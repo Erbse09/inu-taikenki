@@ -70,7 +70,8 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 .exp-more-btn:active{transform:translateY(1px)}
 .exp-more-btn[hidden]{display:none}
 
-</style></head><body>
+</style><link rel="stylesheet" href="/db-review-browser.css">
+</head><body>
 <header><a class="head" href="index.html"><span class="paw">🐾</span><span class="brand">犬用品みんなの体験記</span></a></header>
 <main><div class="eyebrow">DOG COMB</div><h1>犬用コームを口コミ比較</h1><p class="lead">スリッカー後の仕上げ、根元のもつれ確認、顔や足周りで使うコームを犬種別体験から比較します。</p><nav class="quicknav"><a href="brush-guide.html">ブラシTOP →</a><a href="brush-slicker.html">スリッカーはこちら →</a><a href="brush-pin.html">ピンブラシはこちら →</a><a class="current" href="brush-comb.html">コームはこちら →</a><a href="brush-undercoat.html">アンダーコートはこちら →</a></nav>
 <div class="notice">コームは岡野製作所「高級両目金櫛」とSHOWTECHグレイハウンド系を中心に調査。小・中・大や販売店が分かれるため、同じシリーズのレビューを二重に足して「総口コミ数」とはしていません。</div><section class="item-finder" id="itemFinder">
@@ -103,6 +104,22 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 <div class="point"><b>粗目と細目を使い分ける</b>トイプードルでは、粗目で確認→スリッカー→細目仕上げの使い分け例を確認しています。</div>
 <div class="point"><b>固い毛玉に最初から押し込まない</b>引っかかる部分は先にほぐし、根元を押さえて優しく使う例があります。</div></div>
 <div class="notice"><b>向きやすい：</b>長毛・巻毛、根元の確認、顔や足周り、仕上げ。<br/><b>慎重に：</b>固い毛玉へ最初から無理に通す使い方。</div></div>
+
+<section class="db-review-browser" data-db-review-browser data-category="brush-comb">
+  <div class="eyebrow">DATABASE</div>
+  <h2>コームの商品別体験をDBから見る</h2>
+  <p class="db-review-note">Cloudflare D1に保存した商品・公開体験の要約を、商品ごとに表示します。</p>
+  <div class="db-controls">
+    <label>商品</label>
+    <select data-db-product-select><option value="">読み込み中…</option></select>
+    <span class="db-status" data-db-status></span>
+  </div>
+  <div class="db-review-list" data-db-review-list aria-live="polite"></div>
+  <div class="db-more-wrap">
+    <button class="db-more-btn" type="button" data-db-more hidden>もっと見る</button>
+  </div>
+</section>
+
 <h2>主な確認元</h2><ul class="source-list">
 <li><a href="https://review.rakuten.co.jp/review/item/1/211165_10359061/1.1/">楽天：岡野 高級両目金櫛 小</a></li>
 <li><a href="https://review.rakuten.co.jp/review/item/1/211165_10359062/1.1/">楽天：岡野 高級両目金櫛 中</a></li>
@@ -186,4 +203,5 @@ document.getElementById('resetItemFinder').addEventListener('click',()=>{itemChi
 })();
 </script>
 
+<script src="/db-review-browser.js" defer></script>
 </body></html>
