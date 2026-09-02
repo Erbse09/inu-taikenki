@@ -76,6 +76,7 @@ table{border-collapse:collapse;width:100%;min-width:790px;font-size:10px}th,td{p
 .exp-more-btn[hidden]{display:none}
 
 </style>
+<link rel="stylesheet" href="/db-review-browser.css">
 </head>
 <body>
 <header><a class="head" href="index.html"><span class="paw">🐾</span><span class="brand">犬用品みんなの体験記</span></a></header>
@@ -190,6 +191,22 @@ table{border-collapse:collapse;width:100%;min-width:790px;font-size:10px}th,td{p
 </div>
 <h2>調査方法と確認範囲</h2>
 <p class="method">2026年9月1日時点。Yahoo!ショッピング・楽天市場などの公開購入者レビュー、メーカー/販売元の製品情報、犬での実機テスト記事、X（旧Twitter）上の公開投稿およびX投稿を取材した記事を横断しました。前段の調査でカリカリマシーン系レビュー100件を個別確認し、今回さらに10商品へ範囲を拡張。確認先の代表的なレビュー母数だけでも WTW 208件、Take-One 113件、Moizze 97件、ペットラボ館 pet-051 455件などがあります。ただし「ページにあるレビュー件数」と「本文を1件ずつ読んだ件数」は区別し、母数をそのまま調査済み件数とは扱っていません。AI要約は検索の手掛かりには使っても、犬の具体例は個別本文または取材記事で確認できた内容だけを掲載しています。</p>
+
+<section class="db-review-browser" data-db-review-browser data-category="auto-feeder">
+  <div class="eyebrow">DATABASE</div>
+  <h2>自動給餌器の商品別体験をDBから見る</h2>
+  <p class="db-review-note">Cloudflare D1に保存した商品・公開体験の要約を、商品ごとに表示します。</p>
+  <div class="db-controls">
+    <label>商品</label>
+    <select data-db-product-select><option value="">読み込み中…</option></select>
+    <span class="db-status" data-db-status></span>
+  </div>
+  <div class="db-review-list" data-db-review-list aria-live="polite"></div>
+  <div class="db-more-wrap">
+    <button class="db-more-btn" type="button" data-db-more hidden>もっと見る</button>
+  </div>
+</section>
+
 <h2>主な確認元</h2>
 <ul class="sources">
 <li><a href="https://shopping.yahoo.co.jp/review/item/list?page_key=uespv2cp&amp;store_id=catfamily" rel="noopener" target="_blank">Yahoo!：カリカリマシーン V2C Plus レビュー</a></li>
@@ -539,4 +556,5 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
 <p class="site-footer-note">犬用品みんなの体験記は、公開された飼い主体験・商品仕様・公式情報を整理し、犬種・サイズ・毛質・性格などから比較しやすくすることを目的としたサイトです。</p>
 <p>© 犬用品みんなの体験記</p>
 </footer>
+<script src="/db-review-browser.js" defer></script>
 </body></html>
