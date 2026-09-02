@@ -63,6 +63,18 @@ table{border-collapse:collapse;width:100%;min-width:790px;font-size:10px}th,td{p
 .site-footer-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:14px}
 .site-footer-nav a{color:#7a6f67;text-decoration:none;font-weight:700}
 .site-footer-note{max-width:720px;margin:0 auto 8px}
+
+/* progressive experience disclosure */
+.exp-more-hidden{display:none!important}
+.exp-more-wrap{text-align:center;margin:14px 0 20px}
+.exp-more-btn{
+  width:100%;max-width:360px;border:1px solid #edc89f;background:#fff7ed;color:#c66f28;
+  border-radius:999px;padding:12px 18px;font-size:12px;font-weight:850;cursor:pointer;
+  box-shadow:0 4px 14px rgba(217,120,43,.08)
+}
+.exp-more-btn:active{transform:translateY(1px)}
+.exp-more-btn[hidden]{display:none}
+
 </style>
 </head>
 <body>
@@ -139,6 +151,7 @@ table{border-collapse:collapse;width:100%;min-width:790px;font-size:10px}th,td{p
 <div class="meta">6皿タイマー式（ウェット対応例）</div><h3>18歳の犬：缶フードを留守中に小分け</h3><p>長時間仕事で家を空ける家庭で、18歳の犬に缶フードを小分けして与えるために使用。保冷剤を入れられる6皿式が役立ったという体験。ドライ式10商品とは別系統だが、シニア犬では重要な選択肢。</p><div class="tagrow"><span class="tag">18歳</span><span class="tag">シニア</span><span class="tag">ウェット</span></div><div class="score"></div>
 </article>
 </div>
+<div class="exp-more-wrap"><button id="autoExperienceMoreBtn" class="exp-more-btn" type="button" aria-controls="expGrid">もっと見る</button></div>
 <h2>比較する10商品</h2>
 <p class="sub">同一ブランドの似た機種をむやみに増やさず、カメラ型・シンプル型・大容量・多頭向けなど役割が重ならないよう選びました。</p>
 <div class="product-grid">
@@ -199,6 +212,22 @@ chips.forEach(c=>c.addEventListener('click',()=>{
   render();
 }));
 const cards=[...document.querySelectorAll('.exp')];
+const autoMoreBtn=document.getElementById('autoExperienceMoreBtn');
+const AUTO_INITIAL_COUNT = 4;
+const AUTO_PAGE_SIZE = 6;
+let autoVisibleCount = AUTO_INITIAL_COUNT;
+
+function applyAutoExperienceLimit(reset=false){
+  if(reset) autoVisibleCount=AUTO_INITIAL_COUNT;
+  cards.forEach(c=>c.classList.remove('exp-more-hidden'));
+  const shown=cards.filter(c=>c.classList.contains('show'));
+  shown.slice(autoVisibleCount).forEach(c=>c.classList.add('exp-more-hidden'));
+  const remaining=Math.max(0,shown.length-autoVisibleCount);
+  if(autoMoreBtn){
+    autoMoreBtn.hidden=remaining===0;
+    autoMoreBtn.textContent=remaining>0?'もっと見る（あと'+remaining+'件）':'すべて表示しました';
+  }
+}
 
 const productData=[
 {
@@ -433,6 +462,7 @@ function renderExperiences(groups){
  if(!s.length){
    cards.forEach(c=>{c.classList.add('show');c.querySelector('.score').textContent='条件未指定：すべて表示'});
    document.getElementById('resultTitle').textContent='すべての具体体験';
+   applyAutoExperienceLimit(true);
    return;
  }
  let scored=cards.map((c,i)=>{
@@ -463,6 +493,9 @@ function renderExperiences(groups){
  }
 }
 
+  applyAutoExperienceLimit(true);
+}
+
 function render(){
  const groups=selectedByGroup();
  if(!flatSelected(groups).length){
@@ -470,19 +503,31 @@ function render(){
    document.getElementById('resultHead').classList.add('show');
    cards.forEach(c=>{c.classList.add('show');c.querySelector('.score').textContent='条件未指定：すべて表示'});
    document.getElementById('resultTitle').textContent='まず条件を1つ以上選ぶと、商品TOP3も表示されます';
+   applyAutoExperienceLimit(true);
    return;
  }
  renderRecommendations(groups);
  renderExperiences(groups);
  document.getElementById('recoWrap').scrollIntoView({behavior:'smooth',block:'start'});
 }
+if(autoMoreBtn){
+ autoMoreBtn.addEventListener('click',()=>{
+   autoVisibleCount+=AUTO_PAGE_SIZE;
+   applyAutoExperienceLimit(false);
+ });
+}
+cards.forEach(c=>{c.classList.add('show');c.querySelector('.score').textContent='条件未指定：すべて表示'});
+document.getElementById('resultHead').classList.add('show');
+document.getElementById('resultTitle').textContent='すべての具体体験';
+applyAutoExperienceLimit(true);
 document.getElementById('findBtn').addEventListener('click',render);
 document.getElementById('resetBtn').addEventListener('click',()=>{
  chips.forEach(c=>c.classList.remove('active'));
  document.getElementById('recoWrap').classList.remove('show');
  document.getElementById('recoGrid').innerHTML='';
  document.getElementById('resultHead').classList.remove('show');
- cards.forEach(c=>c.classList.remove('show'));
+ cards.forEach(c=>{c.classList.remove('show');c.classList.remove('exp-more-hidden')});
+ if(autoMoreBtn) autoMoreBtn.hidden=true;
 });
 </script>
 
