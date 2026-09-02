@@ -70,7 +70,8 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 .exp-more-btn:active{transform:translateY(1px)}
 .exp-more-btn[hidden]{display:none}
 
-</style></head><body>
+</style><link rel="stylesheet" href="/db-review-browser.css">
+</head><body>
 <header><a class="head" href="index.html"><span class="paw">🐾</span><span class="brand">犬用品みんなの体験記</span></a></header>
 <main><div class="eyebrow">UNDERCOAT TOOL</div><h1>犬用アンダーコートブラシを口コミ比較</h1><p class="lead">柴犬・コーギー系・レトリバー系など、換毛期の下毛対策を公開口コミとXの生活投稿から調査しました。</p><nav class="quicknav"><a href="brush-guide.html">ブラシTOP →</a><a href="brush-slicker.html">スリッカーはこちら →</a><a href="brush-pin.html">ピンブラシはこちら →</a><a href="brush-comb.html">コームはこちら →</a><a class="current" href="brush-undercoat.html">アンダーコートはこちら →</a></nav>
 <div class="notice">アンダーコート用は「たくさん取れる＝常に良い」とはしません。FURminator公式も、下毛のない犬・特に敏感な皮膚には使わないこと、同じ場所を強く何度も梳かさないことを案内しています。</div><section class="item-finder" id="itemFinder">
@@ -104,6 +105,22 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 <div class="point"><b>シングルコートとは役割が違う</b>下毛がない犬には同じ目的で使えないため、犬種名だけでなく実際の被毛タイプを確認します。</div>
 <div class="point"><b>やり過ぎない</b>同じ場所を強く何度も梳かさず、もつれがある場合は先にほぐす。嫌がる犬では無理に続けないことを優先します。</div></div>
 <div class="notice"><b>向きやすい：</b>ダブルコート、換毛期、抜け毛が多い犬。<br/><b>慎重に：</b>シングルコート、皮膚が敏感、ブラシ嫌い、毛玉が強く引っかかる状態。</div></div>
+
+<section class="db-review-browser" data-db-review-browser data-category="brush-undercoat">
+  <div class="eyebrow">DATABASE</div>
+  <h2>アンダーコート用ブラシの商品別体験をDBから見る</h2>
+  <p class="db-review-note">Cloudflare D1に保存した商品・公開体験の要約を、商品ごとに表示します。</p>
+  <div class="db-controls">
+    <label>商品</label>
+    <select data-db-product-select><option value="">読み込み中…</option></select>
+    <span class="db-status" data-db-status></span>
+  </div>
+  <div class="db-review-list" data-db-review-list aria-live="polite"></div>
+  <div class="db-more-wrap">
+    <button class="db-more-btn" type="button" data-db-more hidden>もっと見る</button>
+  </div>
+</section>
+
 <h2>主な確認元</h2><ul class="source-list">
 <li><a href="https://review.rakuten.co.jp/item/1/202898_10097142/1.1/">楽天：FURminator M（191件表示時）</a></li>
 <li><a href="https://review.rakuten.co.jp/item/1/261122_10676545/1.1/">楽天：FURminator S短毛</a></li>
@@ -188,4 +205,5 @@ document.getElementById('resetItemFinder').addEventListener('click',()=>{itemChi
 })();
 </script>
 
+<script src="/db-review-browser.js" defer></script>
 </body></html>
