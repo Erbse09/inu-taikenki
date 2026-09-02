@@ -8,5 +8,12 @@
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "inu-taikenki",
+      "database_id": "a7339570-f395-48fd-8757-b5259a505560"
+    }
+  ],
   "observability": { "enabled": true }
 }
