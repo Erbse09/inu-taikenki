@@ -70,7 +70,8 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 .exp-more-btn:active{transform:translateY(1px)}
 .exp-more-btn[hidden]{display:none}
 
-</style></head><body>
+</style><link rel="stylesheet" href="/db-review-browser.css">
+</head><body>
 <header><a class="head" href="index.html"><span class="paw">🐾</span><span class="brand">犬用品みんなの体験記</span></a></header>
 <main><div class="eyebrow">SLICKER BRUSH</div><h1>犬用スリッカーブラシを口コミ比較</h1><p class="lead">毛玉・もつれ・ふわふわ仕上げを中心に、犬種と毛質が分かる公開口コミを重点的に確認しました。</p><nav class="quicknav"><a href="brush-guide.html">ブラシTOP →</a><a class="current" href="brush-slicker.html">スリッカーはこちら →</a><a href="brush-pin.html">ピンブラシはこちら →</a><a href="brush-comb.html">コームはこちら →</a><a href="brush-undercoat.html">アンダーコートはこちら →</a></nav>
 <div class="notice">確認先の大きなレビュー母数：SHOWTECH 約407件、ローレンス各サイズで数十件、岡野「武蔵」13件など。特にSHOWTECHは複数ページを確認し、トイプードル、ビション、ポメラニアン、シェルティ、シュナウザー、ダックス、オーストラリアン・ラブラドゥードルなど犬種別の本文を拾いました。</div><section class="item-finder" id="itemFinder">
@@ -110,6 +111,22 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 <div class="point"><b>② ピンの長さとサイズ</b>長毛・巻毛では根元まで届く長さが必要ですが、小型犬の顔や足先では大きすぎるブラシが扱いにくい体験も確認できました。</div>
 <div class="point"><b>③ 役割</b>毛玉・もつれをほぐし、ブロー時に毛を伸ばす用途に強い一方、最後の根元確認はコームとの併用が分かりやすいです。</div></div>
 <div class="notice"><b>向きやすい：</b>長毛・巻毛、毛玉ができやすい犬、ふわふわに仕上げたい犬。<br/><b>慎重に：</b>皮膚が敏感、ブラシを強く嫌がる、顔・足先など狭い場所。</div></div>
+
+<section class="db-review-browser" data-db-review-browser data-category="brush-slicker">
+  <div class="eyebrow">DATABASE</div>
+  <h2>スリッカーブラシの商品別体験をDBから見る</h2>
+  <p class="db-review-note">Cloudflare D1に保存した商品・公開体験の要約を、商品ごとに表示します。</p>
+  <div class="db-controls">
+    <label>商品</label>
+    <select data-db-product-select><option value="">読み込み中…</option></select>
+    <span class="db-status" data-db-status></span>
+  </div>
+  <div class="db-review-list" data-db-review-list aria-live="polite"></div>
+  <div class="db-more-wrap">
+    <button class="db-more-btn" type="button" data-db-more hidden>もっと見る</button>
+  </div>
+</section>
+
 <h2>主な確認元</h2><ul class="source-list">
 <li><a href="https://review.rakuten.co.jp/review/review/review/item/1/360103_10000478/1.1/">楽天：SHOWTECH スリッカー（407件表示時）</a></li>
 <li><a href="https://shopping.yahoo.co.jp/products/z4gfmb9lfm/review/">Yahoo!：ローレンス ソフト M</a></li>
@@ -193,4 +210,5 @@ document.getElementById('resetItemFinder').addEventListener('click',()=>{itemChi
 })();
 </script>
 
+<script src="/db-review-browser.js" defer></script>
 </body></html>
