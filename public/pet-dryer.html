@@ -105,6 +105,17 @@ footer{text-align:center;padding:30px 18px 44px;border-top:1px solid #f0ebe4;fon
 .no-results{display:none;background:#fff7ed;border:1px dashed #edc89f;border-radius:16px;padding:18px;text-align:center;font-size:12px;color:#7a6657}
 .no-results.show{display:block}
 
+.exp-more-hidden{display:none!important}
+.exp-more-wrap{text-align:center;margin-top:15px}
+.exp-more-btn{
+  width:100%;max-width:360px;border:1px solid #edc89f;background:#fff7ed;color:#c66f28;
+  border-radius:999px;padding:12px 18px;font-size:12px;font-weight:850;cursor:pointer;
+  box-shadow:0 4px 14px rgba(217,120,43,.08)
+}
+.exp-more-btn:active{transform:translateY(1px)}
+.exp-more-btn[hidden]{display:none}
+
+
 @media(max-width:560px){
   main{padding:0 16px 64px}
   h1{font-size:23px;line-height:1.48}
@@ -115,18 +126,18 @@ footer{text-align:center;padding:30px 18px 44px;border-top:1px solid #f0ebe4;fon
 }
 
 /* CSS-only condition filtering: works without JavaScript */
-body:has(#size-small:checked) .exp-card:not([data-size~="small"]){display:none}
-body:has(#size-medium:checked) .exp-card:not([data-size~="medium"]){display:none}
-body:has(#size-large:checked) .exp-card:not([data-size~="large"]){display:none}
+body:has(#size-small:checked) #experienceGrid .exp-card:not([data-size~="small"]){display:none}
+body:has(#size-medium:checked) #experienceGrid .exp-card:not([data-size~="medium"]){display:none}
+body:has(#size-large:checked) #experienceGrid .exp-card:not([data-size~="large"]){display:none}
 
-body:has(#coat-double:checked) .exp-card:not([data-coat~="double"]){display:none}
-body:has(#coat-long:checked) .exp-card:not([data-coat~="long"]){display:none}
-body:has(#coat-short:checked) .exp-card:not([data-coat~="short"]){display:none}
+body:has(#coat-double:checked) #experienceGrid .exp-card:not([data-coat~="double"]){display:none}
+body:has(#coat-long:checked) #experienceGrid .exp-card:not([data-coat~="long"]){display:none}
+body:has(#coat-short:checked) #experienceGrid .exp-card:not([data-coat~="short"]){display:none}
 
-body:has(#need-scared:checked) .exp-card:not([data-need~="scared"]){display:none}
-body:has(#need-puppy:checked) .exp-card:not([data-need~="puppy"]){display:none}
-body:has(#need-speed:checked) .exp-card:not([data-need~="speed"]){display:none}
-body:has(#need-handsfree:checked) .exp-card:not([data-need~="handsfree"]){display:none}
+body:has(#need-scared:checked) #experienceGrid .exp-card:not([data-need~="scared"]){display:none}
+body:has(#need-puppy:checked) #experienceGrid .exp-card:not([data-need~="puppy"]){display:none}
+body:has(#need-speed:checked) #experienceGrid .exp-card:not([data-need~="speed"]){display:none}
+body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="handsfree"]){display:none}
 
 
 .site-footer{margin-top:42px;padding:30px 18px 42px;border-top:1px solid #eee4da;text-align:center;color:#92877e;font-size:11px;line-height:1.8}
@@ -396,7 +407,9 @@ body:has(#need-handsfree:checked) .exp-card:not([data-need~="handsfree"]){displa
 
     </div>
 
-    
+    <div class="exp-more-wrap">
+      <button id="experienceMoreBtn" class="exp-more-btn" type="button" aria-controls="experienceGrid">もっと見る</button>
+    </div>
 
     <p class="source-line">※上の25件は、既存調査で確認した楽天市場・Yahoo!ショッピング・メーカー公開ページの個別投稿を「1投稿＝1体験」で整理したものです。</p>
   </section>
@@ -472,6 +485,9 @@ body:has(#need-handsfree:checked) .exp-card:not([data-need~="handsfree"]){displa
       <span id="db-review-status" style="color:var(--sub);font-size:.92rem"></span>
     </div>
     <div id="db-review-list" class="exp-grid" aria-live="polite"></div>
+    <div class="exp-more-wrap">
+      <button id="dbReviewMoreBtn" class="exp-more-btn" type="button" hidden>もっと見る</button>
+    </div>
     <noscript><p>この表示にはJavaScriptが必要です。</p></noscript>
   </section>
 
@@ -524,7 +540,13 @@ body:has(#need-handsfree:checked) .exp-card:not([data-need~="handsfree"]){displa
   const select = document.getElementById('db-product-select');
   const list = document.getElementById('db-review-list');
   const status = document.getElementById('db-review-status');
-  if (!select || !list || !status) return;
+  const moreBtn = document.getElementById('dbReviewMoreBtn');
+  if (!select || !list || !status || !moreBtn) return;
+
+  const DB_INITIAL_COUNT = 4;
+  const DB_PAGE_SIZE = 6;
+  let currentData = null;
+  let dbVisibleCount = DB_INITIAL_COUNT;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -533,33 +555,53 @@ body:has(#need-handsfree:checked) .exp-card:not([data-need~="handsfree"]){displa
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 
+  function renderDbReviews() {
+    if (!currentData) {
+      list.innerHTML = '';
+      moreBtn.hidden = true;
+      return;
+    }
+    const visible = currentData.reviews.slice(0, dbVisibleCount);
+    list.innerHTML = visible.map((review) => `
+      <article class="exp-card">
+        <div class="exp-top">
+          <div>
+            <div class="exp-product">${esc(currentData.product.name)}</div>
+            <div class="exp-dog">${esc(review.dog_breed || '犬種情報なし')}</div>
+          </div>
+        </div>
+        <div class="exp-body">${esc(review.summary)}</div>
+      </article>
+    `).join('');
+
+    const remaining = Math.max(0, currentData.reviews.length - dbVisibleCount);
+    moreBtn.hidden = remaining === 0;
+    moreBtn.textContent = remaining > 0 ? 'もっと見る（あと' + remaining + '件）' : 'すべて表示しました';
+  }
+
   async function loadReviews(productId) {
     if (!productId) {
+      currentData = null;
       list.innerHTML = '';
       status.textContent = '';
+      moreBtn.hidden = true;
       return;
     }
     status.textContent = '体験を読み込み中…';
     list.innerHTML = '';
+    moreBtn.hidden = true;
+    dbVisibleCount = DB_INITIAL_COUNT;
     try {
       const res = await fetch('/api/products/' + encodeURIComponent(productId) + '/reviews');
       if (!res.ok) throw new Error('reviews request failed');
-      const data = await res.json();
-      status.textContent = data.count + '件';
-      list.innerHTML = data.reviews.map((review) => `
-        <article class="exp-card">
-          <div class="exp-top">
-            <div>
-              <div class="exp-product">${esc(data.product.name)}</div>
-              <div class="exp-dog">${esc(review.dog_breed || '犬種情報なし')}</div>
-            </div>
-          </div>
-          <div class="exp-body">${esc(review.summary)}</div>
-        </article>
-      `).join('');
+      currentData = await res.json();
+      status.textContent = currentData.count + '件';
+      renderDbReviews();
     } catch (error) {
+      currentData = null;
       status.textContent = '読み込みに失敗しました';
       list.innerHTML = '<p>データを取得できませんでした。</p>';
+      moreBtn.hidden = true;
       console.error(error);
     }
   }
@@ -585,7 +627,67 @@ body:has(#need-handsfree:checked) .exp-card:not([data-need~="handsfree"]){displa
   }
 
   select.addEventListener('change', () => loadReviews(select.value));
+  moreBtn.addEventListener('click', () => {
+    dbVisibleCount += DB_PAGE_SIZE;
+    renderDbReviews();
+  });
   init();
+})();
+</script>
+
+<script>
+(() => {
+  const grid = document.getElementById('experienceGrid');
+  const moreBtn = document.getElementById('experienceMoreBtn');
+  if (!grid || !moreBtn) return;
+
+  const cards = Array.from(grid.querySelectorAll(':scope > .exp-card'));
+  const INITIAL_COUNT = 4;
+  const PAGE_SIZE = 6;
+  let visibleCount = INITIAL_COUNT;
+
+  const selectedToken = (name, prefix) => {
+    const checked = document.querySelector('input[name="' + name + '"]:checked');
+    if (!checked || checked.id.endsWith('-all')) return null;
+    return checked.id.replace(prefix, '');
+  };
+
+  const hasToken = (value, token) =>
+    !token || String(value || '').split(/\s+/).filter(Boolean).includes(token);
+
+  const matchesFilters = (card) => {
+    const size = selectedToken('size-filter', 'size-');
+    const coat = selectedToken('coat-filter', 'coat-');
+    const need = selectedToken('need-filter', 'need-');
+    return hasToken(card.dataset.size, size) &&
+           hasToken(card.dataset.coat, coat) &&
+           hasToken(card.dataset.need, need);
+  };
+
+  const render = () => {
+    const matching = cards.filter(matchesFilters);
+    cards.forEach(card => card.classList.add('exp-more-hidden'));
+    matching.slice(0, visibleCount).forEach(card => card.classList.remove('exp-more-hidden'));
+
+    const remaining = Math.max(0, matching.length - visibleCount);
+    moreBtn.hidden = remaining === 0;
+    moreBtn.textContent = remaining > 0 ? 'もっと見る（あと' + remaining + '件）' : 'すべて表示しました';
+    moreBtn.setAttribute('aria-expanded', remaining === 0 ? 'true' : 'false');
+  };
+
+  moreBtn.addEventListener('click', () => {
+    visibleCount += PAGE_SIZE;
+    render();
+  });
+
+  document.querySelectorAll('.filter-radio').forEach(input => {
+    input.addEventListener('change', () => {
+      visibleCount = INITIAL_COUNT;
+      render();
+    });
+  });
+
+  render();
 })();
 </script>
 
