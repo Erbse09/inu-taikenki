@@ -94,12 +94,16 @@
         return;
       }
 
-      select.innerHTML = products.map((product) =>
-        '<option value="' + esc(product.id) + '">' + esc(product.name) + '</option>'
-      ).join('');
+      select.innerHTML = products.map((product) => {
+        const count = Number(product.review_count || 0);
+        return '<option value="' + esc(product.id) + '">' +
+          esc(product.name) + '（体験' + count + '件）</option>';
+      }).join('');
 
-      select.value = products[0].id;
-      await loadReviews(products[0].id);
+      const firstWithReviews = products.find((product) => Number(product.review_count || 0) > 0);
+      const initialProduct = firstWithReviews || products[0];
+      select.value = initialProduct.id;
+      await loadReviews(initialProduct.id);
     } catch (error) {
       select.innerHTML = '<option value="">商品一覧を取得できません</option>';
       status.textContent = 'API未接続';
