@@ -70,7 +70,8 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 .exp-more-btn:active{transform:translateY(1px)}
 .exp-more-btn[hidden]{display:none}
 
-</style></head><body>
+</style><link rel="stylesheet" href="/db-review-browser.css">
+</head><body>
 <header><a class="head" href="index.html"><span class="paw">🐾</span><span class="brand">犬用品みんなの体験記</span></a></header>
 <main><div class="eyebrow">PIN BRUSH</div><h1>犬用ピンブラシを口コミ比較</h1><p class="lead">毎日のお手入れ、長毛犬、スリッカーを嫌がりやすい犬の公開体験を中心に調べました。</p><nav class="quicknav"><a href="brush-guide.html">ブラシTOP →</a><a href="brush-slicker.html">スリッカーはこちら →</a><a class="current" href="brush-pin.html">ピンブラシはこちら →</a><a href="brush-comb.html">コームはこちら →</a><a href="brush-undercoat.html">アンダーコートはこちら →</a></nav>
 <div class="notice">ピンブラシはスリッカーほど大量レビュー商品が少ないため、「レビューが少ない商品を無理に高評価」にしません。東京ペット商事のドイツピンブラシ201/203/503を中心に、長毛犬・子犬・ブラッシング嫌いの具体例を拾いました。</div><section class="item-finder" id="itemFinder">
@@ -103,6 +104,22 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 <div class="point"><b>ピンの長さを見る</b>毛量が多い犬では、長いピンでもつれに届きやすかった体験があります。</div>
 <div class="point"><b>これ1本で全部とは考えない</b>強い毛玉、換毛期の下毛、最後の根元チェックは別タイプのブラシと役割を分けやすいです。</div></div>
 <div class="notice"><b>向きやすい：</b>長毛犬、毎日の軽いお手入れ、スリッカーを嫌がりやすい犬。<br/><b>慎重に：</b>強い毛玉、換毛期の大量の下毛をこれだけで処理したい場合。</div></div>
+
+<section class="db-review-browser" data-db-review-browser data-category="brush-pin">
+  <div class="eyebrow">DATABASE</div>
+  <h2>ピンブラシの商品別体験をDBから見る</h2>
+  <p class="db-review-note">Cloudflare D1に保存した商品・公開体験の要約を、商品ごとに表示します。</p>
+  <div class="db-controls">
+    <label>商品</label>
+    <select data-db-product-select><option value="">読み込み中…</option></select>
+    <span class="db-status" data-db-status></span>
+  </div>
+  <div class="db-review-list" data-db-review-list aria-live="polite"></div>
+  <div class="db-more-wrap">
+    <button class="db-more-btn" type="button" data-db-more hidden>もっと見る</button>
+  </div>
+</section>
+
 <h2>主な確認元</h2><ul class="source-list">
 <li><a href="https://shopping.yahoo.co.jp/products/ee4906a702/review/">Yahoo!：ドイツピンブラシ201</a></li>
 <li><a href="https://review.rakuten.co.jp/item/1/208700_10000708/1.1/">楽天：ドイツピンブラシ203</a></li>
@@ -185,4 +202,5 @@ document.getElementById('resetItemFinder').addEventListener('click',()=>{itemChi
 })();
 </script>
 
+<script src="/db-review-browser.js" defer></script>
 </body></html>
