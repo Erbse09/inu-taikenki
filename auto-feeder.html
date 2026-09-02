@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<title>犬用自動給餌器10商品を比較｜犬種・年齢・性格から体験を探す | 犬用品みんなの体験記</title>
+<meta content="犬用自動給餌器10商品を、100件以上の公開口コミとメーカー情報から比較。犬種・年齢・性格・用途をボタンで選び、うちの子に近い体験を探せます。" name="description"/>
+<style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+:root{--ink:#3a312b;--sub:#766b63;--orange:#ed9349;--orange2:#d97828;--paper:#fffdf9;--soft:#fbf4ec;--line:#eee3d8;--green:#3b765f;--warn:#a9612d}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;line-height:1.8}
+a{color:inherit}header{background:#fff;border-bottom:1px solid var(--line);padding:13px 16px;position:sticky;top:0;z-index:20}
+.head{max-width:860px;margin:auto;display:flex;align-items:center;gap:10px;text-decoration:none}.paw{width:38px;height:38px;border-radius:12px;background:#f6a85f;display:grid;place-items:center}.brand{font-weight:850;font-size:14px}
+main{max-width:860px;margin:auto;padding:28px 18px 72px}
+.eyebrow{color:var(--orange2);font-size:10px;letter-spacing:.09em;font-weight:900}.hero h1{font-size:30px;line-height:1.38;margin:7px 0 13px}.lead{font-size:13px;color:var(--sub);max-width:720px}
+.research-note{margin:20px 0;background:#fff5e9;border:1px solid #f1dcc7;border-radius:17px;padding:15px;font-size:11px;color:#6d625b}
+.research-note b{color:var(--orange2)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:20px 0 34px}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;text-align:center;padding:12px 6px}.stat b{display:block;color:var(--orange2);font-size:20px;line-height:1.1}.stat span{font-size:8px;color:#897d74}
+h2{font-size:21px;line-height:1.45;margin:39px 0 11px}h3{font-size:16px;line-height:1.5}.sub{font-size:11px;color:#82766e;margin-top:-6px}
+.finder{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 8px 28px rgba(72,52,38,.05)}
+.filter-block{margin:0 0 17px}.filter-title{font-weight:850;font-size:12px;margin-bottom:8px}.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{appearance:none;border:1px solid #eadfd5;background:#fff;color:#6d625b;border-radius:999px;padding:8px 11px;font-size:10px;font-weight:750;cursor:pointer}
+.chip.active{background:#f5a25c;border-color:#f5a25c;color:#fff}
+.find-actions{display:flex;gap:8px;margin-top:5px}.find-btn,.reset-btn{border:0;border-radius:12px;padding:12px 14px;font-weight:850;font-size:11px;cursor:pointer}
+.find-btn{background:var(--orange);color:#fff;flex:1}.reset-btn{background:#f4eee8;color:#776b63}
+
+.reco-wrap{display:none;margin:18px 0 8px}.reco-wrap.show{display:block}
+.reco-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:10px}
+.reco-title b{font-size:16px}.reco-title span{font-size:9px;color:#897d74}
+.reco-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.reco{position:relative;background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px 13px}
+.reco.rank1{border:2px solid #eea05d;background:#fffaf4}
+.reco-rank{font-size:9px;font-weight:900;color:var(--orange2)}
+.reco-name{font-size:13px;font-weight:900;line-height:1.45;margin:3px 0 8px}
+.reco-score{font-size:9px;color:#9a765b;margin-bottom:8px}
+.reco-label{font-size:9px;font-weight:900;margin-top:8px}
+.reco-reason,.reco-warn{font-size:9px;line-height:1.65;margin:3px 0 0}
+.reco-reason{color:#4f6f61}.reco-warn{color:#8f633e}
+.reco-evidence{margin-top:9px;font-size:8px;color:#9a8d84;border-top:1px solid #f1e8df;padding-top:7px}
+.reco-note{font-size:9px;color:#8b7f76;background:#fbf6f0;border-radius:12px;padding:9px 10px;margin-top:9px}
+
+.result-head{display:none;margin:20px 0 9px}.result-head.show{display:block}.result-head b{font-size:14px}.result-head span{font-size:10px;color:#847970}
+.exp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.exp{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;display:none}.exp.show{display:block}
+.exp .meta{font-size:9px;color:#a06b43;font-weight:850}.exp h3{margin:3px 0 6px}.exp p{font-size:10px;color:#756a62;margin:0}.tagrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.tag{font-size:8px;background:#f8f2eb;border-radius:999px;padding:4px 7px;color:#776b63}.score{font-size:8px;color:#a7978b;margin-top:7px}
+.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.product{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px}.product .num{font-size:9px;color:var(--orange2);font-weight:900}.product h3{margin:3px 0 7px}.product p{font-size:10px;color:#756a62;margin:5px 0}.product .plus{color:var(--green);font-weight:800}.product .minus{color:var(--warn);font-weight:800}.confidence{display:inline-block;font-size:8px;border-radius:999px;padding:4px 7px;background:#f8f2eb;color:#776b63;margin-top:7px}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:15px;background:#fff}.table-wrap:after{content:"← 横にスクロールできます →";display:block;text-align:center;font-size:8px;color:#aaa;padding:6px}
+table{border-collapse:collapse;width:100%;min-width:790px;font-size:10px}th,td{padding:10px;border-bottom:1px solid #eee8e1;vertical-align:top;text-align:left}th{background:#fbf6f0;color:#6d625b;font-size:9px}tr:last-child td{border-bottom:0}
+.callout{background:#f7f1ea;border-radius:18px;padding:17px;margin:18px 0}.callout b{font-size:13px}.callout p{font-size:10px;color:#71665e;margin:6px 0 0}
+.xbox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}.xbox p{font-size:10px;color:#756a62}.xcase{padding:9px 0;border-top:1px solid #f0e9e2}.xcase:first-of-type{border-top:0}.xcase b{font-size:11px}.xcase span{display:block;color:#8a7e75;font-size:9px}
+.sources{font-size:9px;color:#82766e;padding-left:18px}.sources li{margin:7px 0}.sources a{word-break:break-all}
+.method{font-size:10px;color:#756a62}.disclosure{font-size:9px;color:#948980;border-top:1px solid var(--line);padding-top:16px;margin-top:38px}.back{display:inline-block;margin-top:24px;background:var(--orange);color:#fff;text-decoration:none;border-radius:12px;padding:10px 14px;font-size:11px;font-weight:850}
+@media(max-width:620px){
+ main{padding:24px 15px 60px}.hero h1{font-size:24px}.lead{font-size:11px}.stats{grid-template-columns:repeat(2,1fr)}
+ .finder{padding:15px}.chip{padding:8px 10px}.exp-grid,.product-grid,.reco-grid{grid-template-columns:1fr}
+ h2{font-size:20px}.product{padding:14px}.exp{padding:13px}
+}
+
+.site-footer{margin-top:42px;padding:30px 18px 42px;border-top:1px solid #eee4da;text-align:center;color:#92877e;font-size:11px;line-height:1.8}
+.site-footer-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:14px}
+.site-footer-nav a{color:#7a6f67;text-decoration:none;font-weight:700}
+.site-footer-note{max-width:720px;margin:0 auto 8px}
+</style>
+</head>
+<body>
+<header><a class="head" href="index.html"><span class="paw">🐾</span><span class="brand">犬用品みんなの体験記</span></a></header>
+<main>
+<section class="hero">
+<div class="eyebrow">AUTOMATIC FEEDER RESEARCH</div>
+<h1>犬用自動給餌器10商品を比較<br/>「うちの子」に近い体験から探す</h1>
+<p class="lead">犬種・年齢・性格・留守番スタイルが違えば、同じ自動給餌器でも困るポイントは変わります。公開レビュー100件以上に加え、メーカー情報・比較検証・X上の犬の利用場面を照合し、「誰に合ったか／何で困ったか」を残しました。</p>
+</section>
+<div class="research-note"><b>この記事のルール：</b> 犬種・年齢・性格は、投稿本文や取材記事で確認できたものだけを付与。書かれていない属性は推測しません。猫レビューは機械の給餌精度・アプリ・清掃などの参考には使いますが、「犬の反応」データには混ぜません。</div>
+<div class="stats">
+<div class="stat"><b>10</b><span>比較商品</span></div>
+<div class="stat"><b>100+</b><span>本文まで確認した公開口コミ</span></div>
+<div class="stat"><b>1,000+</b><span>確認先ページの公開口コミ母数</span></div>
+<div class="stat"><b>4軸</b><span>犬種・年齢・性格・用途</span></div>
+</div>
+<h2>🐶 うちの子条件検索</h2>
+<p class="sub">ボタンを押すたびに、条件に合いやすい商品候補TOP3と近い体験談がその場で更新されます。複数選択もOKです。</p>
+<div class="finder" id="finder">
+<div class="filter-block"><div class="filter-title">① 犬種・サイズ</div><div class="chips" data-group="breed">
+<button class="chip" data-value="小型犬">小型犬</button><button class="chip" data-value="中型犬">中型犬</button><button class="chip" data-value="大型犬">大型犬</button>
+<button class="chip" data-value="柴犬">柴犬</button><button class="chip" data-value="ビーグル">ビーグル</button><button class="chip" data-value="コーギー">コーギー</button><button class="chip" data-value="ジャックラッセル">ジャックラッセル</button>
+</div></div>
+<div class="filter-block"><div class="filter-title">② 年齢</div><div class="chips" data-group="age">
+<button class="chip" data-value="子犬">👶 子犬</button><button class="chip" data-value="成犬">🐕 成犬</button><button class="chip" data-value="シニア">👵 シニア犬</button>
+</div></div>
+<div class="filter-block"><div class="filter-title">③ 性格・行動</div><div class="chips" data-group="temper">
+<button class="chip" data-value="怖がり">😨 怖がり</button><button class="chip" data-value="食いしん坊">🍚 食いしん坊</button><button class="chip" data-value="やんちゃ">💥 やんちゃ・いたずら</button><button class="chip" data-value="慎重">🐢 慎重</button><button class="chip" data-value="機械平気">😌 機械を気にしにくい</button>
+</div></div>
+<div class="filter-block"><div class="filter-title">④ 重視すること</div><div class="chips" data-group="need">
+<button class="chip" data-value="留守番">🏠 留守番</button><button class="chip" data-value="少量">🥄 少量ずつ</button><button class="chip" data-value="カメラ">📷 カメラ</button><button class="chip" data-value="多頭">🐕🐕 多頭</button><button class="chip" data-value="静音">🔇 静音</button><button class="chip" data-value="いたずら対策">🔒 いたずら対策</button>
+</div></div>
+<div class="find-actions"><button class="find-btn" id="findBtn">選んだ条件でもう一度表示 🔎</button><button class="reset-btn" id="resetBtn">リセット</button></div>
+</div>
+<div class="reco-wrap" id="recoWrap">
+<div class="reco-title">
+<b id="recoHeading">🐾 この条件なら候補はこの3つ</b>
+<span>口コミ＋仕様からの条件一致</span>
+</div>
+<div class="reco-grid" id="recoGrid"></div>
+<div class="reco-note" id="recoNote">「おすすめ1位」の断定ではなく、選んだ条件との相性候補です。犬の体格・フード粒・1食量は購入前に必ず確認してください。</div>
+</div>
+<div class="result-head" id="resultHead"><b id="resultTitle">条件に近い体験</b><br/><span>完全一致が少ない場合は、選んだ条件との一致数が多い順に表示します。</span></div>
+<div class="exp-grid" id="expGrid">
+<article class="exp" data-source="Take-One" data-tags="中型犬 ビーグル 成犬 やんちゃ 食いしん坊 留守番 カメラ いたずら対策">
+<div class="meta">Take-One P2Pro</div><h3>ビーグル：皿を持ち逃げ、本体にもいたずら</h3><p>やんちゃで、皿を運び出したり本体にフードが入っていることを理解して荒らしたため、給餌器としてではなく見守りカメラ中心になったという体験。食いしん坊＋いたずらタイプでは固定性が重要。</p><div class="tagrow"><span class="tag">ビーグル</span><span class="tag">やんちゃ</span><span class="tag">食いしん坊</span><span class="tag">留守番</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="WTW" data-tags="シニア 少量 留守番 カメラ">
+<div class="meta">WTW-IPET2971</div><h3>14歳：数時間おきの少量給餌に</h3><p>日中に家を空ける間も数時間おきに少量を与える目的で導入。カメラ性能も安心材料になったという具体例。</p><div class="tagrow"><span class="tag">14歳</span><span class="tag">シニア</span><span class="tag">少量</span><span class="tag">カメラ</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="X" data-tags="シニア 小型犬 ジャックラッセル 食いしん坊 留守番">
+<div class="meta">Xで確認した生活場面</div><h3>16歳ジャックラッセル：給餌器の前で待つ</h3><p>自動給餌器から出るごはんを待っている一方、実際に出た時には寝ていることもあるという投稿。シニアでは「音に気づくか」「食事時間に起きているか」も確認したい。</p><div class="tagrow"><span class="tag">ジャックラッセル</span><span class="tag">16歳</span><span class="tag">シニア</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="X/いぬのきもち" data-tags="中型犬 柴犬 成犬 食いしん坊">
+<div class="meta">X投稿を取材した「いぬのきもち」</div><h3>4歳柴犬：ごはん2時間前から給餌器の前で待機</h3><p>給餌器を「ごはんが出るもの」と学習して待つようになった例。獣医師解説では、食いしん坊な犬などで給餌器への執着が見られる可能性が示されています。</p><div class="tagrow"><span class="tag">柴犬</span><span class="tag">4歳</span><span class="tag">食いしん坊</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="PETLIBRO" data-tags="中型犬 コーギー 成犬 食いしん坊 留守番">
+<div class="meta">PETLIBRO</div><h3>4歳コーギー：何年も毎日利用</h3><p>決まった量を1日2回与える用途で長期使用。録音した「ごはんだよ」の声で走ってくる一方、投稿者が実測した1ポーション量はメーカー表記と差があったため、初回計量の必要性が分かる例。</p><div class="tagrow"><span class="tag">コーギー</span><span class="tag">4歳</span><span class="tag">留守番</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="V2C Plus" data-tags="怖がり 慎重 静音">
+<div class="meta">カリカリマシーン V2C Plus</div><h3>ビビりな子：慣れるまで約1週間</h3><p>同居する好奇心旺盛な子は初回から食べたのに対し、ビビりな子は慣れるまで約1週間。性格差がそのまま導入期間の差になった例。</p><div class="tagrow"><span class="tag">怖がり</span><span class="tag">慎重</span><span class="tag">慣らし</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="Moizze" data-tags="怖がり 静音 留守番 カメラ">
+<div class="meta">Moizze PET001</div><h3>給餌時のステンレス音に最初はびっくり</h3><p>フードが皿へ落ちる音に最初は警戒したものの、慣れると食べられるようになった体験。音に敏感な犬では、留守番本番の前に家にいる状態で練習したい。</p><div class="tagrow"><span class="tag">怖がり</span><span class="tag">静音</span><span class="tag">カメラ</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="Moizze" data-tags="多頭 留守番 少量">
+<div class="meta">Moizze PET001</div><h3>2台を電池運用：時間差で片方が横取り</h3><p>2匹に別々のフードを与える家庭で、電池運用時に2台の給餌タイミングがずれ、先に食べた子がもう一方のフードを横取りしたという例。多頭・療法食では時刻精度が重要。</p><div class="tagrow"><span class="tag">多頭</span><span class="tag">横取り</span><span class="tag">時間ズレ</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="PETLIBRO test" data-tags="大型犬 いたずら対策">
+<div class="meta">PETLIBRO（外部実機テスト）</div><h3>大型犬では本体の安定性に注意</h3><p>実機比較では、PETLIBROの一部モデルは大きな犬の興奮に対して十分頑丈ではないと評価。大型犬では容量だけでなく、倒されにくさ・ボタンに触れにくい構造も優先したい。</p><div class="tagrow"><span class="tag">大型犬</span><span class="tag">いたずら対策</span></div><div class="score"></div>
+</article>
+<article class="exp" data-source="ウェット6皿" data-tags="シニア 留守番 少量">
+<div class="meta">6皿タイマー式（ウェット対応例）</div><h3>18歳の犬：缶フードを留守中に小分け</h3><p>長時間仕事で家を空ける家庭で、18歳の犬に缶フードを小分けして与えるために使用。保冷剤を入れられる6皿式が役立ったという体験。ドライ式10商品とは別系統だが、シニア犬では重要な選択肢。</p><div class="tagrow"><span class="tag">18歳</span><span class="tag">シニア</span><span class="tag">ウェット</span></div><div class="score"></div>
+</article>
+</div>
+<h2>比較する10商品</h2>
+<p class="sub">同一ブランドの似た機種をむやみに増やさず、カメラ型・シンプル型・大容量・多頭向けなど役割が重ならないよう選びました。</p>
+<div class="product-grid">
+<article class="product"><div class="num">01</div><h3>カリカリマシーン V2C Plus</h3><p class="plus">良さ：カメラ・アプリ・細かな給餌設定・洗いやすさ。</p><p class="minus">注意：皿位置が低いという声。新型なのでV2C旧型ほどレビュー蓄積はまだ多くない。</p><span class="confidence">新型レビュー：まだ少なめ</span></article>
+<article class="product"><div class="num">02</div><h3>PETKIT YUMSHARE SOLO 2（P572）</h3><p class="plus">良さ：最新の高機能カメラ型として比較対象に価値あり。</p><p class="minus">注意：発売後の犬の具体レビューはまだ薄い。この記事では「レビュー不足」自体を明示。</p><span class="confidence">犬の実体験：今後追記候補</span></article>
+<article class="product"><div class="num">03</div><h3>PETLIBRO 5L / Granary系</h3><p class="plus">良さ：長期の犬利用例があり、給餌・録音・バックアップ電源を比較しやすい。</p><p class="minus">注意：モデルによって対象が猫中心。大型犬では安定性と1食量を要確認。</p><span class="confidence">海外犬レビュー：厚め</span></article>
+<article class="product"><div class="num">04</div><h3>Moizze PET001 4L カメラ付き</h3><p class="plus">良さ：カメラ・暗視・遠隔給餌。公開レビューが多く、良い点と不満の両方を拾いやすい。</p><p class="minus">注意：給餌量、カメラ角度、音、電池運用時の時刻ズレという具体的指摘あり。</p><span class="confidence">Yahoo 97件＋楽天複数店</span></article>
+<article class="product"><div class="num">05</div><h3>WTW-IPET2971</h3><p class="plus">良さ：カメラ評価と犬の少量頻回給餌例がある。</p><p class="minus">注意：レビューでは給餌量のばらつき、カメラ角度、音量調整などに不満。</p><span class="confidence">Yahoo 208件</span></article>
+<article class="product"><div class="num">06</div><h3>Take-One P2Pro</h3><p class="plus">良さ：見守り＋給餌。犬の具体的なレビューを拾いやすい。</p><p class="minus">注意：ビーグルが皿を持ち逃げし、本体を荒らした例あり。やんちゃ犬では固定性が課題。</p><span class="confidence">Yahoo 113件</span></article>
+<article class="product"><div class="num">07</div><h3>Latuna 4L タイマー式</h3><p class="plus">良さ：カメラなしのシンプル枠。時間・量設定、分解洗浄、録音などを比較しやすい。</p><p class="minus">注意：スマート機能より「決まった時間に出す」ことを重視する家庭向け。</p><span class="confidence">大規模レビュー群を確認</span></article>
+<article class="product"><div class="num">08</div><h3>ELECOM PET-AF04系</h3><p class="plus">良さ：国内大手のタイマー式。ドライフードを決まった量・時間で与えるシンプル比較枠。</p><p class="minus">注意：型番ごとに皿数・容量が異なるため、購入時は販売ページの型番確認が必須。</p><span class="confidence">仕様は型番照合が重要</span></article>
+<article class="product"><div class="num">09</div><h3>ペットラボ館 自動給餌器</h3><p class="plus">良さ：大量の購入者レビューがあり、低価格タイマー型の現実的な不満まで見える。</p><p class="minus">注意：数分の時刻ズレ、操作ボタンの硬さなどの声あり。</p><span class="confidence">楽天 pet-051：455件</span></article>
+<article class="product"><div class="num">10</div><h3>MOFMORE 2フード対応タイプ</h3><p class="plus">良さ：2種類のドライフードを使い分けたい家庭で差別化できる。</p><p class="minus">注意：上位機種ほど国内の犬レビューが豊富ではないため、断定的な評価はしない。</p><span class="confidence">体験データ：少なめ</span></article>
+</div>
+<h2>機能だけで選ぶなら、ここを比較</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>商品</th><th>カメラ</th><th>向きそうな家庭</th><th>犬で注意したい点</th><th>体験データ量</th></tr></thead>
+<tbody>
+<tr><td>V2C Plus</td><td>○</td><td>細かな遠隔管理</td><td>皿の低さ・怖がりは慣らし</td><td>新型は少</td></tr>
+<tr><td>PETKIT P572</td><td>○</td><td>最新スマート機能</td><td>犬レビューがまだ薄い</td><td>少</td></tr>
+<tr><td>PETLIBRO</td><td>機種別</td><td>定時給餌・長期運用</td><td>大型犬の安定性・モデル対象</td><td>多</td></tr>
+<tr><td>Moizze</td><td>○</td><td>カメラと価格の両立</td><td>音・量・電池時刻ズレ</td><td>多</td></tr>
+<tr><td>WTW</td><td>○</td><td>シニア・少量頻回</td><td>量のばらつき・角度</td><td>多</td></tr>
+<tr><td>Take-One</td><td>○</td><td>見守り重視</td><td>やんちゃ犬のいたずら</td><td>多</td></tr>
+<tr><td>Latuna</td><td>×</td><td>シンプル定時給餌</td><td>カメラ不要か確認</td><td>多</td></tr>
+<tr><td>ELECOM</td><td>機種別</td><td>国内メーカー・簡単操作</td><td>型番違いに注意</td><td>中</td></tr>
+<tr><td>ペットラボ館</td><td>機種別</td><td>低価格・定時給餌</td><td>時刻ズレ等を要確認</td><td>非常に多</td></tr>
+<tr><td>MOFMORE</td><td>機種別</td><td>2種類のフード</td><td>犬の体験データ不足</td><td>少</td></tr>
+</tbody></table></div>
+<div class="callout"><b>🐾 今回のいちばん大きな発見</b><p>「おすすめ1位」を決めるより、犬のタイプで弱点を探した方が役に立ちます。怖がり犬なら給餌音、食いしん坊・やんちゃ犬なら蓋・皿・本体の固定、シニア犬なら少量頻回と“ちゃんと気づけるか”、大型犬なら1食量と高さ・安定性、多頭なら横取りと時刻精度が重要でした。</p></div>
+<h2>X（Twitter）で見えた「商品レビュー以外」のこと</h2>
+<div class="xbox">
+<p>商品名検索はPR・アフィリエイト投稿がかなり多かったため、Xの投稿数や「おすすめ」という言葉は評価点にしていません。代わりに、犬が自動給餌器とどう暮らしているかが分かる投稿だけを補助材料として確認しました。</p>
+<div class="xcase"><b>4歳の柴犬</b><span>ごはんまで2時間あるのに給餌器の前で待機。給餌器を「ごはんが出るもの」と学習している生活場面。</span></div>
+<div class="xcase"><b>16歳のジャックラッセルテリア</b><span>給餌器の前で待つ一方、出た時には寝ていることも。シニアならではの「給餌した＝食べたではない」が見える。</span></div>
+</div>
+<h2>調査方法と確認範囲</h2>
+<p class="method">2026年9月1日時点。Yahoo!ショッピング・楽天市場などの公開購入者レビュー、メーカー/販売元の製品情報、犬での実機テスト記事、X（旧Twitter）上の公開投稿およびX投稿を取材した記事を横断しました。前段の調査でカリカリマシーン系レビュー100件を個別確認し、今回さらに10商品へ範囲を拡張。確認先の代表的なレビュー母数だけでも WTW 208件、Take-One 113件、Moizze 97件、ペットラボ館 pet-051 455件などがあります。ただし「ページにあるレビュー件数」と「本文を1件ずつ読んだ件数」は区別し、母数をそのまま調査済み件数とは扱っていません。AI要約は検索の手掛かりには使っても、犬の具体例は個別本文または取材記事で確認できた内容だけを掲載しています。</p>
+<h2>主な確認元</h2>
+<ul class="sources">
+<li><a href="https://shopping.yahoo.co.jp/review/item/list?page_key=uespv2cp&amp;store_id=catfamily" rel="noopener" target="_blank">Yahoo!：カリカリマシーン V2C Plus レビュー</a></li>
+<li><a href="https://shopping.yahoo.co.jp/review/item/list?page_key=yhcw264&amp;store_id=smi" rel="noopener" target="_blank">Yahoo!：Moizze PET001 レビュー</a></li>
+<li><a href="https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&amp;store_id=wtw" rel="noopener" target="_blank">Yahoo!：WTW-IPET2971 レビュー（208件）</a></li>
+<li><a href="https://shopping.yahoo.co.jp/review/item/list?page_key=p1&amp;store_id=take-one" rel="noopener" target="_blank">Yahoo!：Take-One P2Pro レビュー（113件）</a></li>
+<li><a href="https://item.rakuten.co.jp/petlabokan/pet-051/" rel="noopener" target="_blank">楽天：ペットラボ館 pet-051（455件表示）</a></li>
+<li><a href="https://item.rakuten.co.jp/petlabokan/pet-083/" rel="noopener" target="_blank">楽天：ペットラボ館 pet-083 製品情報</a></li>
+<li><a href="https://dog.benesse.ne.jp/withdog/content/?id=177851" rel="noopener" target="_blank">いぬのきもち：4歳柴犬と自動給餌器（X投稿の取材記事）</a></li>
+<li><a href="https://search.yahoo.co.jp/realtime/search?fr=rts_mod&amp;p=%23%E3%83%8F%E3%82%A4%E3%82%B7%E3%83%8B%E3%82%A2%E7%8A%AC&amp;rkf=1" rel="noopener" target="_blank">Yahoo!リアルタイム検索：16歳ジャックラッセルの公開X投稿</a></li>
+<li><a href="https://www.amazon.co.jp/dp/B0CL7HYV6R" rel="noopener" target="_blank">Amazon：PETLIBRO 5L 製品情報</a></li>
+</ul>
+<p class="disclosure">※当サイトは公開情報を調査・整理したもので、掲載10商品を当サイト運営者がすべて実使用したレビューではありません。口コミは個人の感想です。給餌量はフードの粒・形で変わる可能性があるため、導入時は実際に使うフードを計量して確認してください。商品仕様・販売状況は変更されるため、購入前に販売ページで最新情報をご確認ください。</p>
+<a class="back" href="index.html">← トップへ戻る</a>
+</main>
+<script>
+const chips=[...document.querySelectorAll('.chip')];
+chips.forEach(c=>c.addEventListener('click',()=>{
+  c.classList.toggle('active');
+  render();
+}));
+const cards=[...document.querySelectorAll('.exp')];
+
+const productData=[
+{
+ name:"カリカリマシーン V2C Plus",
+ tags:["小型犬","中型犬","子犬","成犬","シニア","留守番","少量","カメラ"],
+ anti:["怖がり"],
+ reasons:{
+  "小型犬":"少量を細かく分けたい家庭の候補にしやすい",
+  "中型犬":"遠隔管理と定時給餌を両立しやすい",
+  "子犬":"少量を複数回に分けたい時に候補",
+  "シニア":"少量頻回＋カメラ確認を組み合わせやすい",
+  "留守番":"カメラとアプリで外出先から確認できる",
+  "少量":"細かな給餌設定が強み",
+  "カメラ":"見守りと給餌を1台で行える"
+ },
+ warning:"怖がりな犬は給餌音や本体に慣れるまで時間がかかる例あり。皿位置が低いという声も確認。",
+ evidence:"犬の慣れ方・皿位置・カメラ利用の公開体験あり",
+ confidence:0.92
+},
+{
+ name:"PETKIT YUMSHARE SOLO 2（P572）",
+ tags:["小型犬","中型犬","成犬","留守番","カメラ"],
+ anti:[],
+ reasons:{
+  "小型犬":"コンパクトなスマート給餌器を探す時の候補",
+  "中型犬":"カメラ付き定時給餌を重視するなら候補",
+  "留守番":"高機能カメラ系として比較価値が高い",
+  "カメラ":"見守り機能を重視する人向け"
+ },
+ warning:"新しい機種で、犬の具体的な長期レビューはまだ少なめ。レビュー量より最新機能を重視する人向け。",
+ evidence:"公式仕様は確認済み／犬の実体験データは少なめ",
+ confidence:0.55
+},
+{
+ name:"PETLIBRO 5L / Granary系",
+ tags:["小型犬","中型犬","大型犬","成犬","留守番","多頭","少量"],
+ anti:["大型犬:いたずら対策"],
+ reasons:{
+  "小型犬":"定量給餌を長期運用した犬の体験がある",
+  "中型犬":"コーギーで長期利用の具体例あり",
+  "大型犬":"5L級の容量を比較したい時の候補",
+  "留守番":"定時給餌・録音・バックアップ電源を比較しやすい",
+  "多頭":"多頭向け構成のモデルも選べる",
+  "少量":"ポーション設定は導入時に実測して調整できる"
+ },
+ warning:"大型犬・興奮しやすい犬では本体の安定性に注意。モデルによって仕様が違うため型番確認必須。",
+ evidence:"4歳コーギーの長期利用例＋外部実機比較あり",
+ confidence:0.86
+},
+{
+ name:"Moizze PET001 4L",
+ tags:["小型犬","中型犬","成犬","シニア","留守番","カメラ","少量"],
+ anti:["怖がり","多頭"],
+ reasons:{
+  "小型犬":"4Lクラスのカメラ付き機として候補",
+  "中型犬":"定時給餌＋遠隔確認を組み合わせやすい",
+  "シニア":"老犬の留守番確認に使った具体例あり",
+  "留守番":"カメラ・暗視・遠隔給餌がある",
+  "カメラ":"外から様子を確認したい家庭向け",
+  "少量":"食事回数を分けたい用途の体験あり"
+ },
+ warning:"給餌音に驚いた例あり。電池運用の時間ズレで多頭飼いの横取りにつながった体験も確認。",
+ evidence:"Yahoo!公開レビュー97件規模＋犬の具体例",
+ confidence:0.88
+},
+{
+ name:"WTW-IPET2971",
+ tags:["小型犬","中型犬","シニア","留守番","少量","カメラ"],
+ anti:[],
+ reasons:{
+  "小型犬":"少量頻回の運用候補",
+  "中型犬":"見守り＋定時給餌を重視するなら候補",
+  "シニア":"14歳の犬に数時間おきの少量給餌をした具体例あり",
+  "留守番":"外出中のカメラ確認と給餌を両立",
+  "少量":"シニア犬の少量頻回給餌の実例がある",
+  "カメラ":"カメラ性能を安心材料にした犬の体験あり"
+ },
+ warning:"給餌量のばらつき、カメラ角度などへの不満もあるため、初回は実量確認が必要。",
+ evidence:"Yahoo!公開レビュー208件規模＋14歳犬の具体例",
+ confidence:0.93
+},
+{
+ name:"Take-One P2Pro",
+ tags:["小型犬","中型犬","成犬","留守番","カメラ"],
+ anti:["やんちゃ","食いしん坊","いたずら対策"],
+ reasons:{
+  "小型犬":"見守りカメラ付き給餌器の比較候補",
+  "中型犬":"ビーグルの具体的な犬レビューがある",
+  "留守番":"見守り機能を重視する家庭向け",
+  "カメラ":"給餌よりカメラ中心で使った犬の実例あり"
+ },
+ warning:"食いしん坊・やんちゃなビーグルが皿を持ち逃げし、本体を荒らした例あり。このタイプには優先度を下げます。",
+ evidence:"Yahoo!公開レビュー113件規模＋ビーグルの具体例",
+ confidence:0.82
+},
+{
+ name:"Latuna 4L タイマー式",
+ tags:["小型犬","中型犬","大型犬","成犬","留守番","多頭"],
+ anti:["カメラ"],
+ reasons:{
+  "小型犬":"カメラ不要で定時給餌をシンプルに使いたい時の候補",
+  "中型犬":"4Lのシンプル定時給餌機として比較しやすい",
+  "大型犬":"容量重視でカメラ不要なら候補",
+  "留守番":"決まった時間に出す用途に特化",
+  "多頭":"複雑なスマート機能不要なら比較候補"
+ },
+ warning:"カメラが必要な条件では候補順位を下げます。大型犬は1食量と本体の安定性を別途確認。",
+ evidence:"大規模な公開レビュー群を確認",
+ confidence:0.78
+},
+{
+ name:"ELECOM PET-AF04系",
+ tags:["小型犬","中型犬","成犬","シニア","留守番"],
+ anti:["カメラ"],
+ reasons:{
+  "小型犬":"シンプルなタイマー給餌を探す時の候補",
+  "中型犬":"スマート機能不要で国内メーカーを選びたい時の候補",
+  "シニア":"複雑なアプリを使わず定時給餌したい家庭向け",
+  "留守番":"シンプルな自動給餌用途"
+ },
+ warning:"型番ごとに皿数・容量が異なるため、購入時の型番確認が必須。カメラ必須なら別商品を。",
+ evidence:"国内メーカー仕様を比較できるシンプル枠",
+ confidence:0.67
+},
+{
+ name:"ペットラボ館 自動給餌器",
+ tags:["小型犬","中型犬","成犬","留守番"],
+ anti:[],
+ reasons:{
+  "小型犬":"低価格帯の定時給餌機を比較したい時の候補",
+  "中型犬":"基本的な定時給餌を重視する家庭の候補",
+  "留守番":"大量レビューから長所と不満の両方を確認しやすい"
+ },
+ warning:"数分の時刻ズレや操作面の不満があるため、時刻精度を最優先する用途では慎重に。",
+ evidence:"楽天 pet-051 公開レビュー455件規模",
+ confidence:0.83
+},
+{
+ name:"MOFMORE 2フード対応タイプ",
+ tags:["小型犬","中型犬","成犬","多頭","留守番"],
+ anti:[],
+ reasons:{
+  "小型犬":"2種類のフードを使い分けたい時の比較候補",
+  "中型犬":"2フード運用を重視する家庭で差別化しやすい",
+  "多頭":"フードを使い分けたい家庭で検討価値あり",
+  "留守番":"自動でフードを分けて運用したい時の候補"
+ },
+ warning:"国内の犬の具体的レビューは他の上位候補より少なく、条件適合の確度は低め。",
+ evidence:"機能差は明確／犬の体験データは少なめ",
+ confidence:0.50
+}
+];
+
+function selectedByGroup(){
+ const out={breed:[],age:[],temper:[],need:[]};
+ chips.filter(c=>c.classList.contains('active')).forEach(c=>{
+   const group=c.closest('.chips').dataset.group;
+   out[group].push(c.dataset.value);
+ });
+ return out;
+}
+function flatSelected(groups){return Object.values(groups).flat()}
+
+function productScore(product,groups){
+ let score=product.confidence;
+ let matched=[];
+ let penalties=[];
+ const chosen=flatSelected(groups);
+
+ chosen.forEach(v=>{
+   if(product.tags.includes(v)){
+     score+=2;
+     if(product.reasons[v]) matched.push(product.reasons[v]);
+   }
+   if(product.anti.includes(v)){
+     score-=2.5;
+     penalties.push(v);
+   }
+ });
+ // Combination penalties are explicit, e.g. "大型犬:いたずら対策"
+ product.anti.filter(x=>x.includes(':')).forEach(rule=>{
+   const parts=rule.split(':');
+   if(parts.every(v=>chosen.includes(v))){
+     score-=3;
+     penalties.push(parts.join("＋"));
+   }
+ });
+ // Size is important: if size is selected and the product has no matching size tag, lower it.
+ const sizeChoices=groups.breed.filter(v=>["小型犬","中型犬","大型犬"].includes(v));
+ if(sizeChoices.length && !sizeChoices.some(v=>product.tags.includes(v))) score-=1.8;
+ // Camera is a hard-ish preference.
+ if(groups.need.includes("カメラ") && product.anti.includes("カメラ")) score-=3;
+ return {product,score,matched:[...new Set(matched)],penalties};
+}
+
+function rankProducts(groups){
+ return productData
+  .map(p=>productScore(p,groups))
+  .sort((a,b)=>b.score-a.score || b.product.confidence-a.product.confidence)
+  .slice(0,3);
+}
+
+function renderRecommendations(groups){
+ const wrap=document.getElementById('recoWrap');
+ const grid=document.getElementById('recoGrid');
+ const chosen=flatSelected(groups);
+ if(!chosen.length){wrap.classList.remove('show');grid.innerHTML='';return;}
+ const ranked=rankProducts(groups);
+ const label=chosen.join("・");
+ document.getElementById('recoHeading').textContent=`🐾「${label}」なら候補はこの3つ`;
+ grid.innerHTML=ranked.map((r,i)=>{
+   const reason=r.matched.length ? r.matched.slice(0,3).join("。")+"。" : "選択条件に直接一致する犬データが少ないため、機能とレビュー量から参考候補として表示。";
+   const scoreText=r.score>=5 ? "条件一致：高め" : r.score>=3 ? "条件一致：中程度" : "条件一致：参考";
+   return `<article class="reco ${i===0?'rank1':''}">
+     <div class="reco-rank">${['🥇 1位候補','🥈 2位候補','🥉 3位候補'][i]}</div>
+     <div class="reco-name">${r.product.name}</div>
+     <div class="reco-score">${scoreText}</div>
+     <div class="reco-label">○ この条件で見る理由</div>
+     <p class="reco-reason">${reason}</p>
+     <div class="reco-label">△ ここは確認</div>
+     <p class="reco-warn">${r.product.warning}</p>
+     <div class="reco-evidence">${r.product.evidence}</div>
+   </article>`;
+ }).join('');
+ wrap.classList.add('show');
+}
+
+function renderExperiences(groups){
+ const s=flatSelected(groups);
+ const head=document.getElementById('resultHead');
+ head.classList.add('show');
+ if(!s.length){
+   cards.forEach(c=>{c.classList.add('show');c.querySelector('.score').textContent='条件未指定：すべて表示'});
+   document.getElementById('resultTitle').textContent='すべての具体体験';
+   return;
+ }
+ let scored=cards.map((c,i)=>{
+   const tags=c.dataset.tags.split(' ');
+   const score=s.filter(v=>tags.includes(v)).length;
+   return {c,score,i};
+ });
+ scored.sort((a,b)=>b.score-a.score||a.i-b.i);
+ const grid=document.getElementById('expGrid');
+ scored.forEach(x=>grid.appendChild(x.c));
+ let shown=0;
+ scored.forEach(x=>{
+   if(x.score>0){
+     x.c.classList.add('show');
+     x.c.querySelector('.score').textContent=`選択条件と ${x.score} 個一致`;
+     shown++;
+   }else{
+     x.c.classList.remove('show');
+   }
+ });
+ document.getElementById('resultTitle').textContent=`条件に近い体験：${shown}件`;
+ if(!shown){
+   scored.slice(0,4).forEach(x=>{
+     x.c.classList.add('show');
+     x.c.querySelector('.score').textContent='直接一致する体験が少ないため参考表示';
+   });
+   document.getElementById('resultTitle').textContent='直接一致する体験がまだ少ないため、参考体験を表示';
+ }
+}
+
+function render(){
+ const groups=selectedByGroup();
+ if(!flatSelected(groups).length){
+   document.getElementById('recoWrap').classList.remove('show');
+   document.getElementById('resultHead').classList.add('show');
+   cards.forEach(c=>{c.classList.add('show');c.querySelector('.score').textContent='条件未指定：すべて表示'});
+   document.getElementById('resultTitle').textContent='まず条件を1つ以上選ぶと、商品TOP3も表示されます';
+   return;
+ }
+ renderRecommendations(groups);
+ renderExperiences(groups);
+ document.getElementById('recoWrap').scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.getElementById('findBtn').addEventListener('click',render);
+document.getElementById('resetBtn').addEventListener('click',()=>{
+ chips.forEach(c=>c.classList.remove('active'));
+ document.getElementById('recoWrap').classList.remove('show');
+ document.getElementById('recoGrid').innerHTML='';
+ document.getElementById('resultHead').classList.remove('show');
+ cards.forEach(c=>c.classList.remove('show'));
+});
+</script>
+
+<footer class="site-footer">
+<nav aria-label="サイト情報" class="site-footer-nav">
+<a href="about.html">このサイトについて</a>
+<a href="editorial-policy.html">調査・編集方針</a>
+<a href="privacy.html">プライバシーポリシー</a>
+<a href="affiliate.html">広告・アフィリエイト</a>
+</nav>
+<p class="site-footer-note">犬用品みんなの体験記は、公開された飼い主体験・商品仕様・公式情報を整理し、犬種・サイズ・毛質・性格などから比較しやすくすることを目的としたサイトです。</p>
+<p>© 犬用品みんなの体験記</p>
+</footer>
+</body></html>
