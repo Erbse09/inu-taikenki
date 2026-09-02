@@ -38,12 +38,25 @@ function validProductId(value: string) {
   return /^[a-z0-9][a-z0-9._-]{0,63}$/i.test(value);
 }
 
-async function listProducts(env: Env) {
+async function listProducts(env: Env, category: string | null) {
+  if (category) {
+    if (!/^[a-z0-9][a-z0-9._-]{0,63}$/i.test(category)) {
+      return json({ error: "invalid_category" }, 400);
+    }
+    const result = await env.DB.prepare(
+      `SELECT id, name, category, asin, affiliate_url
+         FROM products
+        WHERE active = 1 AND category = ?1
+        ORDER BY name ASC`,
+    ).bind(category).all<ProductRow>();
+    return json({ category, products: result.results ?? [] });
+  }
+
   const result = await env.DB.prepare(
     `SELECT id, name, category, asin, affiliate_url
        FROM products
       WHERE active = 1
-      ORDER BY name ASC`,
+      ORDER BY category ASC, name ASC`,
   ).all<ProductRow>();
   return json({ products: result.results ?? [] });
 }
@@ -84,7 +97,7 @@ export default {
     }
 
     if (request.method === "GET" && url.pathname === "/api/products") {
-      return listProducts(env);
+      return listProducts(env, url.searchParams.get("category"));
     }
 
     if (request.method === "GET") {
