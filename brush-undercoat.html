@@ -58,6 +58,18 @@ table{border-collapse:collapse;width:100%;min-width:730px;font-size:9px}th,td{pa
 .site-footer-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:14px}
 .site-footer-nav a{color:#7a6f67;text-decoration:none;font-weight:700}
 .site-footer-note{max-width:720px;margin:0 auto 8px}
+
+/* progressive experience disclosure */
+.exp-more-hidden{display:none!important}
+.exp-more-wrap{text-align:center;margin:14px 0 20px}
+.exp-more-btn{
+  width:100%;max-width:360px;border:1px solid #edc89f;background:#fff7ed;color:#c66f28;
+  border-radius:999px;padding:12px 18px;font-size:12px;font-weight:850;cursor:pointer;
+  box-shadow:0 4px 14px rgba(217,120,43,.08)
+}
+.exp-more-btn:active{transform:translateY(1px)}
+.exp-more-btn[hidden]{display:none}
+
 </style></head><body>
 <header><a class="head" href="index.html"><span class="paw">🐾</span><span class="brand">犬用品みんなの体験記</span></a></header>
 <main><div class="eyebrow">UNDERCOAT TOOL</div><h1>犬用アンダーコートブラシを口コミ比較</h1><p class="lead">柴犬・コーギー系・レトリバー系など、換毛期の下毛対策を公開口コミとXの生活投稿から調査しました。</p><nav class="quicknav"><a href="brush-guide.html">ブラシTOP →</a><a href="brush-slicker.html">スリッカーはこちら →</a><a href="brush-pin.html">ピンブラシはこちら →</a><a href="brush-comb.html">コームはこちら →</a><a class="current" href="brush-undercoat.html">アンダーコートはこちら →</a></nav>
@@ -130,4 +142,50 @@ document.getElementById('resetItemFinder').addEventListener('click',()=>{itemChi
 <p class="site-footer-note">犬用品みんなの体験記は、公開された飼い主体験・商品仕様・公式情報を整理し、犬種・サイズ・毛質・性格などから比較しやすくすることを目的としたサイトです。</p>
 <p>© 犬用品みんなの体験記</p>
 </footer>
+
+<script>
+(() => {
+  const headings = Array.from(document.querySelectorAll('h2'));
+  const experienceHeading = headings.find(h => /犬ごとの|犬種が分かる/.test(h.textContent || ''));
+  if (!experienceHeading) return;
+
+  const cases = [];
+  let node = experienceHeading.nextElementSibling;
+  while (node && node.classList && node.classList.contains('case')) {
+    cases.push(node);
+    node = node.nextElementSibling;
+  }
+  if (cases.length <= 4) return;
+
+  const STATIC_INITIAL_COUNT = 4;
+  const STATIC_PAGE_SIZE = 6;
+  let visibleCount = STATIC_INITIAL_COUNT;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'exp-more-wrap';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'exp-more-btn';
+  button.textContent = 'もっと見る';
+  wrap.appendChild(button);
+  cases[cases.length - 1].insertAdjacentElement('afterend', wrap);
+
+  const render = () => {
+    cases.forEach((item, index) => {
+      item.classList.toggle('exp-more-hidden', index >= visibleCount);
+    });
+    const remaining = Math.max(0, cases.length - visibleCount);
+    button.hidden = remaining === 0;
+    button.textContent = remaining > 0 ? 'もっと見る（あと' + remaining + '件）' : 'すべて表示しました';
+  };
+
+  button.addEventListener('click', () => {
+    visibleCount += STATIC_PAGE_SIZE;
+    render();
+  });
+
+  render();
+})();
+</script>
+
 </body></html>
