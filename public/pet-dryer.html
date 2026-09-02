@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="犬用ペットドライヤーの公開体験を犬種・サイズ・毛質・性格から探せる『犬用品みんなの体験記』。乾燥時間、音への反応、困った点まで比較。">
+<title>犬用ペットドライヤー体験記｜うちの子条件検索で比較｜犬用品みんなの体験記</title>
+<link rel="canonical" href="https://inu-taikenki.com/pet-dryer.html">
+<meta property="og:url" content="https://inu-taikenki.com/pet-dryer.html">
+<meta property="og:site_name" content="犬用品みんなの体験記">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#3a312b;--text:#6f655e;--muted:#968a81;
+  --orange:#ed9144;--orange2:#d9782b;--paper:#fffdf9;
+  --line:#ede4db;--soft:#f8f2eb;--green:#567260;--red:#9b665c;
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:var(--paper);color:#3b342f;line-height:1.8}
+a{color:inherit}
+header{background:#fff;border-bottom:1px solid #f0ebe4;padding:14px 18px;position:sticky;top:0;z-index:10}
+.header-inner{max-width:780px;margin:auto;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none}
+.paw{width:38px;height:38px;border-radius:12px;background:#f6a85f;display:flex;align-items:center;justify-content:center;font-size:20px}
+.site{font-size:15px;font-weight:850;color:var(--ink)}
+.site-mini{display:block;font-size:8px;color:#9b9088;letter-spacing:.06em}
+.back{font-size:11px;text-decoration:none;color:#8c8178;background:#faf6f1;border:1px solid var(--line);padding:7px 10px;border-radius:999px;white-space:nowrap}
+main{max-width:780px;margin:auto;padding:0 18px 72px}
+.crumb{font-size:10px;color:#9d9188;margin:18px 0 12px}
+.crumb a{text-decoration:none}
+.hero{background:linear-gradient(145deg,#fff8ef,#ffe0bd);border:1px solid #f0dbc7;border-radius:26px;padding:25px 21px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:190px;height:190px;border:2px solid rgba(255,255,255,.6);border-radius:50%;right:-90px;top:-100px}
+.kicker,.eyebrow{font-size:10px;color:#df8439;font-weight:900;letter-spacing:.09em}
+h1{font-size:25px;line-height:1.45;letter-spacing:-.025em;color:#382f29;margin:7px 0 12px}
+.lead{font-size:13px;color:#74665d;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}
+.meta span{background:rgba(255,255,255,.78);border:1px solid #edd2b8;padding:5px 9px;border-radius:999px;font-size:10px;color:#765f50}
+.notice{margin-top:15px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px;font-size:11px;color:#7d7169}
+.notice strong{color:#51463f}
+section{margin-top:38px}
+h2{font-size:21px;line-height:1.5;color:var(--ink);margin:4px 0 10px}
+h3{font-size:16px;line-height:1.5;color:#40362f;margin:20px 0 8px}
+p{font-size:13px;color:var(--text);margin-bottom:12px}
+.toc{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}
+.toc b{display:block;font-size:13px;margin-bottom:6px}
+.toc a{display:block;text-decoration:none;color:#7d7067;font-size:12px;padding:4px 0}
+
+/* dog condition search */
+.find-box{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 8px 26px rgba(86,61,41,.06)}
+.find-title{font-size:18px;font-weight:850;color:#3c332d;margin-bottom:4px}
+.find-sub{font-size:11px;color:#8a7d74;margin-bottom:15px}
+.filter-group{margin-top:14px}
+.filter-label{font-size:11px;font-weight:850;color:#564b43;margin-bottom:7px}
+.filter-buttons{display:flex;flex-wrap:wrap;gap:7px}
+.filter-radio{position:absolute;opacity:0;pointer-events:none}
+.filter-btn{display:inline-block;border:1px solid #e7ddd3;background:#faf6f1;color:#6f6259;padding:8px 11px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;user-select:none}
+.filter-radio:checked + .filter-btn{background:#f3a35d;color:#fff;border-color:#f3a35d;box-shadow:0 3px 10px rgba(217,120,43,.18)}
+.match-note{margin-top:12px;background:#fff7ed;border-radius:12px;padding:11px 12px;font-size:10px;color:#796555}
+
+/* experience cards */
+.exp-grid{display:grid;gap:10px;margin-top:15px}
+.exp-card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px;transition:.18s}
+.exp-card.hidden{display:none}
+.exp-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}
+.exp-product{font-size:11px;font-weight:900;color:#d9782b}
+.exp-dog{font-size:14px;font-weight:850;color:#41372f}
+.exp-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.exp-tag{font-size:9px;border:1px solid #eadfd5;background:#fbf7f2;border-radius:999px;padding:3px 7px;color:#796c63}
+.exp-body{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.exp-point{background:#faf6f1;border-radius:11px;padding:9px;font-size:10px;color:#74675e}
+.exp-point b{display:block;color:#51443c;margin-bottom:3px}
+.good{color:#52705c;font-weight:750}
+.watch{color:#956657;font-weight:750}
+.source-line{font-size:9px;color:#9b8f86;margin-top:9px}
+.source-line a{color:#7d6f66}
+
+/* current products */
+.product-grid{display:grid;gap:11px;margin-top:14px}
+.product-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:17px}
+.product-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.product-name{font-size:17px;font-weight:850;color:#3e342d}
+.badge{font-size:9px;font-weight:850;padding:4px 8px;border-radius:999px;white-space:nowrap}
+.badge.ok{background:#eaf4ed;color:#56705e}
+.badge.low{background:#f3eeee;color:#8c6762}
+.product-meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px}
+.product-meta span{font-size:9px;background:#f8f2eb;border-radius:999px;padding:4px 7px;color:#766960}
+.product-card p{font-size:11px}
+.amazon-btn{display:block;margin-top:12px;text-align:center;text-decoration:none;background:#f5a64f;color:#fff;font-weight:850;font-size:12px;padding:11px;border-radius:11px}
+.amazon-btn.disabled{background:#d8d1cb;pointer-events:none}
+.small{font-size:9px;color:#9a8d85;margin-top:6px;text-align:center}
+
+/* summary / methodology */
+.summary-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:17px;margin-top:11px}
+.summary-title{font-size:16px;font-weight:850;color:#3e342d}
+.points{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.point{background:#faf6f1;border-radius:12px;padding:10px;font-size:10px;color:#746860}
+.point b{display:block;color:#51443c;margin-bottom:3px}
+.warning{background:#fff4e8;border-left:3px solid #e9a05c;padding:12px 13px;border-radius:0 12px 12px 0;margin-top:12px;font-size:10px;color:#7a6657}
+.method{background:#f6f1ea;border-radius:18px;padding:16px}
+.method li{font-size:10px;color:#756a62;margin:5px 0}
+.method ul{padding-left:18px}
+.sources{font-size:9px;color:#90847c;padding-left:18px}
+.sources li{margin:6px 0}.sources a{color:#74665d}
+footer{text-align:center;padding:30px 18px 44px;border-top:1px solid #f0ebe4;font-size:10px;color:#aaa098}
+.no-results{display:none;background:#fff7ed;border:1px dashed #edc89f;border-radius:16px;padding:18px;text-align:center;font-size:12px;color:#7a6657}
+.no-results.show{display:block}
+
+@media(max-width:560px){
+  main{padding:0 16px 64px}
+  h1{font-size:23px;line-height:1.48}
+  h2{font-size:20px;line-height:1.55}
+  .exp-body,.points{grid-template-columns:1fr}
+  .header-inner{gap:6px}.site{font-size:14px}.site-mini{font-size:7px}
+  .find-box{padding:15px}
+}
+
+/* CSS-only condition filtering: works without JavaScript */
+body:has(#size-small:checked) .exp-card:not([data-size~="small"]){display:none}
+body:has(#size-medium:checked) .exp-card:not([data-size~="medium"]){display:none}
+body:has(#size-large:checked) .exp-card:not([data-size~="large"]){display:none}
+
+body:has(#coat-double:checked) .exp-card:not([data-coat~="double"]){display:none}
+body:has(#coat-long:checked) .exp-card:not([data-coat~="long"]){display:none}
+body:has(#coat-short:checked) .exp-card:not([data-coat~="short"]){display:none}
+
+body:has(#need-scared:checked) .exp-card:not([data-need~="scared"]){display:none}
+body:has(#need-puppy:checked) .exp-card:not([data-need~="puppy"]){display:none}
+body:has(#need-speed:checked) .exp-card:not([data-need~="speed"]){display:none}
+body:has(#need-handsfree:checked) .exp-card:not([data-need~="handsfree"]){display:none}
+
+
+.site-footer{margin-top:42px;padding:30px 18px 42px;border-top:1px solid #eee4da;text-align:center;color:#92877e;font-size:11px;line-height:1.8}
+.site-footer-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:14px}
+.site-footer-nav a{color:#7a6f67;text-decoration:none;font-weight:700}
+.site-footer-note{max-width:720px;margin:0 auto 8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="brand">
+      <span class="paw">🐾</span>
+      <span><span class="site">犬用品みんなの体験記</span><span class="site-mini">REAL EXPERIENCES FROM DOG OWNERS</span></span>
+    </a>
+    <a href="index.html" class="back">← トップへ</a>
+  </div>
+</header>
+
+<main>
+<div class="crumb"><a href="index.html">トップ</a> › ペットドライヤー体験記</div>
+
+<article>
+  <div class="hero">
+    <div class="kicker">PET DRYER EXPERIENCE RESEARCH</div>
+    <h1>犬用ペットドライヤーを<br>「うちの子条件」で探す。</h1>
+    <p class="lead">「レビュー評価が高い」だけではなく、<strong>どんな犬が使ったか、何分くらいかかったか、音や風をどう感じたか</strong>まで公開体験を調査しました。</p>
+    <div class="meta">
+      <span>犬種が分かる体験を優先</span>
+      <span>乾燥時間も確認</span>
+      <span>怖がった体験も掲載</span>
+      <span>2026年9月確認</span>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>この記事の前提：</strong>
+    運営者が全商品を実使用したレビューではありません。メーカー・販売ページの公開情報と、
+    楽天市場・Yahoo!ショッピング等で公開されている購入者体験を調査し、比較に必要な部分だけ要約しています。
+    書かれていない犬種・体重・性格は推測で補いません。
+  </div>
+
+  <section>
+    <div class="toc">
+      <b>この記事でできること</b>
+      <a href="#find">1. うちの子条件で体験を絞る</a>
+      <a href="#experiences">2. 実際に使った人の体験を見る</a>
+      <a href="#current-products">3. Amazon掲載を確認できた商品を見る</a>
+      <a href="#what-we-know">4. 体験から分かったこと</a>
+      <a href="#method">5. 調査方法・確認先</a>
+    </div>
+  </section>
+
+  <section id="find">
+    <div class="eyebrow">FIND BY DOG TYPE</div>
+    <h2>🐾 うちの子から探す</h2>
+    <p>サイズ・毛質・性格や悩みを選ぶと、下の体験記から近いものだけを表示します。</p>
+
+    <div class="find-box">
+      <div class="find-title">うちの子条件検索</div>
+      <div class="find-sub">サイズ・毛質・性格/悩みを選ぶと、条件に合う体験だけ残ります。</div>
+
+      <div class="filter-group">
+        <div class="filter-label">サイズ</div>
+        <div class="filter-buttons">
+          <input class="filter-radio" type="radio" name="size-filter" id="size-all" checked>
+          <label class="filter-btn" for="size-all">すべて</label>
+          <input class="filter-radio" type="radio" name="size-filter" id="size-small">
+          <label class="filter-btn" for="size-small">🐕 小型犬</label>
+          <input class="filter-radio" type="radio" name="size-filter" id="size-medium">
+          <label class="filter-btn" for="size-medium">🐕 中型犬</label>
+          <input class="filter-radio" type="radio" name="size-filter" id="size-large">
+          <label class="filter-btn" for="size-large">🐕 大型犬</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">毛質</div>
+        <div class="filter-buttons">
+          <input class="filter-radio" type="radio" name="coat-filter" id="coat-all" checked>
+          <label class="filter-btn" for="coat-all">すべて</label>
+          <input class="filter-radio" type="radio" name="coat-filter" id="coat-double">
+          <label class="filter-btn" for="coat-double">🌀 ダブルコート</label>
+          <input class="filter-radio" type="radio" name="coat-filter" id="coat-long">
+          <label class="filter-btn" for="coat-long">🐩 長毛・巻毛</label>
+          <input class="filter-radio" type="radio" name="coat-filter" id="coat-short">
+          <label class="filter-btn" for="coat-short">✨ 短毛</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">性格・悩み</div>
+        <div class="filter-buttons">
+          <input class="filter-radio" type="radio" name="need-filter" id="need-all" checked>
+          <label class="filter-btn" for="need-all">すべて</label>
+          <input class="filter-radio" type="radio" name="need-filter" id="need-scared">
+          <label class="filter-btn" for="need-scared">😨 音が苦手・怖がり</label>
+          <input class="filter-radio" type="radio" name="need-filter" id="need-puppy">
+          <label class="filter-btn" for="need-puppy">👶 子犬</label>
+          <input class="filter-radio" type="radio" name="need-filter" id="need-speed">
+          <label class="filter-btn" for="need-speed">⏱️ 時短重視</label>
+          <input class="filter-radio" type="radio" name="need-filter" id="need-handsfree">
+          <label class="filter-btn" for="need-handsfree">🙌 手を空けたい</label>
+        </div>
+      </div>
+
+      <div class="match-note">同じ犬種でも個体差があります。条件検索は「近い体験を見つけるための入口」として使ってください。</div>
+    </div>
+  </section>
+
+  <section id="experiences">
+    <div class="eyebrow">REAL OWNER EXPERIENCES</div>
+    <h2>実際に使った人の体験記</h2>
+    <p>良い体験だけでなく、音で怖がった・ホースが熱くなった・乾燥に時間がかかったなどの声も残しています。</p>
+
+    <div id="experienceGrid" class="exp-grid">
+
+      <article class="exp-card" data-size="large" data-coat="long" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">Petaboo L400</div><div class="exp-dog">ゴールデンドゥードル</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">長毛・巻毛</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>人用ドライヤー</div><div class="exp-point good"><b>使ってみて</b>何倍も早く乾いたという体験</div></div>
+      </article>
+
+      <article class="exp-card" data-size="medium" data-coat="double" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">Petaboo L400</div><div class="exp-dog">ボーダーコリー</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">中型犬</span><span class="exp-tag">ダブルコート</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>約60分</div><div class="exp-point good"><b>使ってみて</b>約15分まで短縮した体験</div></div>
+      </article>
+
+      <article class="exp-card" data-size="large" data-coat="long" data-need="speed puppy">
+        <div class="exp-top"><div><div class="exp-product">Petaboo L400</div><div class="exp-dog">ゴールデン</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">子犬</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>約90分</div><div class="exp-point good"><b>使ってみて</b>30〜60分以内。パピーは動き回った</div></div>
+      </article>
+
+      <article class="exp-card" data-size="medium" data-coat="double" data-need="scared speed">
+        <div class="exp-top"><div><div class="exp-product">Petaboo L400</div><div class="exp-dog">コーギー</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">中型犬</span><span class="exp-tag">ダブルコート</span><span class="exp-tag">音が気になった</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>60分以上</div><div class="exp-point"><b>反応</b>高い音を気にしたが徐々に慣れた</div></div>
+      </article>
+
+      <article class="exp-card" data-size="large" data-coat="double long" data-need="puppy speed">
+        <div class="exp-top"><div><div class="exp-product">Petaboo L400</div><div class="exp-dog">サモエド 6か月</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">ダブルコート</span><span class="exp-tag">子犬</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>約60分</div><div class="exp-point watch"><b>気になった点</b>約50分。毛絡み・長時間時のホース熱</div></div>
+      </article>
+
+      <article class="exp-card" data-size="small" data-coat="long" data-need="">
+        <div class="exp-top"><div><div class="exp-product">Petaboo L400</div><div class="exp-dog">キャバリア</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">小型犬</span><span class="exp-tag">長毛</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>人用は音と熱の割に乾きにくい</div><div class="exp-point watch"><b>気になった点</b>ホースが短い・両手は空かない</div></div>
+      </article>
+
+      <article class="exp-card" data-size="large" data-coat="long" data-need="puppy scared">
+        <div class="exp-top"><div><div class="exp-product">Petaboo L400</div><div class="exp-dog">ゴールデンアイリッシュ 成犬＋6か月</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">子犬</span><span class="exp-tag">怖がり</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>成犬</b>問題なく使用</div><div class="exp-point watch"><b>子犬</b>逃げ回り、慣らしが必要だった</div></div>
+      </article>
+
+      <article class="exp-card" data-size="large" data-coat="double" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">DogOne Quick Dry</div><div class="exp-dog">秋田犬</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">ダブルコート</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>中まで風が届かず生乾き</div><div class="exp-point good"><b>使ってみて</b>中まで風が届き、乾燥時間短縮</div></div>
+      </article>
+
+      <article class="exp-card" data-size="small" data-coat="double" data-need="">
+        <div class="exp-top"><div><div class="exp-product">DogOne Quick Dry</div><div class="exp-dog">柴犬 5kg</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">小型寄り</span><span class="exp-tag">ダブルコート</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>使ってみて</b>初の家シャンプーで十分な風量</div><div class="exp-point watch"><b>気になった点</b>ホースの熱・フィルターに毛</div></div>
+      </article>
+
+      <article class="exp-card" data-size="medium" data-coat="double" data-need="scared speed">
+        <div class="exp-top"><div><div class="exp-product">DogOne Quick Dry</div><div class="exp-dog">コーギー</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">中型犬</span><span class="exp-tag">ダブルコート</span><span class="exp-tag">怖がり</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>乾燥</b>中間風量で約20分</div><div class="exp-point watch"><b>反応</b>最初は音に驚き嫌がった</div></div>
+      </article>
+
+      <article class="exp-card" data-size="large" data-coat="double long" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">DogOne Quick Dry</div><div class="exp-dog">サモエド</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">ダブルコート</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>乾燥</b>乾きが早いという体験</div><div class="exp-point good"><b>反応</b>強風でも気持ちよさそうだった</div></div>
+      </article>
+
+      <article class="exp-card" data-size="medium" data-coat="" data-need="scared speed">
+        <div class="exp-top"><div><div class="exp-product">DogOne Quick Dry</div><div class="exp-dog">元野犬の雑種・音敏感</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">音敏感</span><span class="exp-tag">怖がり</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>使ってみて</b>湿り気なく時短</div><div class="exp-point"><b>反応</b>最初は震えたが後半は落ち着いた</div></div>
+      </article>
+
+      <article class="exp-card" data-size="large" data-coat="short" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">DogOne Quick Dry</div><div class="exp-dog">ラブラドール</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">短毛</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>2人・2台で30〜40分</div><div class="exp-point good"><b>使ってみて</b>約半分の時間になった体験</div></div>
+      </article>
+
+      <article class="exp-card" data-size="" data-coat="" data-need="scared speed">
+        <div class="exp-top"><div><div class="exp-product">DogOne Quick Dry</div><div class="exp-dog">犬種不明・ビビり</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">怖がり</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>使ってみて</b>乾燥は時短</div><div class="exp-point watch"><b>気になった点</b>顔まわりは怖がり、人用ドライヤーで仕上げ</div></div>
+      </article>
+
+      <article class="exp-card" data-size="small" data-coat="long" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">MORISAWA</div><div class="exp-dog">ポメラニアン</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">小型犬</span><span class="exp-tag">長毛</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>人用2台で約30分</div><div class="exp-point good"><b>使ってみて</b>10分でほぼ乾燥・15分で仕上げ</div></div>
+      </article>
+
+      <article class="exp-card" data-size="large" data-coat="long" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">MORISAWA</div><div class="exp-dog">ゴールデン</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">長毛</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>数十分〜60分超</div><div class="exp-point good"><b>使ってみて</b>約20分</div></div>
+      </article>
+
+      <article class="exp-card" data-size="medium" data-coat="" data-need="scared">
+        <div class="exp-top"><div><div class="exp-product">MORISAWA</div><div class="exp-dog">14kg 雑種</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">中型犬</span><span class="exp-tag">怖がり</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>風量</b>中風量でも水滴が飛ぶ</div><div class="exp-point watch"><b>反応</b>物音で驚き、その後は使用困難</div></div>
+      </article>
+
+      <article class="exp-card" data-size="small" data-coat="long" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">MORISAWA</div><div class="exp-dog">ダックス 2頭</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">小型犬</span><span class="exp-tag">長毛</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>乾燥</b>1頭目20分／2頭目15分</div><div class="exp-point good"><b>使い勝手</b>肉球が乾かしやすかった</div></div>
+      </article>
+
+      <article class="exp-card" data-size="medium" data-coat="double" data-need="speed">
+        <div class="exp-top"><div><div class="exp-product">MORISAWA</div><div class="exp-dog">コーギー</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">中型犬</span><span class="exp-tag">ダブルコート</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point"><b>以前</b>人用ドライヤー</div><div class="exp-point good"><b>使ってみて</b>約15分・心地よさそうだった</div></div>
+      </article>
+
+      <article class="exp-card" data-size="large" data-coat="short long" data-need="scared speed">
+        <div class="exp-top"><div><div class="exp-product">MORISAWA</div><div class="exp-dog">ゴールデン×ラブ</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">大型犬</span><span class="exp-tag">怖がり</span><span class="exp-tag">時短</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>乾燥</b>約25分</div><div class="exp-point watch"><b>反応</b>音と風に驚き逃げようとした・毛が舞う</div></div>
+      </article>
+
+      <article class="exp-card" data-size="medium" data-coat="double long" data-need="scared">
+        <div class="exp-top"><div><div class="exp-product">MORISAWA</div><div class="exp-dog">シェルティ 2頭</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">中型犬</span><span class="exp-tag">長毛</span><span class="exp-tag">怖がり</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>仕上がり</b>フワフワ感が向上</div><div class="exp-point watch"><b>反応</b>弱でも強く、耳を嫌がった</div></div>
+      </article>
+
+      <article class="exp-card" data-size="small" data-coat="long" data-need="handsfree">
+        <div class="exp-top"><div><div class="exp-product">HomerunPET Drybo Pro</div><div class="exp-dog">ポメラニアン</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">小型犬</span><span class="exp-tag">長毛</span><span class="exp-tag">ハンズフリー</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>使ってみて</b>おやつ誘導ですんなり入れた</div><div class="exp-point"><b>音</b>静かだったという体感</div></div>
+      </article>
+
+      <article class="exp-card" data-size="small" data-coat="long" data-need="handsfree">
+        <div class="exp-top"><div><div class="exp-product">HomerunPET Drybo Pro</div><div class="exp-dog">ポメラニアン</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">小型犬</span><span class="exp-tag">長毛</span><span class="exp-tag">ハンズフリー</span></div>
+        <div class="exp-body"><div class="exp-point good"><b>反応</b>怖がらず使用</div><div class="exp-point good"><b>乾燥</b>足元から乾いたという体験</div></div>
+      </article>
+
+      <article class="exp-card" data-size="small" data-coat="long" data-need="handsfree">
+        <div class="exp-top"><div><div class="exp-product">HomerunPET Drybo Pro</div><div class="exp-dog">ビションフリーゼ 6.8kg</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">小型犬</span><span class="exp-tag">巻毛</span><span class="exp-tag">ハンズフリー</span></div>
+        <div class="exp-body"><div class="exp-point"><b>サイズ感</b>使用できた体験</div><div class="exp-point watch"><b>感想</b>一回り大きくてもよかった</div></div>
+      </article>
+
+      <article class="exp-card" data-size="" data-coat="" data-need="puppy handsfree">
+        <div class="exp-top"><div><div class="exp-product">HomerunPET PD10</div><div class="exp-dog">犬種不明の子犬</div></div></div>
+        <div class="exp-tags"><span class="exp-tag">子犬</span><span class="exp-tag">ハンズフリー</span></div>
+        <div class="exp-body"><div class="exp-point"><b>公式購入体験</b>快適そうだった旨</div><div class="exp-point watch"><b>不足情報</b>犬種・体重・乾燥時間は不明</div></div>
+      </article>
+
+    </div>
+
+    
+
+    <p class="source-line">※上の25件は、既存調査で確認した楽天市場・Yahoo!ショッピング・メーカー公開ページの個別投稿を「1投稿＝1体験」で整理したものです。</p>
+  </section>
+
+  <section id="current-products">
+    <div class="eyebrow">CURRENT AMAZON CHECK</div>
+    <h2>Amazon掲載まで確認できた商品</h2>
+    <p>ここは「体験数が多い順」ではなく、商品名・型番・Amazon掲載を別々に確認できたものだけを載せています。体験データが少ない商品は、少ないと明記します。</p>
+
+    <div class="product-grid">
+      <div class="product-card">
+        <div class="product-top"><div class="product-name">mino ペットドライヤー</div><span class="badge ok">Amazon確認</span></div>
+        <div class="product-meta"><span>ハンディ型</span><span>ASIN B0DYJQ1861</span><span>購入者体験あり</span></div>
+        <p>公開レビューでは、トイプードルで嫌がりにくくなった例、フラッフィーコーギーで60分→30分になった例、大型犬・ダブルコートでも時間をかければ乾くという例が確認できました。一方、高い音や最弱でも強めの風を気にする声もあります。</p>
+        <a class="amazon-btn" href="https://www.amazon.co.jp/dp/B0DYJQ1861?tag=100things-22" target="_blank" rel="nofollow sponsored noopener">Amazonで商品を見る</a>
+      </div>
+
+      <div class="product-card">
+        <div class="product-top"><div class="product-name">PETKIT AIRSALON MAX</div><span class="badge ok">Amazon確認</span></div>
+        <div class="product-meta"><span>ドライルーム</span><span>PD10</span><span>60L</span></div>
+        <p>Amazon掲載と製品仕様は確認できています。ただし、今回検索で見つかった犬種まで分かる国内体験の多くは「MAX PRO / PD10PRO」表記で、PD10と混同できないため、ここでは体験談を無理に流用しません。</p>
+        <a class="amazon-btn" href="https://www.amazon.co.jp/dp/B0DCHPYWJK?tag=100things-22" target="_blank" rel="nofollow sponsored noopener">Amazonで商品を見る</a>
+      </div>
+
+      <div class="product-card">
+        <div class="product-top"><div class="product-name">Totoro ball ペットドライルーム 82L</div><span class="badge ok">Amazon確認</span></div>
+        <div class="product-meta"><span>ドライルーム</span><span>82L</span><span>ASIN B0FL767L2W</span></div>
+        <p>82LモデルのAmazon掲載は確認できています。一方、今回の調査では犬種・体重・乾燥時間まで分かる信頼できる購入者体験を十分に確保できませんでした。だから「静か」「すぐ乾く」などを体験談として断定しません。</p>
+        <a class="amazon-btn" href="https://www.amazon.co.jp/dp/B0FL767L2W?tag=100things-22" target="_blank" rel="nofollow sponsored noopener">Amazonで商品を見る</a>
+      </div>
+
+      <div class="product-card">
+        <div class="product-top"><div class="product-name">HomerunPET Drybo Plus</div><span class="badge ok">Amazon確認</span></div>
+        <div class="product-meta"><span>ドライルーム</span><span>PD50</span><span>ASIN B09ZL94MXW</span></div>
+        <p>購入者レビューでは、マルプーで約20分でふわふわになった例、ダックス2匹で従来のドライヤーよりかなり楽になった例、チワワが初日から落ち着いて入れた例などを確認。一方、最初は鳴く・慣らしが必要という体験もあります。</p>
+        <a class="amazon-btn" href="https://www.amazon.co.jp/dp/B09ZL94MXW?tag=100things-22" target="_blank" rel="nofollow sponsored noopener">Amazonで商品を見る</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="what-we-know">
+    <div class="eyebrow">WHAT WE CAN ACTUALLY SAY</div>
+    <h2>体験を並べると見えてきたこと</h2>
+
+    <div class="summary-card">
+      <div class="summary-title">🌀 ダブルコートは「風量」だけでなく「犬が耐えられる強さ」も重要</div>
+      <div class="points">
+        <div class="point"><b>良い側</b>コーギー、秋田、サモエドなどで乾燥時間の短縮例が複数。</div>
+        <div class="point"><b>注意側</b>同じ強風でも、平気な犬と逃げる犬の両方がいる。</div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-title">😨 怖がり犬は「静音」の一言で決めない</div>
+      <p>レビューでは、最初は震えても後半に慣れた例もあれば、物音をきっかけにその後使えなくなった例もあります。最低風量・音質・顔まわりの使いやすさまで見るほうが現実的です。</p>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-title">🙌 ハンズフリー型は、犬が箱に入れることが大前提</div>
+      <p>ポメラニアンやチワワで落ち着いて使えた例がある一方、最初は鳴く・出たがる例もあります。置いて出入りさせるなど、慣らし期間を作る体験が複数見られました。</p>
+    </div>
+  </section>
+
+  <section id="db-review-browser">
+    <div class="eyebrow">DATABASE PROTOTYPE</div>
+    <h2>データベースから商品別の体験を表示</h2>
+    <p>この欄はCloudflare D1から商品一覧を読み込み、選んだ商品IDの体験要約をAPI経由で表示します。</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0 18px">
+      <label for="db-product-select"><strong>商品：</strong></label>
+      <select id="db-product-select" style="min-width:220px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff">
+        <option value="">読み込み中…</option>
+      </select>
+      <span id="db-review-status" style="color:var(--sub);font-size:.92rem"></span>
+    </div>
+    <div id="db-review-list" class="exp-grid" aria-live="polite"></div>
+    <noscript><p>この表示にはJavaScriptが必要です。</p></noscript>
+  </section>
+
+  <section id="method">
+    <div class="eyebrow">METHOD</div>
+    <h2>調査方法</h2>
+    <div class="method">
+      <ul>
+        <li>犬種、体重、乾燥時間、以前の方法、音への反応、困った点のいずれかが具体的な投稿を優先。</li>
+        <li>レビュー本文は転載せず、比較に必要な内容だけ要約。</li>
+        <li>書かれていない犬種・毛質・性格・時間を推測で補わない。</li>
+        <li>販売者のAI要約は個別体験データとして数えない。</li>
+        <li>Amazon掲載商品は、商品名・型番・ASINの整合を別途確認。</li>
+      </ul>
+    </div>
+
+    <h3>主な確認先</h3>
+    <ul class="sources">
+      <li><a href="https://review.rakuten.co.jp/item/1/405945_10000167/1.1/" target="_blank" rel="noopener">Petaboo L400 楽天市場レビュー</a></li>
+      <li><a href="https://review.rakuten.co.jp/item/1/282253_10008401" target="_blank" rel="noopener">DogOne Quick Dry 楽天市場レビュー</a></li>
+      <li><a href="https://shopping.yahoo.co.jp/review/item/list?page_key=petgoods002&store_id=morisawa5628" target="_blank" rel="noopener">MORISAWA Yahoo!ショッピングレビュー</a></li>
+      <li><a href="https://review.rakuten.co.jp/item/1/397230_10000156/1.1/" target="_blank" rel="noopener">HomerunPET Drybo Pro 楽天市場レビュー</a></li>
+      <li><a href="https://product.rakuten.co.jp/product/-/e64e5355ccb42838b6ee6fe31395a013/review/" target="_blank" rel="noopener">mino ペットドライヤー 楽天市場レビュー</a></li>
+      <li><a href="https://review.rakuten.co.jp/review/review/item/1/397230_10000058" target="_blank" rel="noopener">HomerunPET Drybo Plus 楽天市場レビュー</a></li>
+    </ul>
+  </section>
+
+  <div class="notice" style="margin-top:30px">
+    <strong>Amazonアソシエイトについて：</strong><br>
+    Amazonのアソシエイトとして、犬用品みんなの体験記は適格販売により収入を得ています。
+    商品価格・在庫・仕様は変更される場合があります。購入前にAmazonの商品ページで最新情報をご確認ください。
+  </div>
+</article>
+</main>
+
+<footer class="site-footer">
+<nav aria-label="サイト情報" class="site-footer-nav">
+<a href="about.html">このサイトについて</a>
+<a href="editorial-policy.html">調査・編集方針</a>
+<a href="privacy.html">プライバシーポリシー</a>
+<a href="affiliate.html">広告・アフィリエイト</a>
+</nav>
+<p class="site-footer-note">犬用品みんなの体験記は、公開された飼い主体験・商品仕様・公式情報を整理し、犬種・サイズ・毛質・性格などから比較しやすくすることを目的としたサイトです。</p>
+<p>© 犬用品みんなの体験記</p>
+</footer>
+
+
+<script>
+(() => {
+  const select = document.getElementById('db-product-select');
+  const list = document.getElementById('db-review-list');
+  const status = document.getElementById('db-review-status');
+  if (!select || !list || !status) return;
+
+  const esc = (value) => String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+
+  async function loadReviews(productId) {
+    if (!productId) {
+      list.innerHTML = '';
+      status.textContent = '';
+      return;
+    }
+    status.textContent = '体験を読み込み中…';
+    list.innerHTML = '';
+    try {
+      const res = await fetch('/api/products/' + encodeURIComponent(productId) + '/reviews');
+      if (!res.ok) throw new Error('reviews request failed');
+      const data = await res.json();
+      status.textContent = data.count + '件';
+      list.innerHTML = data.reviews.map((review) => `
+        <article class="exp-card">
+          <div class="exp-top">
+            <div>
+              <div class="exp-product">${esc(data.product.name)}</div>
+              <div class="exp-dog">${esc(review.dog_breed || '犬種情報なし')}</div>
+            </div>
+          </div>
+          <div class="exp-body">${esc(review.summary)}</div>
+        </article>
+      `).join('');
+    } catch (error) {
+      status.textContent = '読み込みに失敗しました';
+      list.innerHTML = '<p>データを取得できませんでした。</p>';
+      console.error(error);
+    }
+  }
+
+  async function init() {
+    try {
+      const res = await fetch('/api/products');
+      if (!res.ok) throw new Error('products request failed');
+      const data = await res.json();
+      select.innerHTML = '<option value="">商品を選択</option>' +
+        data.products.map((product) =>
+          '<option value="' + esc(product.id) + '">' + esc(product.name) + '</option>'
+        ).join('');
+      if (data.products[0]) {
+        select.value = data.products[0].id;
+        await loadReviews(data.products[0].id);
+      }
+    } catch (error) {
+      select.innerHTML = '<option value="">商品一覧を取得できません</option>';
+      status.textContent = 'API未接続';
+      console.error(error);
+    }
+  }
+
+  select.addEventListener('change', () => loadReviews(select.value));
+  init();
+})();
+</script>
+
+</body>
+</html>

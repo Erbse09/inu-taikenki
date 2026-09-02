@@ -1,0 +1,19 @@
+{
+  "name": "inu-taikenki-cloudflare-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit",
+    "cf-types": "wrangler types",
+    "db:migrate:local": "wrangler d1 migrations apply inu-taikenki --local",
+    "db:migrate:remote": "wrangler d1 migrations apply inu-taikenki --remote",
+    "db:seed:local": "wrangler d1 execute inu-taikenki --local --file=./seed.sql",
+    "db:seed:remote": "wrangler d1 execute inu-taikenki --remote --file=./seed.sql"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "wrangler": "^4.0.0"
+  }
+}

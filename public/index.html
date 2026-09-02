@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="犬種・サイズ・毛質・性格から、うちの子に近い犬用品の体験を探せる『犬用品みんなの体験記』。" name="description"/>
+<title>犬用品みんなの体験記</title>
+<link rel="canonical" href="https://inu-taikenki.com/">
+<meta property="og:url" content="https://inu-taikenki.com/">
+<meta property="og:site_name" content="犬用品みんなの体験記">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}:root{--ink:#3a312b;--sub:#786d65;--muted:#9b9088;--orange:#ef9446;--orange-dark:#d97828;--paper:#fffdf9;--line:#eee5dc;--soft:#f8f2eb}
+html{scroll-behavior:smooth}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;background:var(--paper);color:#333;line-height:1.7}a{color:inherit;text-decoration:none}
+header{background:#fff;border-bottom:1px solid #f0ebe4;padding:15px 18px}.header-inner{max-width:760px;margin:auto;display:flex;align-items:center;gap:10px}.paw{width:42px;height:42px;background:#f6a85f;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px}.site-name{font-size:18px;font-weight:800;color:#3d352f}.site-mini{font-size:10px;color:#998c82}
+.hero{padding:48px 22px 40px;text-align:center;background:linear-gradient(180deg,#fff8ee 0%,#fffdf9 100%)}.hero-label{display:inline-block;background:#fff;color:#d98236;border:1px solid #f2d5b8;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;margin-bottom:18px}.hero h1{font-size:29px;line-height:1.35;color:var(--ink);margin-bottom:16px;letter-spacing:-.03em}.hero h1 span{color:#e68c3e}.hero p{font-size:14px;color:#756a62;max-width:500px;margin:auto}
+main{max-width:760px;margin:auto;padding:0 18px 60px}section{margin-top:42px}.section-label{color:#e18a3e;font-size:11px;font-weight:800;letter-spacing:.08em;margin-bottom:5px}h2{font-size:21px;color:#3b332d;margin-bottom:8px}.section-desc{color:#81756c;font-size:13px;margin-bottom:20px}
+.dog-types{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.dog-type{background:#fff;border:1px solid var(--line);border-radius:17px;padding:17px 7px;text-align:center;box-shadow:0 5px 18px rgba(90,65,45,.04)}.dog-photo{width:100%;height:110px;object-fit:contain;display:block;margin-bottom:10px}.dog-photo.medium{transform:scale(.86)}.dog-type strong{display:block;font-size:13px;margin-bottom:3px}.dog-type small{display:block;color:var(--muted);font-size:9px;line-height:1.4;min-height:26px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.tag{background:var(--soft);color:#685d55;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:600}
+.featured-card{background:#fff;border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 10px 30px rgba(86,61,41,.07)}
+
+.article-content{padding:21px}.article-badge{display:inline-block;background:#fff0df;color:var(--orange-dark);padding:5px 9px;border-radius:7px;font-size:11px;font-weight:800;margin-bottom:10px}.article-content h3{font-size:19px;line-height:1.5;margin-bottom:9px;color:#342d28}.article-content p{color:#7a6f67;font-size:13px;margin-bottom:15px}.breed-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}.breed{font-size:10px;color:#71665e;border:1px solid #e9dfd5;border-radius:999px;padding:4px 8px}.read-button{display:block;background:var(--orange);color:#fff;padding:13px 15px;border-radius:12px;text-align:center;font-weight:800;font-size:13px}
+.concept{background:#f6f1ea;border-radius:22px;padding:25px 21px}.concept-title{font-size:18px;font-weight:800;margin-bottom:12px}.concept p{font-size:13px;color:#70665f}.concept strong{color:#d9792c}footer{text-align:center;padding:35px 20px 45px;color:#aaa098;font-size:11px;border-top:1px solid #f0ebe4}
+@media(max-width:380px){.hero h1{font-size:26px}.dog-type{padding:14px 4px}.dog-type strong{font-size:12px}.dog-photo{height:96px}}
+
+
+
+.article-hero-photo{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  overflow:hidden;
+  border-radius:20px 20px 0 0;
+  background:#f3eee8;
+  margin:0;
+}
+.article-hero-photo img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center 46%;
+}
+.article-photo-badge{
+  position:absolute;
+  left:14px;
+  bottom:13px;
+  padding:7px 12px;
+  border-radius:999px;
+  background:rgba(237,145,68,.94);
+  color:#fff;
+  font-size:10px;
+  font-weight:850;
+  line-height:1;
+  box-shadow:0 4px 14px rgba(77,49,30,.12);
+}
+@media(max-width:560px){
+  .article-hero-photo{aspect-ratio:16/10;border-radius:18px 18px 0 0}
+  .article-hero-photo img{object-position:center 46%}
+  .article-photo-badge{left:11px;bottom:10px;font-size:9px}
+}
+
+/* v6 mobile polish */
+.section-desc span{display:inline}
+.dog-photo{object-fit:contain}
+.article-hero-photo{border-radius:0}
+.article-hero-photo img{object-fit:cover;object-position:center 48%}
+@media(max-width:560px){
+  main{padding-left:16px;padding-right:16px}
+  .hero{padding:32px 18px 30px}
+  .hero h1{font-size:26px}
+  .hero p{font-size:12px;line-height:1.8}
+  .section-desc{font-size:12px;line-height:1.65;margin-bottom:16px}
+  .section-desc span{display:block}
+  .dog-types{gap:8px}
+  .dog-type{padding:11px 5px 12px}
+  .dog-photo{height:80px;margin-bottom:7px}
+  .dog-type strong{font-size:12px}
+  .dog-type small{font-size:8px;line-height:1.35;min-height:0}
+  .article-hero-photo{aspect-ratio:16/10;border-radius:0}
+  .article-hero-photo img{object-position:center 48%}
+  .article-content{padding:18px}
+  .article-content h3{font-size:18px;line-height:1.45}
+}
+@media(max-width:390px){
+  .hero h1{font-size:25px}
+  h2{font-size:20px}
+  .dog-photo{height:74px}
+  .tag{font-size:10px;padding:7px 10px}
+}
+
+.research-summary{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin:0 0 15px;
+}
+.research-stat{
+  background:#fbf6f0;
+  border:1px solid #f0e5d9;
+  border-radius:12px;
+  padding:9px 6px;
+  text-align:center;
+}
+.research-stat b{
+  display:block;
+  color:#d97828;
+  font-size:17px;
+  line-height:1.1;
+}
+.research-stat span{
+  display:block;
+  margin-top:4px;
+  color:#897d74;
+  font-size:8px;
+}
+.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.method-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:15px 12px;
+}
+.method-num{display:block;color:#e18a3e;font-size:11px;font-weight:900;margin-bottom:5px}
+.method-card b{display:block;color:#443a33;font-size:12px;line-height:1.45;margin-bottom:5px}
+.method-card p{color:#81766e;font-size:9px;line-height:1.6}
+.photo-note{font-size:8px;color:#aaa098;margin-top:7px;text-align:right}
+.photo-note a{text-decoration:underline;text-underline-offset:2px}
+@media(max-width:560px){
+  .research-summary{gap:6px}
+  .research-stat{padding:8px 4px}
+  .research-stat b{font-size:16px}
+  .research-stat span{font-size:8px}
+  .method-grid{grid-template-columns:1fr;gap:8px}
+  .method-card{padding:13px 14px}
+  .method-card b{font-size:12px}
+  .method-card p{font-size:10px}
+}
+
+/* v20: unified article cards */
+.article-grid,.brush-grid{display:grid;grid-template-columns:1fr;gap:14px}
+.research-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 10px 30px rgba(86,61,41,.06)}
+.research-card h3{font-size:19px;line-height:1.5;margin-bottom:9px;color:#342d28}
+.research-card p{color:#7a6f67;font-size:13px;margin-bottom:15px}
+.brush-section-title{margin:28px 0 12px;padding:0 2px}.brush-section-title h3{font-size:20px;color:#342d28;margin:2px 0 6px}.brush-section-title p{font-size:12px;color:#7a6f67}
+.brush-card{padding:18px}.brush-card h3{font-size:17px}.brush-card .read-button{margin-top:auto}
+@media(min-width:680px){.article-grid{grid-template-columns:repeat(2,1fr)}.brush-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* v21: top page = 3 top-level categories */
+.article-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:680px){.article-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.research-card{display:flex;flex-direction:column}
+.research-card .read-button{margin-top:auto}
+
+.site-footer{margin-top:42px;padding:30px 18px 42px;border-top:1px solid #eee4da;text-align:center;color:#92877e;font-size:11px;line-height:1.8}
+.site-footer-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:14px}
+.site-footer-nav a{color:#7a6f67;text-decoration:none;font-weight:700}
+.site-footer-note{max-width:720px;margin:0 auto 8px}
+</style>
+</head>
+<body>
+<header><div class="header-inner"><div class="paw">🐾</div><div><div class="site-name">犬用品みんなの体験記</div><div class="site-mini">REAL EXPERIENCES FROM DOG OWNERS</div></div></div></header>
+<div class="hero"><div class="hero-label">🐶 飼い主たちのリアルな体験を調査</div><h1>「うちの子なら？」で<br/><span>犬用品を選ぼう。</span></h1><p>飼い主たちの「実際どうだった？」を調査。<br/>犬種・サイズ・毛質・性格から、<br/>うちの子に近い体験を探せます。</p></div>
+<main>
+<section><div class="section-label">FIND BY DOG TYPE</div><h2>🐾 うちの子から探す</h2><p class="section-desc"><span>同じ犬用品でも、犬の大きさや毛質によって</span><span>使い心地は変わります。</span></p>
+<div class="dog-types">
+<div class="dog-type"><img alt="小型犬" class="dog-photo" src="small-dogw.PNG"/><strong>小型犬</strong><small>チワワ・ポメ・トイプーなど</small></div>
+<div class="dog-type"><img alt="中型犬" class="dog-photo medium" src="medium-dogw.PNG"/><strong>中型犬</strong><small>柴犬・コーギーなど</small></div>
+<div class="dog-type"><img alt="大型犬" class="dog-photo" src="large-dog.PNG"/><strong>大型犬</strong><small>ゴールデン・大型ミックスなど</small></div>
+</div>
+<div class="tags"><span class="tag">🌀 ダブルコート</span><span class="tag">🐩 長毛・巻毛</span><span class="tag">😨 怖がり</span><span class="tag">👶 子犬</span><span class="tag">⏱️ 時短重視</span></div></section>
+<section><div class="section-label">LATEST RESEARCH</div><h2>🔎 今回の体験調査</h2><p class="section-desc">商品スペックだけでは分からない、実際の飼い主体験まで調べます。</p>
+<div class="article-grid">
+<article class="research-card">
+<div class="article-badge">犬用ブラシ</div>
+<h3>犬用ブラシ12商品を4種類で比較</h3>
+<p>まずブラシTOPで4種類を横断して「うちの子には何タイプ？」を検索。さらに各専門記事では、その種類の中から商品候補TOP3を探せます。</p>
+<div class="research-summary"><div class="research-stat"><b>12</b><span>比較商品</span></div><div class="research-stat"><b>1,000+</b><span>公開口コミ母数</span></div><div class="research-stat"><b>4種類</b><span>ブラシ分類</span></div></div>
+<div class="breed-list"><span class="breed">巻毛</span><span class="breed">長毛</span><span class="breed">ダブルコート</span><span class="breed">怖がり</span></div>
+<a class="read-button" href="brush-guide.html">うちの子のブラシを探す →</a>
+</article><article class="research-card">
+<div class="article-badge">自動給餌器</div>
+<h3>犬用自動給餌器10商品を比較</h3>
+<p>公開口コミ100件以上＋Xも調査。犬種・年齢・性格・用途から、うちの子に合いやすい候補TOP3を探せます。</p>
+<div class="research-summary"><div class="research-stat"><b>100+</b><span>本文確認口コミ</span></div><div class="research-stat"><b>10</b><span>比較商品</span></div><div class="research-stat"><b>4軸</b><span>条件検索</span></div></div>
+<div class="breed-list"><span class="breed">犬種</span><span class="breed">年齢</span><span class="breed">性格</span><span class="breed">留守番</span></div>
+<a class="read-button" href="auto-feeder.html">うちの子向けTOP3を探す →</a>
+</article><article class="research-card">
+<div class="article-badge">ペットドライヤー</div>
+<h3>犬用ペットドライヤー5商品を比較</h3>
+<p>犬種が分かる公開体験を中心に25件整理。乾燥時間・音への反応・困った点まで比較しました。</p>
+<div class="research-summary"><div class="research-stat"><b>25</b><span>具体的な体験</span></div><div class="research-stat"><b>5</b><span>比較商品</span></div><div class="research-stat"><b>7+</b><span>犬種・タイプ</span></div></div>
+<div class="breed-list"><span class="breed">ポメラニアン</span><span class="breed">コーギー</span><span class="breed">柴犬</span><span class="breed">ラブラドール</span></div>
+<a class="read-button" href="pet-dryer.html">うちの子に近い体験を見る →</a>
+</article></div>
+</section>
+<section class="method-section"><div class="section-label">HOW WE RESEARCH</div><h2>📝 体験の集め方</h2><p class="section-desc">「おすすめ○位」だけではなく、どんな犬が・どう使って・何が困ったかまで残します。</p><div class="method-grid"><div class="method-card"><span class="method-num">①</span><b>犬が分かる体験を優先</b><p>犬種・体重・毛質など、うちの子と比べられる情報を優先します。</p></div><div class="method-card"><span class="method-num">②</span><b>良い点だけにしない</b><p>音を怖がった、乾きにくかったなど、合わなかった体験も残します。</p></div><div class="method-card"><span class="method-num">③</span><b>分からないことは埋めない</b><p>口コミにない情報を推測せず、「不明」のまま扱います。</p></div></div></section></main>
+
+
+<footer class="site-footer">
+<nav aria-label="サイト情報" class="site-footer-nav">
+<a href="about.html">このサイトについて</a>
+<a href="editorial-policy.html">調査・編集方針</a>
+<a href="privacy.html">プライバシーポリシー</a>
+<a href="affiliate.html">広告・アフィリエイト</a>
+</nav>
+<p class="site-footer-note">犬用品みんなの体験記は、公開された飼い主体験・商品仕様・公式情報を整理し、犬種・サイズ・毛質・性格などから比較しやすくすることを目的としたサイトです。</p>
+<p>© 犬用品みんなの体験記</p>
+</footer>
+</body></html>
