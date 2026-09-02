@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://erbse09.github.io/inu-taikenki/sitemap.xml
+Sitemap: https://inu-taikenki.com/sitemap.xml
