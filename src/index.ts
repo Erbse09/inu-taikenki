@@ -13,6 +13,7 @@ interface ProductRow {
   category: string;
   asin: string | null;
   affiliate_url: string | null;
+  review_count?: number;
 }
 interface ReviewRow {
   id: number;
@@ -44,19 +45,25 @@ async function listProducts(env: Env, category: string | null) {
       return json({ error: "invalid_category" }, 400);
     }
     const result = await env.DB.prepare(
-      `SELECT id, name, category, asin, affiliate_url
-         FROM products
-        WHERE active = 1 AND category = ?1
-        ORDER BY name ASC`,
+      `SELECT p.id, p.name, p.category, p.asin, p.affiliate_url,
+              COUNT(r.id) AS review_count
+         FROM products p
+         LEFT JOIN reviews r ON r.product_id = p.id
+        WHERE p.active = 1 AND p.category = ?1
+        GROUP BY p.id, p.name, p.category, p.asin, p.affiliate_url
+        ORDER BY review_count DESC, p.name ASC`,
     ).bind(category).all<ProductRow>();
     return json({ category, products: result.results ?? [] });
   }
 
   const result = await env.DB.prepare(
-    `SELECT id, name, category, asin, affiliate_url
-       FROM products
-      WHERE active = 1
-      ORDER BY category ASC, name ASC`,
+    `SELECT p.id, p.name, p.category, p.asin, p.affiliate_url,
+            COUNT(r.id) AS review_count
+       FROM products p
+       LEFT JOIN reviews r ON r.product_id = p.id
+      WHERE p.active = 1
+      GROUP BY p.id, p.name, p.category, p.asin, p.affiliate_url
+      ORDER BY p.category ASC, review_count DESC, p.name ASC`,
   ).all<ProductRow>();
   return json({ products: result.results ?? [] });
 }
