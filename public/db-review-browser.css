@@ -5,11 +5,16 @@
 .db-review-note{font-size:10px;color:var(--sub);margin:0 0 12px}
 .db-total-badge{
   display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
-  margin:10px 0 12px;padding:10px 12px;border-radius:13px;
+  margin:10px 0 8px;padding:10px 12px;border-radius:13px;
   background:#fff7ed;border:1px solid #f0dcc6;color:#7b6655;
 }
 .db-total-badge strong{font-size:18px;line-height:1;color:#d97828}
 .db-total-badge span{font-size:9px;font-weight:700}
+.db-all-search-link{
+  display:block;margin:0 0 12px;text-align:center;text-decoration:none;
+  border:1px solid #edc89f;background:#fff;color:#c66f28;border-radius:999px;
+  padding:9px 12px;font-size:10px;font-weight:850
+}
 .db-controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:12px 0 10px}
 .db-controls label{font-size:11px;font-weight:850}
 .db-controls select,
