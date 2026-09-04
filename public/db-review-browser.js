@@ -94,6 +94,12 @@
     totalBadge.setAttribute('aria-live', 'polite');
     controls.before(totalBadge);
 
+    const allSearchLink = document.createElement('a');
+    allSearchLink.className = 'db-all-search-link';
+    allSearchLink.href = '/review-search.html?category=' + encodeURIComponent(category);
+    allSearchLink.textContent = 'このカテゴリ50件をまとめて検索 →';
+    totalBadge.after(allSearchLink);
+
     const filters = document.createElement('div');
     filters.className = 'db-review-filters';
     filters.innerHTML = `
