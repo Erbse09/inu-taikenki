@@ -26,6 +26,10 @@ interface ReviewRow {
   source_type: string;
   source_url: string | null;
 }
+interface CategoryReviewRow extends ReviewRow {
+  product_name: string;
+  category: string;
+}
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -49,15 +53,16 @@ const PET_DRYER_BROWSER = `
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data, null, 2), { status, headers });
 }
-function validProductId(value: string) {
+function validSlug(value: string) {
   return /^[a-z0-9][a-z0-9._-]{0,63}$/i.test(value);
+}
+function validProductId(value: string) {
+  return validSlug(value);
 }
 
 async function listProducts(env: Env, category: string | null) {
   if (category) {
-    if (!/^[a-z0-9][a-z0-9._-]{0,63}$/i.test(category)) {
-      return json({ error: "invalid_category" }, 400);
-    }
+    if (!validSlug(category)) return json({ error: "invalid_category" }, 400);
     const result = await env.DB.prepare(
       `SELECT p.id, p.name, p.category, p.asin, p.affiliate_url,
               COUNT(r.id) AS review_count
@@ -80,6 +85,23 @@ async function listProducts(env: Env, category: string | null) {
       ORDER BY p.category ASC, review_count DESC, p.name ASC`,
   ).all<ProductRow>();
   return json({ products: result.results ?? [] });
+}
+
+async function getReviewsByCategory(env: Env, category: string | null) {
+  if (!category || !validSlug(category)) return json({ error: "invalid_category" }, 400);
+
+  const result = await env.DB.prepare(
+    `SELECT r.id, r.product_id, p.name AS product_name, p.category,
+            r.dog_breed, r.dog_size, r.coat_type, r.needs,
+            r.summary, r.source_type, r.source_url
+       FROM reviews r
+       JOIN products p ON p.id = r.product_id
+      WHERE p.active = 1 AND p.category = ?1
+      ORDER BY p.name ASC, r.id ASC`,
+  ).bind(category).all<CategoryReviewRow>();
+
+  const reviews = result.results ?? [];
+  return json({ category, count: reviews.length, reviews });
 }
 
 async function getReviewsByProductId(env: Env, productId: string) {
@@ -151,6 +173,10 @@ export default {
 
     if (request.method === "GET" && url.pathname === "/api/products") {
       return listProducts(env, url.searchParams.get("category"));
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/reviews") {
+      return getReviewsByCategory(env, url.searchParams.get("category"));
     }
 
     if (request.method === "GET") {
