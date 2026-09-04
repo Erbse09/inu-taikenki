@@ -1,6 +1,6 @@
 (() => {
-  const INITIAL_COUNT = 4;
-  const PAGE_SIZE = 6;
+  const INITIAL_COUNT = 6;
+  const PAGE_SIZE = 8;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -9,16 +9,145 @@
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 
+  const SIZE_LABELS = {
+    small: '小型',
+    medium: '中型',
+    large: '大型',
+  };
+
+  const COAT_LABELS = {
+    short: '短毛',
+    long: '長毛',
+    double: 'ダブルコート',
+    curly: '巻毛',
+    fluffy: 'ふわふわ毛',
+    single: 'シングルコート',
+  };
+
+  const NEED_LABELS = {
+    scared: '怖がり',
+    puppy: '子犬',
+    senior: 'シニア',
+    speed: '時短',
+    handsfree: 'ハンズフリー',
+    shedding: '抜け毛',
+    mat: '毛玉',
+    tangle: 'もつれ',
+    gentle: 'やさしさ重視',
+    relaxed: '落ち着いて使用',
+    multi: '多頭',
+    'multi-dog': '多頭',
+    daily: '日常ケア',
+    grooming: 'お手入れ',
+    face: '顔まわり',
+    skin: '皮膚配慮',
+    'skin-sensitive': '皮膚配慮',
+    quiet: '静音',
+    camera: 'カメラ',
+    travel: '外出・旅行',
+    mischief: 'いたずら対策',
+  };
+
+  const tokens = (value) => String(value ?? '')
+    .trim()
+    .split(/\s+/)
+    .map((token) => token.toLowerCase())
+    .filter((token) => token && token !== 'null');
+
+  const unique = (values) => [...new Set(values)];
+
+  const labelsForReview = (review) => {
+    const labels = [];
+    tokens(review.dog_size).forEach((token) => {
+      if (SIZE_LABELS[token]) labels.push(SIZE_LABELS[token]);
+    });
+    tokens(review.coat_type).forEach((token) => {
+      if (COAT_LABELS[token]) labels.push(COAT_LABELS[token]);
+    });
+    tokens(review.needs).forEach((token) => {
+      if (NEED_LABELS[token]) labels.push(NEED_LABELS[token]);
+    });
+    return unique(labels).slice(0, 6);
+  };
+
   async function initBrowser(section) {
     const category = section.dataset.category;
     const select = section.querySelector('[data-db-product-select]');
     const status = section.querySelector('[data-db-status]');
     const list = section.querySelector('[data-db-review-list]');
     const more = section.querySelector('[data-db-more]');
-    if (!category || !select || !status || !list || !more) return;
+    const controls = section.querySelector('.db-controls');
+    if (!category || !select || !status || !list || !more || !controls) return;
 
     let currentData = null;
     let visibleCount = INITIAL_COUNT;
+    let categoryTotal = 0;
+    const filterState = { size: '', coat: '', query: '' };
+
+    const note = section.querySelector('.db-review-note');
+    if (note) {
+      note.textContent = '商品を選び、犬のサイズ・毛質・キーワードで近い体験を絞り込めます。書かれていない犬情報は推測していません。';
+    }
+
+    const totalBadge = document.createElement('div');
+    totalBadge.className = 'db-total-badge';
+    totalBadge.setAttribute('aria-live', 'polite');
+    controls.before(totalBadge);
+
+    const filters = document.createElement('div');
+    filters.className = 'db-review-filters';
+    filters.innerHTML = `
+      <label class="db-filter-field">
+        <span>犬のサイズ</span>
+        <select data-db-size-filter>
+          <option value="">すべて</option>
+          <option value="small">小型</option>
+          <option value="medium">中型</option>
+          <option value="large">大型</option>
+        </select>
+      </label>
+      <label class="db-filter-field">
+        <span>毛質</span>
+        <select data-db-coat-filter>
+          <option value="">すべて</option>
+          <option value="short">短毛</option>
+          <option value="long">長毛</option>
+          <option value="double">ダブルコート</option>
+          <option value="curly">巻毛</option>
+        </select>
+      </label>
+      <label class="db-filter-field db-filter-search">
+        <span>キーワード</span>
+        <input data-db-query-filter type="search" inputmode="search" placeholder="例：怖がり、子犬、抜け毛" autocomplete="off">
+      </label>
+      <button class="db-filter-reset" type="button" data-db-filter-reset>条件をクリア</button>
+    `;
+    controls.after(filters);
+
+    const sizeFilter = filters.querySelector('[data-db-size-filter]');
+    const coatFilter = filters.querySelector('[data-db-coat-filter]');
+    const queryFilter = filters.querySelector('[data-db-query-filter]');
+    const resetFilter = filters.querySelector('[data-db-filter-reset]');
+
+    const filteredReviews = () => {
+      if (!currentData) return [];
+      const query = filterState.query.trim().toLowerCase();
+      return (currentData.reviews || []).filter((review) => {
+        if (filterState.size && !tokens(review.dog_size).includes(filterState.size)) return false;
+        if (filterState.coat && !tokens(review.coat_type).includes(filterState.coat)) return false;
+        if (query) {
+          const haystack = [
+            review.dog_breed,
+            review.dog_size,
+            review.coat_type,
+            review.needs,
+            review.summary,
+          ].filter(Boolean).join(' ').toLowerCase();
+          if (!haystack.includes(query)) return false;
+        }
+        return true;
+      });
+    };
 
     const renderReviews = () => {
       if (!currentData) {
@@ -27,24 +156,67 @@
         return;
       }
 
-      const reviews = currentData.reviews || [];
+      const reviews = filteredReviews();
       const visible = reviews.slice(0, visibleCount);
-      list.innerHTML = visible.map((review) => `
-        <article class="db-review-card">
-          <div class="db-review-product">${esc(currentData.product.name)}</div>
-          <div class="db-review-dog">${esc(review.dog_breed || '犬種情報なし')}</div>
-          <div class="db-review-summary">${esc(review.summary)}</div>
-        </article>
-      `).join('');
+      list.innerHTML = visible.map((review) => {
+        const tags = labelsForReview(review);
+        const tagsHtml = tags.length
+          ? '<div class="db-review-tags">' + tags.map((tag) => '<span>' + esc(tag) + '</span>').join('') + '</div>'
+          : '';
+        const sourceHtml = review.source_url && /^https?:\/\//i.test(review.source_url)
+          ? '<div class="db-review-source"><a href="' + esc(review.source_url) + '" target="_blank" rel="noopener noreferrer nofollow">確認元を見る ↗</a></div>'
+          : '';
+        return `
+          <article class="db-review-card">
+            <div class="db-review-product">${esc(currentData.product.name)}</div>
+            <div class="db-review-dog">${esc(review.dog_breed || '犬種情報なし')}</div>
+            ${tagsHtml}
+            <div class="db-review-summary">${esc(review.summary)}</div>
+            ${sourceHtml}
+          </article>
+        `;
+      }).join('');
 
       if (!reviews.length) {
-        list.innerHTML = '<div class="db-empty">この商品に紐づく体験はまだDBにありません。</div>';
+        list.innerHTML = '<div class="db-empty">この条件に合う体験はありません。条件を少し広げてみてください。</div>';
       }
+
+      const totalProductReviews = Number(currentData.count || 0);
+      status.textContent = reviews.length === totalProductReviews
+        ? totalProductReviews + '件'
+        : '条件一致 ' + reviews.length + '件 / 商品全体 ' + totalProductReviews + '件';
 
       const remaining = Math.max(0, reviews.length - visibleCount);
       more.hidden = remaining === 0;
       more.textContent = remaining > 0 ? 'もっと見る（あと' + remaining + '件）' : 'すべて表示しました';
     };
+
+    const resetVisibleAndRender = () => {
+      visibleCount = INITIAL_COUNT;
+      renderReviews();
+    };
+
+    sizeFilter.addEventListener('change', () => {
+      filterState.size = sizeFilter.value;
+      resetVisibleAndRender();
+    });
+    coatFilter.addEventListener('change', () => {
+      filterState.coat = coatFilter.value;
+      resetVisibleAndRender();
+    });
+    queryFilter.addEventListener('input', () => {
+      filterState.query = queryFilter.value;
+      resetVisibleAndRender();
+    });
+    resetFilter.addEventListener('click', () => {
+      filterState.size = '';
+      filterState.coat = '';
+      filterState.query = '';
+      sizeFilter.value = '';
+      coatFilter.value = '';
+      queryFilter.value = '';
+      resetVisibleAndRender();
+    });
 
     const loadReviews = async (productId) => {
       if (!productId) {
@@ -58,14 +230,13 @@
       visibleCount = INITIAL_COUNT;
       currentData = null;
       status.textContent = '体験を読み込み中…';
-      list.innerHTML = '';
+      list.innerHTML = '<div class="db-empty">体験を読み込み中…</div>';
       more.hidden = true;
 
       try {
         const res = await fetch('/api/products/' + encodeURIComponent(productId) + '/reviews');
         if (!res.ok) throw new Error('reviews request failed');
         currentData = await res.json();
-        status.textContent = currentData.count + '件';
         renderReviews();
       } catch (error) {
         status.textContent = '読み込みに失敗しました';
@@ -90,9 +261,13 @@
       if (!products.length) {
         select.innerHTML = '<option value="">DB登録準備中</option>';
         status.textContent = 'このカテゴリの商品はまだDBにありません';
+        totalBadge.textContent = '公開体験 0件';
         more.hidden = true;
         return;
       }
+
+      categoryTotal = products.reduce((sum, product) => sum + Number(product.review_count || 0), 0);
+      totalBadge.innerHTML = '<strong>' + categoryTotal + '件</strong><span>このカテゴリでDBに整理した公開体験</span>';
 
       select.innerHTML = products.map((product) => {
         const count = Number(product.review_count || 0);
@@ -107,6 +282,7 @@
     } catch (error) {
       select.innerHTML = '<option value="">商品一覧を取得できません</option>';
       status.textContent = 'API未接続';
+      totalBadge.textContent = '体験件数を取得できませんでした';
       more.hidden = true;
       console.error(error);
     }
