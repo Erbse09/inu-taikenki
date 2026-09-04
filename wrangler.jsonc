@@ -19,6 +19,10 @@
     {
       "pattern": "inu-taikenki.com",
       "custom_domain": true
+    },
+    {
+      "pattern": "www.inu-taikenki.com",
+      "custom_domain": true
     }
   ],
   "observability": { "enabled": true }
