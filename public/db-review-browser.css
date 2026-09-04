@@ -3,22 +3,60 @@
 }
 .db-review-browser h2{margin-top:4px}
 .db-review-note{font-size:10px;color:var(--sub);margin:0 0 12px}
-.db-controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:12px 0 15px}
+.db-total-badge{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  margin:10px 0 12px;padding:10px 12px;border-radius:13px;
+  background:#fff7ed;border:1px solid #f0dcc6;color:#7b6655;
+}
+.db-total-badge strong{font-size:18px;line-height:1;color:#d97828}
+.db-total-badge span{font-size:9px;font-weight:700}
+.db-controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:12px 0 10px}
 .db-controls label{font-size:11px;font-weight:850}
-.db-controls select{
-  min-width:220px;max-width:100%;padding:10px 11px;border:1px solid var(--line);
+.db-controls select,
+.db-review-filters select,
+.db-review-filters input{
+  min-width:0;max-width:100%;padding:10px 11px;border:1px solid var(--line);
   border-radius:11px;background:#fff;color:var(--ink);font:inherit;font-size:11px
 }
-.db-status{font-size:10px;color:var(--sub)}
+.db-controls select{min-width:220px}
+.db-review-filters{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+  margin:10px 0 8px;padding:11px;border:1px solid var(--line);border-radius:14px;background:var(--soft)
+}
+.db-filter-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.db-filter-field span{font-size:9px;font-weight:850;color:var(--sub)}
+.db-filter-search{grid-column:1/-1}
+.db-filter-search input{width:100%}
+.db-filter-reset{
+  grid-column:1/-1;border:0;border-radius:10px;padding:9px 11px;background:#fff;color:#7b6e65;
+  font-size:10px;font-weight:800;cursor:pointer;border:1px solid var(--line)
+}
+.db-status{font-size:10px;color:var(--sub);margin:7px 0 9px}
 .db-review-list{display:grid;gap:9px}
 .db-review-card{border:1px solid var(--line);border-radius:15px;padding:13px;background:var(--paper)}
 .db-review-product{font-size:9px;font-weight:900;color:var(--orange2)}
-.db-review-dog{font-size:12px;font-weight:850;margin:2px 0 5px}
-.db-review-summary{font-size:10px;color:var(--sub);line-height:1.7}
-.db-empty{font-size:10px;color:var(--sub);background:var(--soft);border-radius:12px;padding:12px}
+.db-review-dog{font-size:12px;font-weight:850;margin:2px 0 5px;line-height:1.55}
+.db-review-tags{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 7px}
+.db-review-tags span{
+  display:inline-block;padding:3px 7px;border-radius:999px;background:#f8f2eb;border:1px solid #eadfd5;
+  color:#796c63;font-size:8px;font-weight:750
+}
+.db-review-summary{font-size:10px;color:var(--sub);line-height:1.75}
+.db-review-source{margin-top:7px;font-size:8px}
+.db-review-source a{color:#8a7565;text-decoration:underline;text-underline-offset:2px}
+.db-empty{font-size:10px;color:var(--sub);background:var(--soft);border-radius:12px;padding:12px;line-height:1.7}
 .db-more-wrap{text-align:center;margin-top:13px}
 .db-more-btn{
   width:100%;max-width:360px;border:1px solid #edc89f;background:#fff7ed;color:#c66f28;
   border-radius:999px;padding:12px 18px;font-size:12px;font-weight:850;cursor:pointer
 }
 .db-more-btn[hidden]{display:none}
+@media(max-width:560px){
+  .db-review-browser{padding:14px}
+  .db-controls{align-items:stretch}
+  .db-controls label{width:100%}
+  .db-controls select{width:100%;min-width:0}
+  .db-review-filters{grid-template-columns:1fr 1fr;padding:9px;gap:7px}
+  .db-filter-search,.db-filter-reset{grid-column:1/-1}
+  .db-total-badge strong{font-size:17px}
+}
