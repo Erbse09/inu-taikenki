@@ -98,6 +98,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.hostname === "www.inu-taikenki.com") {
+      url.hostname = "inu-taikenki.com";
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (request.method === "GET" && url.pathname === "/api/health") {
       const row = await env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
       return json({ ok: row?.ok === 1, service: "inu-taikenki-worker" });
