@@ -40,6 +40,26 @@ Goal: every D1-backed review article has at least 50 individual public experienc
 | dog-conditioner | 50 | 50 | 0 |
 | **TOTAL** | **144** | **550** | **406** |
 
+## Prepared migration coverage
+
+All 406 missing rows are now represented by idempotent migrations in GitHub:
+
+| Migration | Category | Rows added | Expected category total |
+|---|---|---:|---:|
+| 0008_brush_comb_to_50.sql | brush-comb | 45 | 50 |
+| 0009_brush_slicker_to_50.sql | brush-slicker | 44 | 50 |
+| 0010_brush_undercoat_to_50.sql | brush-undercoat | 44 | 50 |
+| 0011_brush_pin_to_50.sql | brush-pin | 45 | 50 |
+| 0012_dog_shampoo_to_50.sql | dog-shampoo | 40 | 50 |
+| 0013_nail_clipper_to_50.sql | nail-clipper | 40 | 50 |
+| 0014_nail_grinder_to_50.sql | nail-grinder | 40 | 50 |
+| 0015_dog_clipper_to_50.sql | dog-clipper | 40 | 50 |
+| 0016_auto_feeder_to_50.sql | auto-feeder | 43 | 50 |
+| 0017_pet_dryer_to_50.sql | pet-dryer | 25 | 50 |
+| **TOTAL** |  | **406** | **550 reviews across 11 categories** |
+
+Pet-dryer validation: 25 new rows, 25 public review URLs, 0 duplicate summaries inside the migration, and 19/25 rows include an explicit dog descriptor from the source. Applying the migration twice against a 25-row baseline remains at 50, confirming idempotency at the migration-key level.
+
 ## Deployment sequence
 1. Research and prepare idempotent SQL migrations in GitHub.
 2. Validate exact row counts and duplicate keys locally at the text/SQL level.
