@@ -32,6 +32,20 @@ const headers = {
   "cache-control": "no-store",
 };
 
+const PET_DRYER_BROWSER = `
+<section class="db-review-browser" data-db-review-browser data-category="pet-dryer">
+  <div class="eyebrow">PRODUCT EXPERIENCES</div>
+  <h2>ペットドライヤーの商品別に50件の体験を見る</h2>
+  <p class="db-review-note">商品を選ぶと、その商品について確認できた公開体験を表示します。</p>
+  <div class="db-controls">
+    <label>商品</label>
+    <select data-db-product-select><option value="">読み込み中…</option></select>
+    <span class="db-status" data-db-status></span>
+  </div>
+  <div class="db-review-list" data-db-review-list aria-live="polite"></div>
+  <div class="db-more-wrap"><button class="db-more-btn" type="button" data-db-more hidden>もっと見る</button></div>
+</section>`;
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data, null, 2), { status, headers });
 }
@@ -68,8 +82,6 @@ async function listProducts(env: Env, category: string | null) {
   return json({ products: result.results ?? [] });
 }
 
-// 指定した商品IDのレビューを取得。
-// GET /api/products/petaboo-l400/reviews
 async function getReviewsByProductId(env: Env, productId: string) {
   if (!validProductId(productId)) return json({ error: "invalid_product_id" }, 400);
 
@@ -94,6 +106,35 @@ async function getReviewsByProductId(env: Env, productId: string) {
   return json({ product, count: reviews.length, reviews });
 }
 
+async function servePetDryerWithBrowser(request: Request, env: Env) {
+  const asset = await env.ASSETS.fetch(request);
+  const contentType = asset.headers.get("content-type") ?? "";
+  if (!asset.ok || !contentType.includes("text/html")) return asset;
+
+  let html = await asset.text();
+
+  if (!html.includes("/db-review-browser.css")) {
+    html = html.replace("</head>", '<link rel="stylesheet" href="/db-review-browser.css">\n</head>');
+  }
+
+  if (!html.includes('data-db-review-browser data-category="pet-dryer"')) {
+    html = html.replace("</main>", `${PET_DRYER_BROWSER}\n</main>`);
+  }
+
+  if (!html.includes("/db-review-browser.js")) {
+    html = html.replace("</body>", '<script src="/db-review-browser.js" defer></script>\n</body>');
+  }
+
+  const responseHeaders = new Headers(asset.headers);
+  responseHeaders.delete("content-length");
+  responseHeaders.delete("etag");
+  return new Response(html, {
+    status: asset.status,
+    statusText: asset.statusText,
+    headers: responseHeaders,
+  });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -115,6 +156,10 @@ export default {
     if (request.method === "GET") {
       const match = url.pathname.match(/^\/api\/products\/([^/]+)\/reviews\/?$/);
       if (match) return getReviewsByProductId(env, decodeURIComponent(match[1]));
+    }
+
+    if (request.method === "GET" && url.pathname === "/pet-dryer.html") {
+      return servePetDryerWithBrowser(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) return json({ error: "not_found" }, 404);
