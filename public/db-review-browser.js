@@ -302,24 +302,24 @@
     return url.toString();
   }
 
-  function enhanceAutoFeederAmazonLinks() {
-    if (!/\/auto-feeder\.html$/.test(window.location.pathname)) return;
+  function appendAmazonSearchLinks(pathPattern, cardSelector, linkClass = 'amazon-cta', noteClass = 'amazon-note') {
+    if (!pathPattern.test(window.location.pathname)) return;
 
-    document.querySelectorAll('.product-grid .product').forEach((card) => {
-      if (card.querySelector('.amazon-cta')) return;
+    document.querySelectorAll(cardSelector).forEach((card) => {
+      if (card.querySelector('.amazon-cta, .amazon-search-cta, .amazon-btn')) return;
       const heading = card.querySelector('h3');
       const productName = heading?.textContent?.trim();
       if (!productName) return;
 
       const link = document.createElement('a');
-      link.className = 'amazon-cta';
+      link.className = linkClass;
       link.href = amazonSearchUrl(productName);
       link.target = '_blank';
       link.rel = 'sponsored noopener';
       link.textContent = 'Amazonで商品名を探す';
 
       const note = document.createElement('span');
-      note.className = 'amazon-note';
+      note.className = noteClass;
       note.textContent = '※型番・容量・販売元をAmazonの商品ページで確認してください。';
 
       card.append(link, note);
@@ -327,5 +327,6 @@
   }
 
   document.querySelectorAll('[data-db-review-browser]').forEach(initBrowser);
-  enhanceAutoFeederAmazonLinks();
+  appendAmazonSearchLinks(/\/auto-feeder\.html$/, '.product-grid .product');
+  appendAmazonSearchLinks(/\/dog-clipper\.html$/, '.cards .card');
 })();
