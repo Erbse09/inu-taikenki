@@ -214,6 +214,9 @@ async function serveReviewSearchWithGlobalOption(request: Request, env: Env) {
       '<a data-review-insights-link href="/review-insights.html" style="display:block;margin:12px 0 0;text-align:center;color:#9b6036;font-size:10px;font-weight:800;text-underline-offset:3px">550件の体験傾向を見る 📊</a>\n<div class="status" id="status" aria-live="polite">体験を読み込み中…</div>',
     );
   }
+  if (!html.includes('/review-product-distribution.js')) {
+    html = html.replace('</body>', '<script src="/review-product-distribution.js" defer></script>\n</body>');
+  }
   return htmlResponse(asset, html);
 }
 
