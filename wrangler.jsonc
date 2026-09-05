@@ -6,6 +6,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
+    "html_handling": "none",
     "run_worker_first": ["/api/*", "/pet-dryer.html", "/review-search.html", "/", "/index.html"]
   },
   "d1_databases": [
