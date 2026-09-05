@@ -56,6 +56,7 @@ const HOME_SEARCH_PROMO = `
   <h2 style="font-size:21px;line-height:1.45;color:#3a312b;margin:5px 0 8px">550件の体験から<br>うちの子に近い話を探す</h2>
   <p style="font-size:11px;color:#766b63;line-height:1.75;margin:0 0 14px">11カテゴリを横断して、犬のサイズ・毛質・性格や悩みから検索できます。</p>
   <a href="/review-search.html" style="display:block;background:#ef9446;color:#fff;text-decoration:none;border-radius:12px;padding:12px 14px;font-size:12px;font-weight:900">550件から条件検索する 🔎</a>
+  <a href="/review-insights.html" style="display:inline-block;margin-top:11px;color:#9b6036;text-decoration:underline;text-underline-offset:3px;font-size:10px;font-weight:800">550件の体験傾向を見る 📊</a>
 </section>`;
 
 function json(data: unknown, status = 200) {
@@ -206,6 +207,12 @@ async function serveReviewSearchWithGlobalOption(request: Request, env: Env) {
     );
   }
   html = html.replace('条件一致 / このカテゴリ ', '条件一致 / 検索対象 ');
+  if (!html.includes('data-review-insights-link')) {
+    html = html.replace(
+      '<div class="status" id="status" aria-live="polite">体験を読み込み中…</div>',
+      '<a data-review-insights-link href="/review-insights.html" style="display:block;margin:12px 0 0;text-align:center;color:#9b6036;font-size:10px;font-weight:800;text-underline-offset:3px">550件の体験傾向を見る 📊</a>\n<div class="status" id="status" aria-live="polite">体験を読み込み中…</div>',
+    );
+  }
   return htmlResponse(asset, html);
 }
 
