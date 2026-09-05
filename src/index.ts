@@ -50,6 +50,14 @@ const PET_DRYER_BROWSER = `
   <div class="db-more-wrap"><button class="db-more-btn" type="button" data-db-more hidden>もっと見る</button></div>
 </section>`;
 
+const HOME_SEARCH_PROMO = `
+<section data-home-review-search style="margin-top:24px;background:linear-gradient(145deg,#fff7ed,#ffe5ca);border:1px solid #f0d7bd;border-radius:22px;padding:20px 18px;text-align:center;box-shadow:0 8px 24px rgba(86,61,41,.06)">
+  <div style="font-size:10px;color:#d97828;font-weight:900;letter-spacing:.08em">550 EXPERIENCES SEARCH</div>
+  <h2 style="font-size:21px;line-height:1.45;color:#3a312b;margin:5px 0 8px">550件の体験から<br>うちの子に近い話を探す</h2>
+  <p style="font-size:11px;color:#766b63;line-height:1.75;margin:0 0 14px">11カテゴリを横断して、犬のサイズ・毛質・性格や悩みから検索できます。</p>
+  <a href="/review-search.html" style="display:block;background:#ef9446;color:#fff;text-decoration:none;border-radius:12px;padding:12px 14px;font-size:12px;font-weight:900">550件から条件検索する 🔎</a>
+</section>`;
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data, null, 2), { status, headers });
 }
@@ -88,7 +96,21 @@ async function listProducts(env: Env, category: string | null) {
 }
 
 async function getReviewsByCategory(env: Env, category: string | null) {
-  if (!category || !validSlug(category)) return json({ error: "invalid_category" }, 400);
+  if (category && !validSlug(category)) return json({ error: "invalid_category" }, 400);
+
+  if (!category) {
+    const result = await env.DB.prepare(
+      `SELECT r.id, r.product_id, p.name AS product_name, p.category,
+              r.dog_breed, r.dog_size, r.coat_type, r.needs,
+              r.summary, r.source_type, r.source_url
+         FROM reviews r
+         JOIN products p ON p.id = r.product_id
+        WHERE p.active = 1
+        ORDER BY p.category ASC, p.name ASC, r.id ASC`,
+    ).all<CategoryReviewRow>();
+    const reviews = result.results ?? [];
+    return json({ category: null, count: reviews.length, reviews });
+  }
 
   const result = await env.DB.prepare(
     `SELECT r.id, r.product_id, p.name AS product_name, p.category,
@@ -128,6 +150,17 @@ async function getReviewsByProductId(env: Env, productId: string) {
   return json({ product, count: reviews.length, reviews });
 }
 
+function htmlResponse(asset: Response, html: string) {
+  const responseHeaders = new Headers(asset.headers);
+  responseHeaders.delete("content-length");
+  responseHeaders.delete("etag");
+  return new Response(html, {
+    status: asset.status,
+    statusText: asset.statusText,
+    headers: responseHeaders,
+  });
+}
+
 async function servePetDryerWithBrowser(request: Request, env: Env) {
   const asset = await env.ASSETS.fetch(request);
   const contentType = asset.headers.get("content-type") ?? "";
@@ -138,23 +171,42 @@ async function servePetDryerWithBrowser(request: Request, env: Env) {
   if (!html.includes("/db-review-browser.css")) {
     html = html.replace("</head>", '<link rel="stylesheet" href="/db-review-browser.css">\n</head>');
   }
-
   if (!html.includes('data-db-review-browser data-category="pet-dryer"')) {
     html = html.replace("</main>", `${PET_DRYER_BROWSER}\n</main>`);
   }
-
   if (!html.includes("/db-review-browser.js")) {
     html = html.replace("</body>", '<script src="/db-review-browser.js" defer></script>\n</body>');
   }
 
-  const responseHeaders = new Headers(asset.headers);
-  responseHeaders.delete("content-length");
-  responseHeaders.delete("etag");
-  return new Response(html, {
-    status: asset.status,
-    statusText: asset.statusText,
-    headers: responseHeaders,
-  });
+  return htmlResponse(asset, html);
+}
+
+async function serveHomeWithSearchPromo(request: Request, env: Env) {
+  const asset = await env.ASSETS.fetch(request);
+  const contentType = asset.headers.get("content-type") ?? "";
+  if (!asset.ok || !contentType.includes("text/html")) return asset;
+
+  let html = await asset.text();
+  if (!html.includes("data-home-review-search")) {
+    html = html.replace("<main>", `<main>\n${HOME_SEARCH_PROMO}`);
+  }
+  return htmlResponse(asset, html);
+}
+
+async function serveReviewSearchWithGlobalOption(request: Request, env: Env) {
+  const asset = await env.ASSETS.fetch(request);
+  const contentType = asset.headers.get("content-type") ?? "";
+  if (!asset.ok || !contentType.includes("text/html")) return asset;
+
+  let html = await asset.text();
+  if (!html.includes('value="">すべてのカテゴリ')) {
+    html = html.replace(
+      '<select id="category">',
+      '<select id="category">\n<option value="">すべてのカテゴリ（550件）</option>',
+    );
+  }
+  html = html.replace('条件一致 / このカテゴリ ', '条件一致 / 検索対象 ');
+  return htmlResponse(asset, html);
 }
 
 export default {
@@ -186,6 +238,14 @@ export default {
 
     if (request.method === "GET" && url.pathname === "/pet-dryer.html") {
       return servePetDryerWithBrowser(request, env);
+    }
+
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+      return serveHomeWithSearchPromo(request, env);
+    }
+
+    if (request.method === "GET" && url.pathname === "/review-search.html") {
+      return serveReviewSearchWithGlobalOption(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) return json({ error: "not_found" }, 404);
