@@ -49,6 +49,23 @@
     mischief: 'いたずら対策',
   };
 
+  const QUERY_ALIASES = {
+    怖がり: 'scared',
+    子犬: 'puppy',
+    シニア: 'senior',
+    時短: 'speed',
+    抜け毛: 'shedding',
+    毛玉: 'mat',
+    もつれ: 'tangle',
+    多頭: 'multi',
+    静音: 'quiet',
+    皮膚: 'skin',
+    カメラ: 'camera',
+    旅行: 'travel',
+    いたずら: 'mischief',
+    ハンズフリー: 'handsfree',
+  };
+
   const tokens = (value) => String(value ?? '')
     .trim()
     .split(/\s+/)
@@ -139,6 +156,7 @@
     const filteredReviews = () => {
       if (!currentData) return [];
       const query = filterState.query.trim().toLowerCase();
+      const alias = QUERY_ALIASES[query] || '';
       return (currentData.reviews || []).filter((review) => {
         if (filterState.size && !tokens(review.dog_size).includes(filterState.size)) return false;
         if (filterState.coat && !tokens(review.coat_type).includes(filterState.coat)) return false;
@@ -150,7 +168,7 @@
             review.needs,
             review.summary,
           ].filter(Boolean).join(' ').toLowerCase();
-          if (!haystack.includes(query)) return false;
+          if (!haystack.includes(query) && (!alias || !haystack.includes(alias))) return false;
         }
         return true;
       });
