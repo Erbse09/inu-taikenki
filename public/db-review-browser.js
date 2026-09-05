@@ -1,6 +1,7 @@
 (() => {
   const INITIAL_COUNT = 6;
   const PAGE_SIZE = 8;
+  const AMAZON_TAG = '100things-22';
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -294,5 +295,37 @@
     }
   }
 
+  function amazonSearchUrl(productName) {
+    const url = new URL('https://www.amazon.co.jp/s');
+    url.searchParams.set('k', productName);
+    url.searchParams.set('tag', AMAZON_TAG);
+    return url.toString();
+  }
+
+  function enhanceAutoFeederAmazonLinks() {
+    if (!/\/auto-feeder\.html$/.test(window.location.pathname)) return;
+
+    document.querySelectorAll('.product-grid .product').forEach((card) => {
+      if (card.querySelector('.amazon-cta')) return;
+      const heading = card.querySelector('h3');
+      const productName = heading?.textContent?.trim();
+      if (!productName) return;
+
+      const link = document.createElement('a');
+      link.className = 'amazon-cta';
+      link.href = amazonSearchUrl(productName);
+      link.target = '_blank';
+      link.rel = 'sponsored noopener';
+      link.textContent = 'Amazonで商品名を探す';
+
+      const note = document.createElement('span');
+      note.className = 'amazon-note';
+      note.textContent = '※型番・容量・販売元をAmazonの商品ページで確認してください。';
+
+      card.append(link, note);
+    });
+  }
+
   document.querySelectorAll('[data-db-review-browser]').forEach(initBrowser);
+  enhanceAutoFeederAmazonLinks();
 })();
