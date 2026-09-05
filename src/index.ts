@@ -155,6 +155,7 @@ function htmlResponse(asset: Response, html: string) {
   const responseHeaders = new Headers(asset.headers);
   responseHeaders.delete("content-length");
   responseHeaders.delete("etag");
+  responseHeaders.set("cache-control", "no-store");
   return new Response(html, {
     status: asset.status,
     statusText: asset.statusText,
