@@ -1,1 +1,0 @@
-The site icon assets are public static files and intentionally crawlable for browser/search preview use.
