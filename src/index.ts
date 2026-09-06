@@ -59,6 +59,29 @@ const HOME_SEARCH_PROMO = `
   <a href="/review-insights.html" style="display:inline-block;margin-top:11px;color:#9b6036;text-decoration:underline;text-underline-offset:3px;font-size:10px;font-weight:800">550件の体験傾向を見る 📊</a>
 </section>`;
 
+const HOME_DOG_SIZE_SCRIPT = `<script data-home-dog-size-links>
+(() => {
+  const sizes = ['small','medium','large'];
+  const cards = document.querySelectorAll('.dog-types .dog-type');
+  cards.forEach((card, index) => {
+    const size = sizes[index];
+    if (!size) return;
+    card.setAttribute('role', 'link');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', card.textContent.trim() + 'の商品体験を全カテゴリから探す');
+    card.style.cursor = 'pointer';
+    const go = () => { location.href = '/dog-size.html?size=' + size; };
+    card.addEventListener('click', go);
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        go();
+      }
+    });
+  });
+})();
+</script>`;
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data, null, 2), { status, headers });
 }
@@ -191,6 +214,9 @@ async function serveHomeWithSearchPromo(request: Request, env: Env) {
   let html = await asset.text();
   if (!html.includes("data-home-review-search")) {
     html = html.replace("<main>", `<main>\n${HOME_SEARCH_PROMO}`);
+  }
+  if (!html.includes("data-home-dog-size-links")) {
+    html = html.replace("</body>", `${HOME_DOG_SIZE_SCRIPT}\n</body>`);
   }
   return htmlResponse(asset, html);
 }
