@@ -188,6 +188,10 @@ export default {
       }
     }
 
+    if (!html.includes('/site-events.js') && html.includes('</body>')) {
+      html = html.replace('</body>', '<script src="/site-events.js" defer></script>\n</body>');
+    }
+
     return withHtml(response, html);
   },
 };
