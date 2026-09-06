@@ -1,0 +1,1 @@
+Selected site icon: warm cream circular badge with brown house outline, dog profile, and soft pink heart. Source artwork is embedded in site-icon.svg. favicon.svg/favicon.ico and touch/social aliases point to the same artwork.
