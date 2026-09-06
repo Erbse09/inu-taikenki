@@ -38,6 +38,28 @@ const HOME_TRUST_BLOCK = `
 
 const SEARCH_SCHEMA = `<script type="application/ld+json" data-search-schema>{"@context":"https://schema.org","@type":"CollectionPage","name":"550件の犬用品体験から探す｜うちの子条件検索","url":"https://inu-taikenki.com/review-search.html","isPartOf":{"@id":"https://inu-taikenki.com/#website"},"about":{"@type":"Thing","name":"犬用品の公開体験"}}</script>`;
 
+const CANONICAL_HTML_SLUGS = new Set([
+  "about",
+  "affiliate",
+  "auto-feeder",
+  "brush-comb",
+  "brush-guide",
+  "brush-pin",
+  "brush-slicker",
+  "brush-undercoat",
+  "dog-clipper",
+  "dog-conditioner",
+  "dog-nail-clipper",
+  "dog-nail-grinder",
+  "dog-shampoo",
+  "dog-size",
+  "editorial-policy",
+  "pet-dryer",
+  "privacy",
+  "review-insights",
+  "review-search",
+]);
+
 function withHtml(response: Response, html: string) {
   const headers = new Headers(response.headers);
   headers.delete("content-length");
@@ -51,6 +73,21 @@ function withHtml(response: Response, html: string) {
 
 function injectBeforeHeadClose(html: string, content: string) {
   return html.includes("</head>") ? html.replace("</head>", `${content}\n</head>`) : html;
+}
+
+function canonicalRedirect(request: Request) {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const url = new URL(request.url);
+  if (url.pathname === "/index") {
+    url.pathname = "/";
+    url.hostname = "inu-taikenki.com";
+    return Response.redirect(url.toString(), 301);
+  }
+  const match = url.pathname.match(/^\/([^/.]+)\/?$/);
+  if (!match || !CANONICAL_HTML_SLUGS.has(match[1])) return null;
+  url.pathname = `/${match[1]}.html`;
+  url.hostname = "inu-taikenki.com";
+  return Response.redirect(url.toString(), 301);
 }
 
 function enhanceHomepage(html: string) {
@@ -95,6 +132,9 @@ function enhanceHomepage(html: string) {
 
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
+    const redirect = canonicalRedirect(request);
+    if (redirect) return redirect;
+
     const response = await worker.fetch(request, env);
 
     if (request.method !== "GET" || !response.ok) return response;
