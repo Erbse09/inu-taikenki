@@ -82,6 +82,74 @@ const HOME_DOG_SIZE_SCRIPT = `<script data-home-dog-size-links>
 })();
 </script>`;
 
+const HOME_TRAIT_LINK_SCRIPT = `<script data-home-trait-links>
+(() => {
+  const rules = [
+    { text: 'ダブルコート', href: '/review-search.html?coat=double', label: 'ダブルコートの体験を550件から探す' },
+    { text: '怖がり', href: '/review-search.html?q=' + encodeURIComponent('怖がり'), label: '怖がりな犬の体験を550件から探す' },
+    { text: '子犬', href: '/review-search.html?q=' + encodeURIComponent('子犬'), label: '子犬の体験を550件から探す' },
+    { text: '時短', href: '/review-search.html?q=' + encodeURIComponent('時短'), label: '時短を重視した体験を550件から探す' }
+  ];
+  document.querySelectorAll('.tags .tag').forEach((tag) => {
+    const text = tag.textContent || '';
+    const rule = rules.find((item) => text.includes(item.text));
+    if (!rule) return;
+    tag.setAttribute('role', 'link');
+    tag.setAttribute('tabindex', '0');
+    tag.setAttribute('aria-label', rule.label);
+    tag.style.cursor = 'pointer';
+    tag.style.textDecoration = 'underline';
+    tag.style.textUnderlineOffset = '3px';
+    const go = () => { location.href = rule.href; };
+    tag.addEventListener('click', go);
+    tag.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        go();
+      }
+    });
+  });
+})();
+</script>`;
+
+const REVIEW_SEARCH_PARAM_SCRIPT = `<script data-review-search-params>
+(() => {
+  const params = new URL(location.href).searchParams;
+  const size = document.getElementById('size');
+  const coat = document.getElementById('coat');
+  const query = document.getElementById('query');
+  const category = document.getElementById('category');
+  const reset = document.getElementById('reset');
+  if (!size || !coat || !query || !category) return;
+
+  const requestedSize = params.get('size');
+  const requestedCoat = params.get('coat');
+  const requestedQuery = params.get('q');
+  if (requestedSize && [...size.options].some((o) => o.value === requestedSize)) size.value = requestedSize;
+  if (requestedCoat && [...coat.options].some((o) => o.value === requestedCoat)) coat.value = requestedCoat;
+  if (requestedQuery) query.value = requestedQuery;
+
+  const sync = () => {
+    const url = new URL(location.href);
+    const values = [
+      ['category', category.value],
+      ['size', size.value],
+      ['coat', coat.value],
+      ['q', query.value.trim()]
+    ];
+    values.forEach(([key, value]) => value ? url.searchParams.set(key, value) : url.searchParams.delete(key));
+    history.replaceState(null, '', url);
+  };
+
+  category.addEventListener('change', sync);
+  size.addEventListener('change', sync);
+  coat.addEventListener('change', sync);
+  query.addEventListener('input', sync);
+  if (reset) reset.addEventListener('click', () => requestAnimationFrame(sync));
+  sync();
+})();
+</script>`;
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data, null, 2), { status, headers });
 }
@@ -218,6 +286,9 @@ async function serveHomeWithSearchPromo(request: Request, env: Env) {
   if (!html.includes("data-home-dog-size-links")) {
     html = html.replace("</body>", `${HOME_DOG_SIZE_SCRIPT}\n</body>`);
   }
+  if (!html.includes("data-home-trait-links")) {
+    html = html.replace("</body>", `${HOME_TRAIT_LINK_SCRIPT}\n</body>`);
+  }
   return htmlResponse(asset, html);
 }
 
@@ -242,6 +313,9 @@ async function serveReviewSearchWithGlobalOption(request: Request, env: Env) {
   }
   if (!html.includes('/review-product-distribution.js')) {
     html = html.replace('</body>', '<script src="/review-product-distribution.js" defer></script>\n</body>');
+  }
+  if (!html.includes('data-review-search-params')) {
+    html = html.replace('</body>', `${REVIEW_SEARCH_PARAM_SCRIPT}\n</body>`);
   }
   return htmlResponse(asset, html);
 }
