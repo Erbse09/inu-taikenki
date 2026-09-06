@@ -117,6 +117,11 @@ function enhanceHomepage(html: string) {
   ];
   for (const [from, to] of traitLinks) html = html.replace(from, to);
 
+  html = html.replaceAll('<b>10</b><span>具体的な体験</span>', '<b>50</b><span>公開体験DB</span>');
+  html = html.replace('犬の具体的な公開体験10件から「うちの子なら？」を比べます。', '公開体験50件をDBに整理し、記事内の具体例から「うちの子なら？」を比べます。');
+  html = html.replace('犬種が分かる公開体験を中心に25件整理。乾燥時間・音への反応・困った点まで比較しました。', '犬種が分かる公開体験50件をDBに整理。記事内では代表例も掲載し、乾燥時間・音への反応・困った点まで比較しました。');
+  html = html.replace('<b>25</b><span>具体的な体験</span>', '<b>50</b><span>公開体験DB</span>');
+
   if (!html.includes("data-home-trust")) {
     const promoStart = html.indexOf('<section data-home-review-search');
     if (promoStart >= 0) {
