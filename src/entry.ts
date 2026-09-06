@@ -38,6 +38,8 @@ const HOME_TRUST_BLOCK = `
 
 const SEARCH_SCHEMA = `<script type="application/ld+json" data-search-schema>{"@context":"https://schema.org","@type":"CollectionPage","name":"550件の犬用品体験から探す｜うちの子条件検索","url":"https://inu-taikenki.com/review-search.html","isPartOf":{"@id":"https://inu-taikenki.com/#website"},"about":{"@type":"Thing","name":"犬用品の公開体験"}}</script>`;
 
+const ARTICLE_DB_NOTE = `<div data-article-db-coverage style="margin:-15px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:10px 12px;font-size:10px;color:#765f50;line-height:1.65"><strong style="color:#d97828">公開体験DB：50件</strong>　上の件数は記事内で詳しく紹介している代表例です。さらに、このページ下部の体験DBから犬のサイズ・毛質・条件で50件を絞り込めます。</div>`;
+
 const CANONICAL_HTML_SLUGS = new Set([
   "about",
   "affiliate",
@@ -58,6 +60,13 @@ const CANONICAL_HTML_SLUGS = new Set([
   "privacy",
   "review-insights",
   "review-search",
+]);
+
+const REPRESENTATIVE_EXAMPLE_PAGES = new Set([
+  "/dog-shampoo.html",
+  "/dog-nail-clipper.html",
+  "/dog-nail-grinder.html",
+  "/dog-clipper.html",
 ]);
 
 function withHtml(response: Response, html: string) {
@@ -135,6 +144,21 @@ function enhanceHomepage(html: string) {
   return html;
 }
 
+function enhanceArticleCoverage(html: string, pathname: string) {
+  if (!REPRESENTATIVE_EXAMPLE_PAGES.has(pathname)) return html;
+
+  html = html.replace('<b>10</b><span>具体体験</span>', '<b>10</b><span>記事内代表例</span>');
+  html = html.replace('<b>10</b><span>具体体験を整理</span>', '<b>10</b><span>記事内代表例</span>');
+
+  if (!html.includes('data-article-db-coverage')) {
+    const marker = '\n\n<section class="item-finder"';
+    if (html.includes(marker)) {
+      html = html.replace(marker, `\n${ARTICLE_DB_NOTE}\n<section class="item-finder"`);
+    }
+  }
+  return html;
+}
+
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     const redirect = canonicalRedirect(request);
@@ -151,6 +175,7 @@ export default {
 
     if (!html.includes('href="/favicon.ico"')) html = injectBeforeHeadClose(html, GLOBAL_HEAD);
     if (url.pathname === "/" || url.pathname === "/index.html") html = enhanceHomepage(html);
+    html = enhanceArticleCoverage(html, url.pathname);
     if (url.pathname === "/review-search.html" && !html.includes("data-search-schema")) {
       html = injectBeforeHeadClose(html, SEARCH_SCHEMA);
     }
