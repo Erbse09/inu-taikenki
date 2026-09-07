@@ -34,6 +34,28 @@ function alignHomepageReviewCounts(request: Request, html: string) {
   return html;
 }
 
+function alignSeoAndInternalUrls(request: Request, html: string) {
+  const url = new URL(request.url);
+  const pathname = url.pathname === "/index.html" ? "/" : url.pathname.replace(/\.html$/, "");
+  const canonical = `${url.origin}${pathname || "/"}`;
+
+  html = html.replace(
+    /<link\s+rel=["']canonical["'][^>]*>/i,
+    `<link rel="canonical" href="${canonical}">`,
+  );
+  html = html.replace(
+    /<meta\s+property=["']og:url["'][^>]*>/i,
+    `<meta property="og:url" content="${canonical}">`,
+  );
+
+  html = html.replace(/href=(['"])(\/?[^'"?#]+)\.html([?#][^'"]*)?\1/g, (_match, quote, path, suffix = "") => {
+    const normalized = path === "index" || path === "/index" ? "/" : path;
+    return `href=${quote}${normalized}${suffix}${quote}`;
+  });
+
+  return html;
+}
+
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     const response = await worker.fetch(request, env);
@@ -44,6 +66,7 @@ export default {
 
     let html = await response.text();
     html = alignHomepageReviewCounts(request, html);
+    html = alignSeoAndInternalUrls(request, html);
     if (html.includes(GA4_ID)) return withAnalytics(response, html);
 
     if (html.includes("<head>")) {
