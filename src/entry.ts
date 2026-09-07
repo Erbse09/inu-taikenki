@@ -12,6 +12,15 @@ const GA4_TAG = `<!-- Google tag (gtag.js) -->
   gtag('config', '${GA4_ID}');
 </script>`;
 
+const ARTICLE_DB_NOTE = `<div data-article-db-coverage style="margin:-15px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:10px 12px;font-size:10px;color:#765f50;line-height:1.65"><strong style="color:#d97828">公開体験DB：50件</strong>　上の件数は記事内で詳しく紹介している代表例です。さらに、このページ下部の体験DBから犬のサイズ・毛質・条件で50件を絞り込めます。</div>`;
+
+const REPRESENTATIVE_EXAMPLE_PAGES = new Set([
+  "/dog-shampoo",
+  "/dog-nail-clipper",
+  "/dog-nail-grinder",
+  "/dog-clipper",
+]);
+
 function withAnalytics(response: Response, html: string) {
   const headers = new Headers(response.headers);
   headers.delete("content-length");
@@ -31,6 +40,23 @@ function alignHomepageReviewCounts(request: Request, html: string) {
   html = html.replace('犬の具体的な公開体験10件から「うちの子なら？」を比べます。', '公開体験50件をDBに整理し、記事内の具体例から「うちの子なら？」を比べます。');
   html = html.replace('犬種が分かる公開体験を中心に25件整理。乾燥時間・音への反応・困った点まで比較しました。', '犬種が分かる公開体験50件をDBに整理。記事内では代表例も掲載し、乾燥時間・音への反応・困った点まで比較しました。');
   html = html.replace('<b>25</b><span>具体的な体験</span>', '<b>50</b><span>公開体験DB</span>');
+  return html;
+}
+
+function clarifyArticleCoverage(request: Request, html: string) {
+  const rawPathname = new URL(request.url).pathname;
+  const pathname = rawPathname.replace(/\.html$/, "");
+  if (!REPRESENTATIVE_EXAMPLE_PAGES.has(pathname)) return html;
+
+  html = html.replace('<b>10</b><span>具体体験</span>', '<b>10</b><span>記事内代表例</span>');
+  html = html.replace('<b>10</b><span>具体体験を整理</span>', '<b>10</b><span>記事内代表例</span>');
+
+  if (!html.includes('data-article-db-coverage')) {
+    const marker = '<section class="item-finder"';
+    if (html.includes(marker)) {
+      html = html.replace(marker, `${ARTICLE_DB_NOTE}\n<section class="item-finder"`);
+    }
+  }
   return html;
 }
 
@@ -74,6 +100,7 @@ export default {
 
     let html = await response.text();
     html = alignHomepageReviewCounts(request, html);
+    html = clarifyArticleCoverage(request, html);
     html = alignSeoAndInternalUrls(request, html);
     if (html.includes(GA4_ID)) return withAnalytics(response, html);
 
