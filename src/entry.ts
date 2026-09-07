@@ -23,6 +23,17 @@ function withAnalytics(response: Response, html: string) {
   });
 }
 
+function alignHomepageReviewCounts(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname;
+  if (pathname !== "/" && pathname !== "/index.html") return html;
+
+  html = html.replaceAll('<b>10</b><span>具体的な体験</span>', '<b>50</b><span>公開体験DB</span>');
+  html = html.replace('犬の具体的な公開体験10件から「うちの子なら？」を比べます。', '公開体験50件をDBに整理し、記事内の具体例から「うちの子なら？」を比べます。');
+  html = html.replace('犬種が分かる公開体験を中心に25件整理。乾燥時間・音への反応・困った点まで比較しました。', '犬種が分かる公開体験50件をDBに整理。記事内では代表例も掲載し、乾燥時間・音への反応・困った点まで比較しました。');
+  html = html.replace('<b>25</b><span>具体的な体験</span>', '<b>50</b><span>公開体験DB</span>');
+  return html;
+}
+
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     const response = await worker.fetch(request, env);
@@ -32,6 +43,7 @@ export default {
     if (!contentType.includes("text/html")) return response;
 
     let html = await response.text();
+    html = alignHomepageReviewCounts(request, html);
     if (html.includes(GA4_ID)) return withAnalytics(response, html);
 
     if (html.includes("<head>")) {
