@@ -48,8 +48,16 @@ function alignSeoAndInternalUrls(request: Request, html: string) {
     `<meta property="og:url" content="${canonical}">`,
   );
 
-  html = html.replace(/href=(['"])(\/?[^'"?#]+)\.html([?#][^'"]*)?\1/g, (_match, quote, path, suffix = "") => {
-    const normalized = path === "index" || path === "/index" ? "/" : path;
+  html = html.replace(/href=(['"])([^'"]+)\1/g, (match, quote, target) => {
+    if (/^(?:https?:)?\/\//i.test(target) || /^(?:mailto:|tel:|#)/i.test(target)) return match;
+
+    const splitAt = target.search(/[?#]/);
+    const path = splitAt === -1 ? target : target.slice(0, splitAt);
+    const suffix = splitAt === -1 ? "" : target.slice(splitAt);
+    if (!path.endsWith(".html")) return match;
+
+    const withoutHtml = path.slice(0, -5);
+    const normalized = withoutHtml === "index" || withoutHtml === "/index" ? "/" : withoutHtml;
     return `href=${quote}${normalized}${suffix}${quote}`;
   });
 
