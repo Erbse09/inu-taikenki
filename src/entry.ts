@@ -89,6 +89,14 @@ const REPRESENTATIVE_EXAMPLE_PAGES = new Set([
   "/dog-clipper",
 ]);
 
+const BRUSH_COVERAGE_PAGES = new Set([
+  "/brush-guide",
+  "/brush-slicker",
+  "/brush-pin",
+  "/brush-comb",
+  "/brush-undercoat",
+]);
+
 function withAnalytics(response: Response, html: string) {
   const headers = new Headers(response.headers);
   headers.delete("content-length");
@@ -146,6 +154,24 @@ function clarifyAutoFeederCoverage(request: Request, html: string) {
   if (!html.includes(marker)) return html;
 
   const note = '<div data-auto-feeder-coverage style="margin:-17px 0 28px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:11px 13px;font-size:10px;color:#765f50;line-height:1.7"><strong style="color:#d97828">調査範囲について：</strong>この記事では100件以上の公開口コミ本文を確認しています。条件検索で表示する公開体験は50件です。前者は調査母数、後者は検索対象として整理した件数です。</div>';
+  return html.replace(marker, `${note}\n${marker}`);
+}
+
+function clarifyBrushCoverage(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "").replace(/\/$/, "");
+  if (!BRUSH_COVERAGE_PAGES.has(pathname) || html.includes('data-brush-coverage')) return html;
+
+  const style = 'margin:10px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:11px 13px;font-size:10px;color:#765f50;line-height:1.7';
+  if (pathname === "/brush-guide") {
+    const marker = '<section class="finder" id="dogFinder">';
+    if (!html.includes(marker)) return html;
+    const note = `<div data-brush-coverage style="${style}"><strong style="color:#d97828">件数の見方：</strong>1,000件以上は確認先ページに掲載されている公開口コミの母数です。4つの専門記事では、各ブラシ種類ごとに50件の公開体験を整理しています。口コミ母数と整理した体験件数は別の数字です。</div>`;
+    return html.replace(marker, `${note}\n${marker}`);
+  }
+
+  const marker = '<section class="item-finder" id="itemFinder">';
+  if (!html.includes(marker)) return html;
+  const note = `<div data-brush-coverage style="${style}"><strong style="color:#d97828">件数の見方：</strong>上部の「公開口コミ母数」は、確認先ページに掲載されている口コミの総数です。このブラシ種類では50件の公開体験を整理しています。口コミ母数と整理した体験件数は別の数字です。</div>`;
   return html.replace(marker, `${note}\n${marker}`);
 }
 
@@ -246,6 +272,7 @@ export default {
     html = clarifyArticleCoverage(request, html);
     html = clarifyPetDryerCoverage(request, html);
     html = clarifyAutoFeederCoverage(request, html);
+    html = clarifyBrushCoverage(request, html);
     html = removeVisibleDatabaseWording(html);
     html = alignSeoAndInternalUrls(request, html);
     html = injectStructuredSeo(request, html);
