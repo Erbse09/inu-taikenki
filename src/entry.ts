@@ -22,6 +22,62 @@ const GA4_TAG = `<!-- Google tag (gtag.js) -->
     }
   })();
   gtag('config', '${GA4_ID}');
+  (() => {
+    if (document.documentElement.hasAttribute('data-inu-analytics-installed')) return;
+    document.documentElement.setAttribute('data-inu-analytics-installed', '');
+
+    const send = (name, params = {}) => {
+      if (typeof window.gtag !== 'function') return;
+      window.gtag('event', name, {
+        page_path: location.pathname + location.search,
+        ...params
+      });
+    };
+    const textOf = (el) => (el?.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 120);
+
+    document.addEventListener('click', (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) return;
+      const a = target.closest('a[href]');
+      if (a) {
+        let url = null;
+        try { url = new URL(a.href, location.href); } catch {}
+        const href = a.getAttribute('href') || '';
+        const params = { link_text: textOf(a), link_url: url?.href || href };
+
+        if (url && url.origin !== location.origin) {
+          const host = url.hostname;
+          const isAmazon = /(^|\\.)amazon\\./i.test(host) || /amzn\\.to$/i.test(host);
+          send(isAmazon ? 'product_click' : 'outbound_click', {
+            ...params,
+            destination_host: host
+          });
+        } else if (/review-search/.test(href)) {
+          send('review_search_click', params);
+        } else if (/review-insights/.test(href)) {
+          send('review_insights_click', params);
+        } else if (/dog-size/.test(href)) {
+          send('dog_size_click', params);
+        } else {
+          send('internal_link_click', params);
+        }
+      }
+
+      const more = target.closest('[data-db-more]');
+      if (more) send('reviews_more_click', { category: document.querySelector('[data-db-review-browser]')?.getAttribute('data-category') || '' });
+    }, true);
+
+    document.addEventListener('change', (event) => {
+      const el = event.target;
+      if (!(el instanceof HTMLSelectElement)) return;
+      if (el.matches('[data-db-product-select]')) {
+        send('review_product_filter', {
+          product_value: el.value.slice(0, 120),
+          category: document.querySelector('[data-db-review-browser]')?.getAttribute('data-category') || ''
+        });
+      }
+    }, true);
+  })();
 </script>`;
 
 const ARTICLE_COVERAGE_NOTE = `<div data-article-coverage style="margin:-15px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:10px 12px;font-size:10px;color:#765f50;line-height:1.65"><strong style="color:#d97828">公開体験：50件</strong>　上の件数は記事内で詳しく紹介している代表例です。さらに、このページ下部から犬のサイズ・毛質・条件で50件の体験を絞り込めます。</div>`;
