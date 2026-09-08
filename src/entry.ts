@@ -70,6 +70,52 @@ function clarifyPetDryerCoverage(request: Request, html: string) {
   );
 }
 
+function injectStructuredSeo(request: Request, html: string) {
+  if (html.includes('data-structured-seo')) return html;
+
+  const url = new URL(request.url);
+  const pathname = url.pathname === "/index.html" ? "/" : url.pathname.replace(/\.html$/, "");
+  const canonical = `${url.origin}${pathname || "/"}`;
+
+  let schema: Record<string, unknown>;
+  if (pathname === "/") {
+    schema = {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "犬用品みんなの体験記",
+      url: canonical,
+      inLanguage: "ja",
+    };
+  } else {
+    const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
+    const currentName = (titleMatch?.[1] ?? "犬用品みんなの体験記")
+      .replace(/\s*\|\s*犬用品みんなの体験記\s*$/u, "")
+      .trim();
+
+    schema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "犬用品みんなの体験記",
+          item: `${url.origin}/`,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: currentName || "ページ",
+          item: canonical,
+        },
+      ],
+    };
+  }
+
+  const tag = `<script type="application/ld+json" data-structured-seo>${JSON.stringify(schema)}</script>`;
+  return html.includes("</head>") ? html.replace("</head>", `${tag}\n</head>`) : html;
+}
+
 function alignSeoAndInternalUrls(request: Request, html: string) {
   const url = new URL(request.url);
   const pathname = url.pathname === "/index.html" ? "/" : url.pathname.replace(/\.html$/, "");
@@ -113,6 +159,7 @@ export default {
     html = clarifyArticleCoverage(request, html);
     html = clarifyPetDryerCoverage(request, html);
     html = alignSeoAndInternalUrls(request, html);
+    html = injectStructuredSeo(request, html);
     if (html.includes(GA4_ID)) return withAnalytics(response, html);
 
     if (html.includes("<head>")) {
