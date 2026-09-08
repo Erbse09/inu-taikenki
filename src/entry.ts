@@ -61,7 +61,7 @@ function clarifyArticleCoverage(request: Request, html: string) {
 }
 
 function clarifyPetDryerCoverage(request: Request, html: string) {
-  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "").replace(/\/$/, "");
   if (pathname !== "/pet-dryer") return html;
 
   return html.replace(
