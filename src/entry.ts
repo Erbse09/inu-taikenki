@@ -9,6 +9,18 @@ const GA4_TAG = `<!-- Google tag (gtag.js) -->
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
+  (() => {
+    const ownerKey = 'inu_owner_exclude_v1';
+    const params = new URLSearchParams(location.search);
+    if (params.get('owner') === '1') localStorage.setItem(ownerKey, '1');
+    if (params.get('owner') === '0') localStorage.removeItem(ownerKey);
+    if (localStorage.getItem(ownerKey) === '1') window['ga-disable-${GA4_ID}'] = true;
+    if (params.has('owner')) {
+      params.delete('owner');
+      const q = params.toString();
+      history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+    }
+  })();
   gtag('config', '${GA4_ID}');
 </script>`;
 
