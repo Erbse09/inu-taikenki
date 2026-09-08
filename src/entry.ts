@@ -12,7 +12,7 @@ const GA4_TAG = `<!-- Google tag (gtag.js) -->
   gtag('config', '${GA4_ID}');
 </script>`;
 
-const ARTICLE_DB_NOTE = `<div data-article-db-coverage style="margin:-15px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:10px 12px;font-size:10px;color:#765f50;line-height:1.65"><strong style="color:#d97828">公開体験DB：50件</strong>　上の件数は記事内で詳しく紹介している代表例です。さらに、このページ下部の体験DBから犬のサイズ・毛質・条件で50件を絞り込めます。</div>`;
+const ARTICLE_COVERAGE_NOTE = `<div data-article-coverage style="margin:-15px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:10px 12px;font-size:10px;color:#765f50;line-height:1.65"><strong style="color:#d97828">公開体験：50件</strong>　上の件数は記事内で詳しく紹介している代表例です。さらに、このページ下部から犬のサイズ・毛質・条件で50件の体験を絞り込めます。</div>`;
 
 const REPRESENTATIVE_EXAMPLE_PAGES = new Set([
   "/dog-shampoo",
@@ -36,10 +36,10 @@ function alignHomepageReviewCounts(request: Request, html: string) {
   const pathname = new URL(request.url).pathname;
   if (pathname !== "/" && pathname !== "/index.html") return html;
 
-  html = html.replaceAll('<b>10</b><span>具体的な体験</span>', '<b>50</b><span>公開体験DB</span>');
-  html = html.replace('犬の具体的な公開体験10件から「うちの子なら？」を比べます。', '公開体験50件をDBに整理し、記事内の具体例から「うちの子なら？」を比べます。');
-  html = html.replace('犬種が分かる公開体験を中心に25件整理。乾燥時間・音への反応・困った点まで比較しました。', '犬種が分かる公開体験50件をDBに整理。記事内では代表例も掲載し、乾燥時間・音への反応・困った点まで比較しました。');
-  html = html.replace('<b>25</b><span>具体的な体験</span>', '<b>50</b><span>公開体験DB</span>');
+  html = html.replaceAll('<b>10</b><span>具体的な体験</span>', '<b>50</b><span>公開体験</span>');
+  html = html.replace('犬の具体的な公開体験10件から「うちの子なら？」を比べます。', '公開体験50件を整理し、記事内の具体例から「うちの子なら？」を比べます。');
+  html = html.replace('犬種が分かる公開体験を中心に25件整理。乾燥時間・音への反応・困った点まで比較しました。', '犬種が分かる公開体験50件を整理。記事内では代表例も掲載し、乾燥時間・音への反応・困った点まで比較しました。');
+  html = html.replace('<b>25</b><span>具体的な体験</span>', '<b>50</b><span>公開体験</span>');
   return html;
 }
 
@@ -51,10 +51,10 @@ function clarifyArticleCoverage(request: Request, html: string) {
   html = html.replace('<b>10</b><span>具体体験</span>', '<b>10</b><span>記事内代表例</span>');
   html = html.replace('<b>10</b><span>具体体験を整理</span>', '<b>10</b><span>記事内代表例</span>');
 
-  if (!html.includes('data-article-db-coverage')) {
+  if (!html.includes('data-article-coverage')) {
     const marker = '<section class="item-finder"';
     if (html.includes(marker)) {
-      html = html.replace(marker, `${ARTICLE_DB_NOTE}\n<section class="item-finder"`);
+      html = html.replace(marker, `${ARTICLE_COVERAGE_NOTE}\n<section class="item-finder"`);
     }
   }
   return html;
@@ -66,8 +66,15 @@ function clarifyPetDryerCoverage(request: Request, html: string) {
 
   return html.replace(
     '<p class="source-line">※上の25件は、既存調査で確認した楽天市場・Yahoo!ショッピング・メーカー公開ページの個別投稿を「1投稿＝1体験」で整理したものです。</p>',
-    '<p class="source-line"><strong>記事内代表例：25件</strong>　上の25件は、既存調査で確認した公開体験から詳しく紹介している代表例です。公開体験DBにはこのカテゴリの50件を収録しており、犬のサイズ・毛質・条件で絞り込めます。</p>',
+    '<p class="source-line"><strong>記事内代表例：25件</strong>　上の25件は、既存調査で確認した公開体験から詳しく紹介している代表例です。このカテゴリでは50件の公開体験を収録しており、犬のサイズ・毛質・条件で絞り込めます。</p>',
   );
+}
+
+function removeVisibleDatabaseWording(html: string) {
+  return html
+    .replaceAll('公開体験DB', '公開体験')
+    .replaceAll('体験DB', '体験一覧')
+    .replaceAll('DBに整理', '整理');
 }
 
 function injectStructuredSeo(request: Request, html: string) {
@@ -140,7 +147,7 @@ function alignSeoAndInternalUrls(request: Request, html: string) {
 
     const withoutHtml = path.slice(0, -5);
     const normalized = withoutHtml === "index" || withoutHtml === "/index" ? "/" : withoutHtml;
-    return `href=${quote}${normalized}${suffix}${quote}`;
+    return `href=${quote}${normalized}${suffix}` + quote;
   });
 
   return html;
@@ -158,6 +165,7 @@ export default {
     html = alignHomepageReviewCounts(request, html);
     html = clarifyArticleCoverage(request, html);
     html = clarifyPetDryerCoverage(request, html);
+    html = removeVisibleDatabaseWording(html);
     html = alignSeoAndInternalUrls(request, html);
     html = injectStructuredSeo(request, html);
     if (html.includes(GA4_ID)) return withAnalytics(response, html);
