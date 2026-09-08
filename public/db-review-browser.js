@@ -284,15 +284,15 @@
       const products = data.products || [];
 
       if (!products.length) {
-        select.innerHTML = '<option value="">DB登録準備中</option>';
-        status.textContent = 'このカテゴリの商品はまだDBにありません';
+        select.innerHTML = '<option value="">公開体験を準備中</option>';
+        status.textContent = 'このカテゴリの商品体験はまだ準備中です';
         totalBadge.textContent = '公開体験 0件';
         more.hidden = true;
         return;
       }
 
       categoryTotal = products.reduce((sum, product) => sum + Number(product.review_count || 0), 0);
-      totalBadge.innerHTML = '<strong>' + categoryTotal + '件</strong><span>このカテゴリでDBに整理した公開体験</span>';
+      totalBadge.innerHTML = '<strong>' + categoryTotal + '件</strong><span>このカテゴリで整理した公開体験</span>';
 
       select.innerHTML = products.map((product) => {
         const count = Number(product.review_count || 0);
@@ -306,7 +306,7 @@
       await loadReviews(initialProduct.id);
     } catch (error) {
       select.innerHTML = '<option value="">商品一覧を取得できません</option>';
-      status.textContent = 'API未接続';
+      status.textContent = '読み込みに失敗しました';
       totalBadge.textContent = '体験件数を取得できませんでした';
       more.hidden = true;
       console.error(error);
