@@ -329,6 +329,11 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
+    if (request.method === "GET" && url.pathname.endsWith(".html")) {
+      url.pathname = url.pathname === "/index.html" ? "/" : url.pathname.slice(0, -5);
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (request.method === "GET" && url.pathname === "/api/health") {
       const row = await env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
       return json({ ok: row?.ok === 1, service: "inu-taikenki-worker" });
@@ -347,15 +352,15 @@ export default {
       if (match) return getReviewsByProductId(env, decodeURIComponent(match[1]));
     }
 
-    if (request.method === "GET" && url.pathname === "/pet-dryer.html") {
+    if (request.method === "GET" && url.pathname === "/pet-dryer") {
       return servePetDryerWithBrowser(request, env);
     }
 
-    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html")) {
+    if (request.method === "GET" && url.pathname === "/") {
       return serveHomeWithSearchPromo(request, env);
     }
 
-    if (request.method === "GET" && url.pathname === "/review-search.html") {
+    if (request.method === "GET" && url.pathname === "/review-search") {
       return serveReviewSearchWithGlobalOption(request, env);
     }
 
