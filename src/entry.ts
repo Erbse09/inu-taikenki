@@ -70,11 +70,23 @@ function clarifyPetDryerCoverage(request: Request, html: string) {
   );
 }
 
+function clarifyAutoFeederCoverage(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "").replace(/\/$/, "");
+  if (pathname !== "/auto-feeder" || html.includes('data-auto-feeder-coverage')) return html;
+
+  const marker = '<h2>🐶 うちの子条件検索</h2>';
+  if (!html.includes(marker)) return html;
+
+  const note = '<div data-auto-feeder-coverage style="margin:-17px 0 28px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:11px 13px;font-size:10px;color:#765f50;line-height:1.7"><strong style="color:#d97828">調査範囲について：</strong>この記事では100件以上の公開口コミ本文を確認しています。条件検索で表示する公開体験は50件です。前者は調査母数、後者は検索対象として整理した件数です。</div>';
+  return html.replace(marker, `${note}\n${marker}`);
+}
+
 function removeVisibleDatabaseWording(html: string) {
   return html
     .replaceAll('公開体験DB', '公開体験')
     .replaceAll('体験DB', '体験一覧')
-    .replaceAll('DBに整理', '整理');
+    .replaceAll('DBに整理', '整理')
+    .replaceAll('商品別DB収録', '商品別に収録');
 }
 
 function injectStructuredSeo(request: Request, html: string) {
@@ -165,6 +177,7 @@ export default {
     html = alignHomepageReviewCounts(request, html);
     html = clarifyArticleCoverage(request, html);
     html = clarifyPetDryerCoverage(request, html);
+    html = clarifyAutoFeederCoverage(request, html);
     html = removeVisibleDatabaseWording(html);
     html = alignSeoAndInternalUrls(request, html);
     html = injectStructuredSeo(request, html);
