@@ -148,22 +148,7 @@ function alignSeoAndInternalUrls(request: Request, html: string) {
 
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
-    const requestUrl = new URL(request.url);
-    const normalizedPath = requestUrl.pathname.replace(/\.html$/, "").replace(/\/$/, "");
-    const isPetDryerRequest = request.method === "GET" && normalizedPath === "/pet-dryer";
-
-    let response: Response;
-    if (isPetDryerRequest) {
-      const assetUrl = new URL(request.url);
-      assetUrl.pathname = "/pet-dryer.html";
-      response = await env.ASSETS.fetch(new Request(assetUrl.toString(), {
-        method: "GET",
-        headers: request.headers,
-        redirect: "manual",
-      }));
-    } else {
-      response = await worker.fetch(request, env);
-    }
+    const response = await worker.fetch(request, env);
 
     if (request.method !== "GET" || !response.ok) return response;
     const contentType = response.headers.get("content-type") ?? "";
