@@ -9,6 +9,13 @@ INSERT OR IGNORE INTO products (id, name, category, active) VALUES ('virbac-cet-
 
 DELETE FROM reviews WHERE product_id IN ('kins-dental-gel','oratene-dental-gel','petkiss-gel-leaf','dr-yujiro-dental-gel','virbac-cet-chicken','virbac-cet-vanilla-mint');
 
+UPDATE products SET affiliate_url='https://www.amazon.co.jp/s?k=KINS+WITH+DENTAL+GEL+for+dogs&tag=100things-22' WHERE id='kins-dental-gel';
+UPDATE products SET affiliate_url='https://www.amazon.co.jp/s?k=0667334601008&tag=100things-22' WHERE id='oratene-dental-gel';
+UPDATE products SET affiliate_url='https://www.amazon.co.jp/s?k=4903351003972&tag=100things-22' WHERE id='petkiss-gel-leaf';
+UPDATE products SET affiliate_url='https://www.amazon.co.jp/s?k=Dr.YUJIRO+デンタルジェル&tag=100things-22' WHERE id='dr-yujiro-dental-gel';
+UPDATE products SET affiliate_url='https://www.amazon.co.jp/s?k=C.E.T.+歯みがきペースト+チキン+70g&tag=100things-22' WHERE id='virbac-cet-chicken';
+UPDATE products SET affiliate_url='https://www.amazon.co.jp/s?k=C.E.T.+歯みがきペースト+バニラミント+70g&tag=100things-22' WHERE id='virbac-cet-vanilla-mint';
+
 INSERT INTO reviews (product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url) VALUES
 ('kins-dental-gel','柴犬 8歳・5歳',NULL,NULL,'daily scared taste','以前の歯磨き粉では寄ってこなかった2頭が、ヤギミルク味に替えると自分から歯磨きに来るようになったという体験。','public_purchase_review_summary','https://review.rakuten.co.jp/review/item/1/404653_10000028/1.1/'),
 ('kins-dental-gel',NULL,NULL,NULL,'taste daily','歯磨きガムに付けるととても喜び、朝晩のケアを続けやすかったという体験。','public_purchase_review_summary','https://review.rakuten.co.jp/review/item/1/404653_10000028/1.1/'),
