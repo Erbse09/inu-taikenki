@@ -182,7 +182,8 @@ function removeVisibleDatabaseWording(html: string) {
     .replaceAll('DBに整理', '整理')
     .replaceAll('商品別DB収録', '商品別に収録')
     .replaceAll('公開レビューを整理したDBの分布', '公開レビューを整理した体験データの分布')
-    .replaceAll('ここではDB内の「分布」だけを表示しています。', 'ここでは整理した体験の「分布」だけを表示しています。');
+    .replaceAll('ここではDB内の「分布」だけを表示しています。', 'ここでは整理した体験の「分布」だけを表示しています。')
+    .replaceAll('D1に保存した公開購入者レビューの要約50件', '整理した公開購入者レビューの要約50件');
 }
 
 function injectStructuredSeo(request: Request, html: string) {
