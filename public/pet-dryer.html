@@ -411,7 +411,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
       <button id="experienceMoreBtn" class="exp-more-btn" type="button" aria-controls="experienceGrid">もっと見る</button>
     </div>
 
-    <p class="source-line"><strong>記事内代表例：25件</strong>　上の25件は、既存調査で確認した公開体験から詳しく紹介している代表例です。公開体験DBにはこのカテゴリの50件を収録しており、犬のサイズ・毛質・条件で絞り込めます。</p>
+    <p class="source-line"><strong>記事内代表例：25件</strong>　上の25件は、既存調査で確認した公開体験から詳しく紹介している代表例です。このカテゴリでは公開体験50件を整理しており、犬のサイズ・毛質・条件で絞り込めます。</p>
   </section>
 
   <section id="current-products">
@@ -477,7 +477,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
 <section id="db-review-browser">
     <div class="eyebrow">DATABASE PROTOTYPE</div>
     <h2>データベースから商品別の体験を表示</h2>
-    <p>この欄はCloudflare D1から商品一覧を読み込み、選んだ商品IDの体験要約をAPI経由で表示します。</p>
+    <p>商品を選ぶと、その商品について整理した公開体験の要約を表示します。</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0 18px">
       <label for="db-product-select"><strong>商品：</strong></label>
       <select id="db-product-select" style="min-width:220px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff">
@@ -627,7 +627,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
       }
     } catch (error) {
       select.innerHTML = '<option value="">商品一覧を取得できません</option>';
-      status.textContent = 'API未接続';
+      status.textContent = '読み込みに失敗しました';
       console.error(error);
     }
   }
