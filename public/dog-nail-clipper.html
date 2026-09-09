@@ -36,6 +36,28 @@ table{border-collapse:collapse;width:100%;min-width:720px;font-size:9px}th,td{pa
 .exp-more-hidden{display:none!important}.exp-more-wrap{text-align:center;margin:14px 0 20px}.exp-more-btn{width:100%;max-width:360px;border:1px solid #edc89f;background:#fff7ed;color:#c66f28;border-radius:999px;padding:12px 18px;font-size:12px;font-weight:850;cursor:pointer}.exp-more-btn[hidden]{display:none}
 .site-footer{margin-top:42px;padding:30px 18px 42px;border-top:1px solid #eee4da;text-align:center;color:#92877e;font-size:11px;line-height:1.8}.site-footer-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:14px}.site-footer-nav a{color:#7a6f67;text-decoration:none;font-weight:700}.site-footer-note{max-width:720px;margin:0 auto 8px}
 @media(max-width:620px){main{padding:23px 15px 60px}h1{font-size:24px}.cards,.reco-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.item-finder{padding:15px}}
+
+.type-guide{margin:30px 0 12px}
+.type-intro{font-size:11px;color:var(--sub);margin:0 0 14px}
+.type-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.type-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px}
+.type-card .type-label{display:inline-block;font-size:8px;font-weight:900;color:var(--orange2);background:#fff4e8;border-radius:999px;padding:4px 7px;margin-bottom:6px}
+.type-card h3{font-size:15px;margin:2px 0 7px}
+.type-card p{font-size:10px;color:#71675f;margin:4px 0}
+.type-card ul{margin:8px 0 0;padding-left:17px;color:#71675f;font-size:9px}
+.type-card li{margin:4px 0}
+.diff-box{margin:14px 0;background:#fbf7f2;border:1px solid var(--line);border-radius:16px;padding:14px}
+.diff-box h3{margin:0 0 7px;font-size:14px}
+.diff-box p{font-size:10px;color:#71675f;margin:5px 0}
+.pick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}
+.pick{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
+.pick b{display:block;font-size:11px;margin-bottom:4px}.pick p{font-size:9px;color:#71675f;margin:0}
+.mini-compare{margin-top:14px}
+.mini-compare table{min-width:640px}
+.guide-source{font-size:8px;color:#8d827a;margin-top:10px}
+.guide-source a{color:#7d6e63}
+@media(max-width:620px){.type-grid,.pick-grid{grid-template-columns:1fr}}
+
 </style>
 <link rel="stylesheet" href="/db-review-browser.css">
 </head>
@@ -47,7 +69,7 @@ table{border-collapse:collapse;width:100%;min-width:720px;font-size:9px}th,td{pa
 <p class="lead">「パチン音を怖がる」「黒い爪で切る位置が怖い」「大型犬の硬い爪」「ギロチンが怖い」。公開レビューから、犬のサイズと飼い主の使いやすさを分けて整理しました。</p>
 
 <div class="notice">2026年9月4日時点。Yahoo!ショッピング・楽天市場などの公開購入者レビューと販売情報を確認。切れ味が良い爪切りでも深爪リスクはあるため、「よく切れる＝安全」とは扱わず、怖がり方や失敗例も含めて掲載しています。</div>
-<div class="stats"><div class="stat"><b>4</b><span>比較商品</span></div><div class="stat"><b>10</b><span>具体体験</span></div><div class="stat"><b>3方式</b><span>刃のタイプ</span></div></div>
+<div class="stats"><div class="stat"><b>4</b><span>比較商品</span></div><div class="stat"><b>50</b><span>公開体験</span></div><div class="stat"><b>3方式</b><span>刃のタイプ</span></div></div>
 
 <section class="item-finder" id="itemFinder">
 <div class="eyebrow">FIND FOR YOUR DOG</div><h2>🐶 うちの子条件検索｜爪切り</h2>
@@ -56,6 +78,79 @@ table{border-collapse:collapse;width:100%;min-width:720px;font-size:9px}th,td{pa
 <div class="filter-block"><div class="filter-title">② 気になること</div><div class="chips"><button class="chip" data-value="怖がり" type="button">音・衝撃が怖い</button><button class="chip" data-value="初心者" type="button">初心者</button><button class="chip" data-value="黒い爪" type="button">黒い爪</button><button class="chip" data-value="硬い爪" type="button">硬い・太い爪</button><button class="chip" data-value="ギロチン苦手" type="button">ギロチンが怖い</button></div></div>
 <div class="find-actions"><button class="find-btn" id="showFinder" type="button">この条件で見る 🔎</button><button class="reset-btn" id="resetFinder" type="button">リセット</button></div>
 <div class="reco-wrap" id="recoWrap"><h3 id="recoHeading">この条件なら</h3><div class="reco-grid" id="recoGrid"></div></div>
+</section>
+
+
+<section class="type-guide" id="clipper-types">
+<div class="eyebrow">TYPE GUIDE</div>
+<h2>ギロチン・ニッパー・ハサミ式の違いは？</h2>
+<p class="type-intro">見た目が違うだけではなく、<strong>爪を入れる方向・刃の動き・手元の見え方</strong>が変わります。どれが絶対に一番というより、「犬の爪」と「飼い主が操作しやすい形」の組み合わせで選ぶのが現実的です。</p>
+
+<div class="type-grid">
+<article class="type-card">
+<span class="type-label">GUILLOTINE</span>
+<h3>ギロチン式</h3>
+<p><strong>輪の穴に爪先を通し、握ると刃がスライドして切る</strong>タイプです。</p>
+<ul>
+<li>爪を穴に固定してから切るので、切る位置を決めて握る流れが分かりやすい</li>
+<li>しっかりした爪にも使われる定番タイプ</li>
+<li>一方で、穴へ爪を通す動作そのものを嫌がる犬もいます</li>
+</ul>
+</article>
+
+<article class="type-card">
+<span class="type-label">PLIER</span>
+<h3>ニッパー式</h3>
+<p><strong>左右の刃で爪を挟み、ペンチのように握って切る</strong>タイプです。</p>
+<ul>
+<li>爪を穴に通さず、横から刃を当てられる</li>
+<li>角度を変えながら少しずつ切りたい人と相性が良い</li>
+<li>自由度が高いぶん、どこに刃を当てるかは自分で判断します</li>
+</ul>
+</article>
+
+<article class="type-card">
+<span class="type-label">SCISSOR</span>
+<h3>ハサミ式</h3>
+<p><strong>2枚の刃を合わせて切る、ハサミに近い操作感</strong>のタイプです。</p>
+<ul>
+<li>手の動きが直感的で、初めてでも形を理解しやすい</li>
+<li>子犬・小型犬向けとして案内される製品もあります</li>
+<li>太く硬い爪では、製品サイズや刃の強さを確認したいタイプです</li>
+</ul>
+</article>
+</div>
+
+<div class="diff-box">
+<h3>一番大きな違いは「爪を穴に通すかどうか」</h3>
+<p><strong>ギロチン式</strong>は爪を輪の中に入れて位置を決めます。<strong>ニッパー式・ハサミ式</strong>は外側から刃を当てるので、爪の向きに合わせて角度を変えやすいのが違いです。</p>
+<p>VCA Animal Hospitalsでも、犬用爪切りの代表的な方式としてギロチン式とハサミ式を挙げ、どちらも使えるものの飼い主の好みや扱いやすさで選ぶとしています。ペットラインでは、ハサミ・ギロチン・ニッパーなど複数方式があり、体格や爪の大きさ、使い勝手に合わせて選ぶよう案内しています。</p>
+</div>
+
+<div class="mini-compare tablewrap">
+<table>
+<thead><tr><th>比較</th><th>ギロチン式</th><th>ニッパー式</th><th>ハサミ式</th></tr></thead>
+<tbody>
+<tr><td>爪の入れ方</td><td>穴に通す</td><td>横から挟む</td><td>刃の間に置く</td></tr>
+<tr><td>角度調整</td><td>穴の向きに合わせる</td><td>しやすい</td><td>しやすい</td></tr>
+<tr><td>操作感</td><td>握ってスライド刃で切る</td><td>ペンチに近い</td><td>ハサミに近い</td></tr>
+<tr><td>この記事の体験で目立った条件</td><td>小〜大型犬・硬い爪</td><td>ギロチンが苦手・微調整</td><td>小型犬・音や衝撃が気になる</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 style="margin-top:20px">迷ったら、こんな順番で考える</h3>
+<div class="pick-grid">
+<div class="pick"><b>🐾 爪を穴に通すのが苦手そう</b><p>ニッパー式やハサミ式を先に比較。足先を長く固定しにくい犬では、装着動作の少なさが扱いやすさにつながることがあります。</p></div>
+<div class="pick"><b>💪 太く硬い爪</b><p>刃の強さ・対応サイズを確認し、しっかりした爪向けのギロチン式やニッパー式を比較。大型犬では「大型犬用」の有無も確認します。</p></div>
+<div class="pick"><b>👀 黒い爪で切る位置が怖い</b><p>方式だけで安全になるわけではありません。1回で大きく切らず、少量ずつ断面を確認しながら進める前提で、手元が見やすい形を選びます。</p></div>
+<div class="pick"><b>🙋 初めてで操作自体が不安</b><p>握りやすさ・刃先の見え方を優先。犬に使う前に、ストローなどで道具の動きを練習する方法もVCAが案内しています。</p></div>
+</div>
+
+<p class="guide-source">種類説明の参考：
+<a href="https://vcahospitals.com/know-your-pet/how-to-trim-a-dogs-nails" target="_blank" rel="noopener">VCA Animal Hospitals</a> /
+<a href="https://www.petline.co.jp/note/dog/trimming/000052/" target="_blank" rel="noopener">ペットライン</a>
+</p>
 </section>
 
 <h2>先に結論：刃の方式より「犬と飼い主の苦手」が大事</h2>
