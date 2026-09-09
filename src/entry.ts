@@ -140,10 +140,13 @@ function clarifyPetDryerCoverage(request: Request, html: string) {
   const pathname = new URL(request.url).pathname.replace(/\.html$/, "").replace(/\/$/, "");
   if (pathname !== "/pet-dryer") return html;
 
-  return html.replace(
+  html = html.replace(
     '<p class="source-line">※上の25件は、既存調査で確認した楽天市場・Yahoo!ショッピング・メーカー公開ページの個別投稿を「1投稿＝1体験」で整理したものです。</p>',
     '<p class="source-line"><strong>記事内代表例：25件</strong>　上の25件は、既存調査で確認した公開体験から詳しく紹介している代表例です。このカテゴリでは50件の公開体験を収録しており、犬のサイズ・毛質・条件で絞り込めます。</p>',
   );
+  html = html.replace('データベースから商品別の体験を表示', '商品別の体験を見る');
+  html = html.replace('この欄はCloudflare D1から商品一覧を読み込み、選んだ商品IDの体験要約をAPI経由で表示します。', '商品を選ぶと、その商品について整理した公開体験を表示します。');
+  return html;
 }
 
 function clarifyAutoFeederCoverage(request: Request, html: string) {
