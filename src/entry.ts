@@ -178,6 +178,34 @@ function clarifyBrushCoverage(request: Request, html: string) {
   return html.replace(marker, `${note}\n${marker}`);
 }
 
+function addDogClipperAffiliateLinks(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "").replace(/\/$/, "");
+  if (pathname !== "/dog-clipper" || html.includes('data-dog-clipper-affiliate-links')) return html;
+
+  const note = '<span class="amazon-note">※Amazon内検索を開きます。型番・販売元・販売状況を確認してください。</span>';
+  const additions = [
+    {
+      marker: '<div class="pillrow"><span class="pill">トイプードル</span><span class="pill">ミニチュアダックス</span><span class="pill">シニア</span></div>',
+      query: 'Panasonic+ER807PP-A',
+    },
+    {
+      marker: '<div class="pillrow"><span class="pill">足裏</span><span class="pill">顔まわり</span><span class="pill">怖がり</span></div>',
+      query: 'Pateker+LG4+ミニバリカン',
+    },
+    {
+      marker: '<div class="pillrow"><span class="pill">多頭</span><span class="pill">全身</span><span class="pill">替刃</span></div>',
+      query: 'SPEEDIK+PEACE+バリカン',
+    },
+  ];
+
+  for (const item of additions) {
+    if (!html.includes(item.marker)) continue;
+    const link = `<a class="amazon-cta" data-dog-clipper-affiliate-links href="https://www.amazon.co.jp/s?k=${item.query}&tag=100things-22" rel="sponsored noopener" target="_blank">Amazonでこの商品名を探す</a>${note}`;
+    html = html.replace(item.marker, `${item.marker}${link}`);
+  }
+  return html;
+}
+
 function removeVisibleDatabaseWording(html: string) {
   return html
     .replaceAll('公開体験DB', '公開体験')
@@ -279,6 +307,7 @@ export default {
     html = clarifyPetDryerCoverage(request, html);
     html = clarifyAutoFeederCoverage(request, html);
     html = clarifyBrushCoverage(request, html);
+    html = addDogClipperAffiliateLinks(request, html);
     html = removeVisibleDatabaseWording(html);
     html = alignSeoAndInternalUrls(request, html);
     html = injectStructuredSeo(request, html);
