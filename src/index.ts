@@ -52,11 +52,11 @@ const PET_DRYER_BROWSER = `
 
 const HOME_SEARCH_PROMO = `
 <section data-home-review-search style="margin-top:24px;background:linear-gradient(145deg,#fff7ed,#ffe5ca);border:1px solid #f0d7bd;border-radius:22px;padding:20px 18px;text-align:center;box-shadow:0 8px 24px rgba(86,61,41,.06)">
-  <div style="font-size:10px;color:#d97828;font-weight:900;letter-spacing:.08em">650 EXPERIENCES SEARCH</div>
-  <h2 style="font-size:21px;line-height:1.45;color:#3a312b;margin:5px 0 8px">650件の体験から<br>うちの子に近い話を探す</h2>
-  <p style="font-size:11px;color:#766b63;line-height:1.75;margin:0 0 14px">13カテゴリを横断して、犬のサイズ・毛質・性格や悩みから検索できます。</p>
-  <a href="/review-search.html" style="display:block;background:#ef9446;color:#fff;text-decoration:none;border-radius:12px;padding:12px 14px;font-size:12px;font-weight:900">650件から条件検索する 🔎</a>
-  <a href="/review-insights.html" style="display:inline-block;margin-top:11px;color:#9b6036;text-decoration:underline;text-underline-offset:3px;font-size:10px;font-weight:800">650件の体験傾向を見る 📊</a>
+  <div style="font-size:10px;color:#d97828;font-weight:900;letter-spacing:.08em">700 EXPERIENCES SEARCH</div>
+  <h2 style="font-size:21px;line-height:1.45;color:#3a312b;margin:5px 0 8px">700件の体験から<br>うちの子に近い話を探す</h2>
+  <p style="font-size:11px;color:#766b63;line-height:1.75;margin:0 0 14px">14カテゴリを横断して、犬のサイズ・毛質・性格や悩みから検索できます。</p>
+  <a href="/review-search.html" style="display:block;background:#ef9446;color:#fff;text-decoration:none;border-radius:12px;padding:12px 14px;font-size:12px;font-weight:900">700件から条件検索する 🔎</a>
+  <a href="/review-insights.html" style="display:inline-block;margin-top:11px;color:#9b6036;text-decoration:underline;text-underline-offset:3px;font-size:10px;font-weight:800">700件の体験傾向を見る 📊</a>
 </section>`;
 
 const HOME_DOG_SIZE_SCRIPT = `<script data-home-dog-size-links>
@@ -85,10 +85,10 @@ const HOME_DOG_SIZE_SCRIPT = `<script data-home-dog-size-links>
 const HOME_TRAIT_LINK_SCRIPT = `<script data-home-trait-links>
 (() => {
   const rules = [
-    { text: 'ダブルコート', href: '/review-search.html?coat=double', label: 'ダブルコートの体験を650件から探す' },
-    { text: '怖がり', href: '/review-search.html?q=' + encodeURIComponent('怖がり'), label: '怖がりな犬の体験を650件から探す' },
-    { text: '子犬', href: '/review-search.html?q=' + encodeURIComponent('子犬'), label: '子犬の体験を650件から探す' },
-    { text: '時短', href: '/review-search.html?q=' + encodeURIComponent('時短'), label: '時短を重視した体験を650件から探す' }
+    { text: 'ダブルコート', href: '/review-search.html?coat=double', label: 'ダブルコートの体験を700件から探す' },
+    { text: '怖がり', href: '/review-search.html?q=' + encodeURIComponent('怖がり'), label: '怖がりな犬の体験を700件から探す' },
+    { text: '子犬', href: '/review-search.html?q=' + encodeURIComponent('子犬'), label: '子犬の体験を700件から探す' },
+    { text: '時短', href: '/review-search.html?q=' + encodeURIComponent('時短'), label: '時短を重視した体験を700件から探す' }
   ];
   document.querySelectorAll('.tags .tag').forEach((tag) => {
     const text = tag.textContent || '';
@@ -301,14 +301,14 @@ async function serveReviewSearchWithGlobalOption(request: Request, env: Env) {
   if (!html.includes('value="">すべてのカテゴリ')) {
     html = html.replace(
       '<select id="category">',
-      '<select id="category">\n<option value="">すべてのカテゴリ（650件）</option>',
+      '<select id="category">\n<option value="">すべてのカテゴリ（700件）</option>',
     );
   }
   html = html.replace('条件一致 / このカテゴリ ', '条件一致 / 検索対象 ');
   if (!html.includes('data-review-insights-link')) {
     html = html.replace(
       '<div class="status" id="status" aria-live="polite">体験を読み込み中…</div>',
-      '<a data-review-insights-link href="/review-insights.html" style="display:block;margin:12px 0 0;text-align:center;color:#9b6036;font-size:10px;font-weight:800;text-underline-offset:3px">650件の体験傾向を見る 📊</a>\n<div class="status" id="status" aria-live="polite">体験を読み込み中…</div>',
+      '<a data-review-insights-link href="/review-insights.html" style="display:block;margin:12px 0 0;text-align:center;color:#9b6036;font-size:10px;font-weight:800;text-underline-offset:3px">700件の体験傾向を見る 📊</a>\n<div class="status" id="status" aria-live="polite">体験を読み込み中…</div>',
     );
   }
   if (!html.includes('/review-product-distribution.js')) {
