@@ -324,8 +324,9 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    if (url.hostname === "www.inu-taikenki.com") {
-      url.hostname = "inu-taikenki.com";
+    if (url.protocol !== "https:" || url.hostname === "www.inu-taikenki.com") {
+      url.protocol = "https:";
+      if (url.hostname === "www.inu-taikenki.com") url.hostname = "inu-taikenki.com";
       return Response.redirect(url.toString(), 301);
     }
 
