@@ -264,7 +264,7 @@ async function servePetDryerWithBrowser(request: Request, env: Env) {
   if (!html.includes("/db-review-browser.css")) {
     html = html.replace("</head>", '<link rel="stylesheet" href="/db-review-browser.css">\n</head>');
   }
-  if (!html.includes('data-db-review-browser data-category="pet-dryer"')) {
+  if (!html.includes('data-db-review-browser data-category="pet-dryer"') && !html.includes('id="db-product-select"')) {
     html = html.replace("</main>", `${PET_DRYER_BROWSER}\n</main>`);
   }
   if (!html.includes("/db-review-browser.js")) {
