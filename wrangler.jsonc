@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "inu-taikenki",
-  "main": "src/entry.ts",
+  "main": "src/final-entry.ts",
   "compatibility_date": "2026-09-02",
   "assets": {
     "directory": "./public",
