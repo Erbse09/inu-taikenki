@@ -28,6 +28,26 @@ const FAVICON_LINKS = `<link rel="icon" type="image/png" sizes="96x96" href="/fa
 <link rel="apple-touch-icon" href="/apple-touch-icon.svg">
 <link rel="manifest" href="/site.webmanifest">`;
 
+const SEO_TITLES: Record<string, string> = {
+  "/": "犬用品の公開体験750件を犬種・条件別に比較｜犬体験記",
+  "/index": "犬用品の公開体験750件を犬種・条件別に比較｜犬体験記",
+  "/brush-comb": "犬用コームの公開体験50件｜毛玉・仕上げ・長毛犬を比較",
+  "/brush-slicker": "犬用スリッカーブラシの公開体験50件｜毛玉・抜け毛・怖がり犬を比較",
+  "/brush-undercoat": "犬用アンダーコートブラシの公開体験50件｜抜け毛・ダブルコートを比較",
+  "/brush-pin": "犬用ピンブラシとは？公開体験50件を犬種・毛質別に比較",
+  "/dog-shampoo": "犬用シャンプーの公開体験50件｜低刺激・保湿・仕上がりを比較",
+  "/dog-conditioner": "犬用コンディショナーの公開体験50件｜毛質・仕上がり別に比較",
+  "/dog-nail-clipper": "犬用爪切りの公開体験50件｜ギロチン・ニッパー・怖がり犬を比較",
+  "/dog-nail-grinder": "犬用電動爪やすりの公開体験50件｜音・怖がり・大型犬を比較",
+  "/dog-clipper": "犬用バリカンの公開体験50件｜音・切れ味・初心者目線で比較",
+  "/auto-feeder": "犬用自動給餌器の公開体験50件｜留守番・食べ方・使いやすさを比較",
+  "/pet-dryer": "犬用ペットドライヤーの公開体験50件｜風量・音・乾燥時間を比較",
+  "/dog-toothbrush": "犬用歯ブラシの公開体験50件｜サイズ・磨きやすさ・嫌がり方を比較",
+  "/dog-toothpaste": "犬用歯磨きジェル・歯磨き粉の公開体験50件｜味・使いやすさを比較",
+  "/dog-dental-chew": "犬用デンタルガムの公開体験50件｜食いつき・硬さ・続けやすさを比較",
+  "/dog-ear-cleaner": "犬用イヤークリーナーの公開体験50件｜低刺激・におい・耳掃除嫌いを比較",
+};
+
 function updateCounts(html: string) {
   return html
     .replaceAll("700件", "750件")
@@ -96,6 +116,16 @@ function integrateFavicons(html: string) {
   return html;
 }
 
+function integrateSeoTitle(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  const title = SEO_TITLES[pathname];
+  if (!title) return html;
+  if (/<title>[\s\S]*?<\/title>/i.test(html)) {
+    return html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${title}</title>`);
+  }
+  return html.replace("</head>", `<title>${title}</title>\n</head>`);
+}
+
 function htmlResponse(response: Response, html: string) {
   const headers = new Headers(response.headers);
   headers.delete("content-length");
@@ -117,6 +147,7 @@ export default {
 
     let html = integrateEarCleaner(request, await response.text());
     html = integrateFavicons(html);
+    html = integrateSeoTitle(request, html);
     return htmlResponse(response, html);
   },
 };
