@@ -28,6 +28,21 @@ const FAVICON_LINKS = `<link rel="icon" type="image/png" sizes="96x96" href="/fa
 <link rel="apple-touch-icon" href="/apple-touch-icon.svg">
 <link rel="manifest" href="/site.webmanifest">`;
 
+const REMOVE_REVIEW_SOURCE_LINKS = `<script data-remove-review-source-links>
+(() => {
+  const removeSourceLinks = () => {
+    document.querySelectorAll('a').forEach((link) => {
+      if ((link.textContent || '').trim().startsWith('確認元を見る')) {
+        const wrapper = link.closest('.db-review-source, .source');
+        (wrapper || link).remove();
+      }
+    });
+  };
+  removeSourceLinks();
+  new MutationObserver(removeSourceLinks).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>`;
+
 const SEO_TITLES: Record<string, string> = {
   "/": "犬用品の公開体験750件を犬種・条件別に比較｜犬体験記",
   "/index": "犬用品の公開体験750件を犬種・条件別に比較｜犬体験記",
@@ -126,6 +141,11 @@ function integrateSeoTitle(request: Request, html: string) {
   return html.replace("</head>", `<title>${title}</title>\n</head>`);
 }
 
+function integrateReviewSourcePolicy(html: string) {
+  if (html.includes("data-remove-review-source-links")) return html;
+  return html.replace("</body>", `${REMOVE_REVIEW_SOURCE_LINKS}\n</body>`);
+}
+
 function htmlResponse(response: Response, html: string) {
   const headers = new Headers(response.headers);
   headers.delete("content-length");
@@ -148,6 +168,7 @@ export default {
     let html = integrateEarCleaner(request, await response.text());
     html = integrateFavicons(html);
     html = integrateSeoTitle(request, html);
+    html = integrateReviewSourcePolicy(html);
     return htmlResponse(response, html);
   },
 };
