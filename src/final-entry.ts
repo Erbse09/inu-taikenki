@@ -22,6 +22,12 @@ const WEBSITE_SCHEMA = `<script type="application/ld+json" data-inu-website-sche
 }
 </script>`;
 
+const FAVICON_LINKS = `<link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png">
+<link rel="icon" type="image/svg+xml" href="/site-icon.svg">
+<link rel="shortcut icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.svg">
+<link rel="manifest" href="/site.webmanifest">`;
+
 function updateCounts(html: string) {
   return html
     .replaceAll("700件", "750件")
@@ -81,6 +87,15 @@ function integrateEarCleaner(request: Request, html: string) {
   return html;
 }
 
+function integrateFavicons(html: string) {
+  const faviconPattern = /<link\b[^>]*rel=["'][^"']*(?:icon|manifest)[^"']*["'][^>]*>\s*/gi;
+  html = html.replace(faviconPattern, "");
+  if (html.includes("</head>")) {
+    return html.replace("</head>", `${FAVICON_LINKS}\n</head>`);
+  }
+  return html;
+}
+
 function htmlResponse(response: Response, html: string) {
   const headers = new Headers(response.headers);
   headers.delete("content-length");
@@ -100,7 +115,8 @@ export default {
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.includes("text/html")) return response;
 
-    const html = integrateEarCleaner(request, await response.text());
+    let html = integrateEarCleaner(request, await response.text());
+    html = integrateFavicons(html);
     return htmlResponse(response, html);
   },
 };
