@@ -11,6 +11,17 @@ const EAR_HOME_CARD = `<article class="research-card">
 <a class="read-button" href="dog-ear-cleaner">うちの子向けイヤークリーナーを見る →</a>
 </article>`;
 
+const WEBSITE_SCHEMA = `<script type="application/ld+json" data-inu-website-schema>
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "url": "https://inu-taikenki.com/",
+  "name": "犬用品みんなの体験記",
+  "alternateName": "犬体験記",
+  "inLanguage": "ja"
+}
+</script>`;
+
 function updateCounts(html: string) {
   return html
     .replaceAll("700件", "750件")
@@ -31,6 +42,9 @@ function integrateEarCleaner(request: Request, html: string) {
     );
     if (!html.includes('href="dog-ear-cleaner"')) {
       html = html.replace('<div class="article-grid">', `<div class="article-grid">\n${EAR_HOME_CARD}`);
+    }
+    if (!html.includes("data-inu-website-schema")) {
+      html = html.replace("</head>", `${WEBSITE_SCHEMA}\n</head>`);
     }
   }
 
