@@ -2,7 +2,7 @@ import worker from "./entry";
 
 type WorkerEnv = Parameters<typeof worker.fetch>[1];
 
-const EAR_HOME_CARD = `<article class="research-card">">
+const EAR_HOME_CARD = `<article class="research-card">
 <div class="article-badge">犬用イヤークリーナー</div>
 <h3>犬用イヤークリーナー6商品を公開体験50件で比較</h3>
 <p>垂れ耳・耳掃除嫌い・におい・汚れ・低刺激など、選び方が分かる公開体験を6商品で整理しました。</p>
