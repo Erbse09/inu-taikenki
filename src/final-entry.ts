@@ -2,7 +2,7 @@ import worker from "./entry";
 
 type WorkerEnv = Parameters<typeof worker.fetch>[1];
 
-const EAR_HOME_CARD = `<article class="research-card">
+const EAR_HOME_CARD = `<article class="research-card">">
 <div class="article-badge">犬用イヤークリーナー</div>
 <h3>犬用イヤークリーナー6商品を公開体験50件で比較</h3>
 <p>垂れ耳・耳掃除嫌い・におい・汚れ・低刺激など、選び方が分かる公開体験を6商品で整理しました。</p>
@@ -54,7 +54,7 @@ const SEO_TITLES: Record<string, string> = {
   "/dog-conditioner": "毛質・仕上がりから選ぶ犬用コンディショナー｜複数サイトの実体験を横断比較",
   "/dog-nail-clipper": "ギロチン・ニッパーの違いから選ぶ犬用爪切り｜複数サイトの実体験を横断比較",
   "/dog-nail-grinder": "音・振動・太い爪から選ぶ犬用電動爪やすり｜複数サイトの実体験を横断比較",
-  "/dog-clipper": "犬用バリカンの公開体験50件｜音・切れ味・初心者目線で比較",
+  "/dog-clipper": "全身・足裏・怖がり犬から選ぶ犬用バリカン｜複数サイトの実体験を横断比較",
   "/auto-feeder": "犬用自動給餌器の公開体験50件｜留守番・食べ方・使いやすさを比較",
   "/pet-dryer": "音・乾燥時間から選ぶ犬用ペットドライヤー｜複数サイトの実体験を横断比較",
   "/dog-toothbrush": "犬用歯ブラシの公開体験50件｜サイズ・磨きやすさ・嫌がり方を比較",
@@ -72,6 +72,7 @@ const SEO_DESCRIPTIONS: Record<string, string> = {
   "/dog-conditioner": "Amazon・楽天など複数サイトの犬用コンディショナー・トリートメントの公開口コミ・体験を横断整理。長毛・短毛など毛質ごとに、ふわふわ・しっとり、毛玉、静電気、香りを比較し、うちの子に近い実体験から選べます。",
   "/dog-nail-clipper": "Amazon・楽天など複数サイトの犬用爪切りの公開口コミ・体験を横断整理。ギロチン・ニッパー・ハサミ式の違い、犬のサイズ、黒い爪、音や衝撃への反応、初心者の使いやすさを比較し、うちの子に近い実体験から選べます。",
   "/dog-nail-grinder": "Yahoo!ショッピング・海外小売レビュー・Redditなど複数の公開情報から犬用電動爪やすりの体験を横断整理。怖がり犬・黒い爪・大型犬などの条件ごとに、音・振動、削る速さ、太い爪への対応、使いやすさを比較し、うちの子に近い実体験から選べます。",
+  "/dog-clipper": "楽天市場・Yahoo!ショッピングなど複数サイトの公開口コミ・体験を横断整理。犬種・年齢ごとに、全身用と足裏・顔まわり用の違い、音・振動、切れ味、怖がり犬やシニア犬での使いやすさを比較し、うちの子に近い実体験から選べます。",
 };
 
 function updateCounts(html: string) {
