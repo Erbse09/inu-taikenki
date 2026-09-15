@@ -56,11 +56,15 @@ const SEO_TITLES: Record<string, string> = {
   "/dog-nail-grinder": "犬用電動爪やすりの公開体験50件｜音・怖がり・大型犬を比較",
   "/dog-clipper": "犬用バリカンの公開体験50件｜音・切れ味・初心者目線で比較",
   "/auto-feeder": "犬用自動給餌器の公開体験50件｜留守番・食べ方・使いやすさを比較",
-  "/pet-dryer": "犬用ペットドライヤーの公開体験50件｜風量・音・乾燥時間を比較",
+  "/pet-dryer": "音・乾燥時間から選ぶ犬用ペットドライヤー｜複数サイトの実体験を横断比較",
   "/dog-toothbrush": "犬用歯ブラシの公開体験50件｜サイズ・磨きやすさ・嫌がり方を比較",
   "/dog-toothpaste": "犬用歯磨きジェル・歯磨き粉の公開体験50件｜味・使いやすさを比較",
   "/dog-dental-chew": "犬用デンタルガムの公開体験50件｜食いつき・硬さ・続けやすさを比較",
   "/dog-ear-cleaner": "犬用イヤークリーナーの公開体験50件｜低刺激・におい・耳掃除嫌いを比較",
+};
+
+const SEO_DESCRIPTIONS: Record<string, string> = {
+  "/pet-dryer": "Amazon・楽天など複数サイトの公開口コミ・体験を横断整理。犬種・サイズ・毛質ごとに、風量・音への反応・乾燥時間・ハンズフリーの使いやすさを比較し、うちの子に近い実体験から選べます。",
 };
 
 function updateCounts(html: string) {
@@ -141,6 +145,17 @@ function integrateSeoTitle(request: Request, html: string) {
   return html.replace("</head>", `<title>${title}</title>\n</head>`);
 }
 
+function integrateSeoDescription(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  const description = SEO_DESCRIPTIONS[pathname];
+  if (!description) return html;
+  const escaped = description.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
+  const tag = `<meta name="description" content="${escaped}">`;
+  const metaPattern = /<meta\b(?=[^>]*\bname=["']description["'])[^>]*>/i;
+  if (metaPattern.test(html)) return html.replace(metaPattern, tag);
+  return html.replace("</head>", `${tag}\n</head>`);
+}
+
 function integrateReviewSourcePolicy(html: string) {
   if (html.includes("data-remove-review-source-links")) return html;
   return html.replace("</body>", `${REMOVE_REVIEW_SOURCE_LINKS}\n</body>`);
@@ -168,6 +183,7 @@ export default {
     let html = integrateEarCleaner(request, await response.text());
     html = integrateFavicons(html);
     html = integrateSeoTitle(request, html);
+    html = integrateSeoDescription(request, html);
     html = integrateReviewSourcePolicy(html);
     return htmlResponse(response, html);
   },
