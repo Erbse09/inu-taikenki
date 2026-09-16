@@ -50,13 +50,19 @@ const PET_DRYER_BROWSER = `
   <div class="db-more-wrap"><button class="db-more-btn" type="button" data-db-more hidden>もっと見る</button></div>
 </section>`;
 
+const HOME_DESCRIPTION = "犬用品15カテゴリ・公開体験750件を、犬種・サイズ・毛質・性格・悩みから探せます。人気ランキングではなく、うちの子に近い体験から商品比較記事やブラシの選び方へ進めます。";
+
 const HOME_SEARCH_PROMO = `
 <section data-home-review-search style="margin-top:24px;background:linear-gradient(145deg,#fff7ed,#ffe5ca);border:1px solid #f0d7bd;border-radius:22px;padding:20px 18px;text-align:center;box-shadow:0 8px 24px rgba(86,61,41,.06)">
-  <div style="font-size:10px;color:#d97828;font-weight:900;letter-spacing:.08em">700 EXPERIENCES SEARCH</div>
-  <h2 style="font-size:21px;line-height:1.45;color:#3a312b;margin:5px 0 8px">700件の体験から<br>うちの子に近い話を探す</h2>
-  <p style="font-size:11px;color:#766b63;line-height:1.75;margin:0 0 14px">14カテゴリを横断して、犬のサイズ・毛質・性格や悩みから検索できます。</p>
-  <a href="/review-search.html" style="display:block;background:#ef9446;color:#fff;text-decoration:none;border-radius:12px;padding:12px 14px;font-size:12px;font-weight:900">700件から条件検索する 🔎</a>
-  <a href="/review-insights.html" style="display:inline-block;margin-top:11px;color:#9b6036;text-decoration:underline;text-underline-offset:3px;font-size:10px;font-weight:800">700件の体験傾向を見る 📊</a>
+  <div style="font-size:10px;color:#d97828;font-weight:900;letter-spacing:.08em">750 EXPERIENCES / 15 CATEGORIES</div>
+  <h2 style="font-size:21px;line-height:1.45;color:#3a312b;margin:5px 0 8px">犬用品を「うちの子基準」で探す</h2>
+  <p style="font-size:11px;color:#766b63;line-height:1.75;margin:0 0 14px">人気順ではなく、犬のサイズ・毛質・性格・悩みや、ブラシの用途などから入口を選べます。</p>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;text-align:left">
+    <a href="/review-search" style="display:block;background:#ef9446;color:#fff;text-decoration:none;border-radius:12px;padding:11px 12px;font-size:10px;font-weight:900;line-height:1.55">🐶 毛質・性格・悩みから探す<br><span style="font-size:8px;font-weight:700;opacity:.9">750件を条件検索</span></a>
+    <a href="/dog-size" style="display:block;background:#fff;color:#765f50;text-decoration:none;border:1px solid #edc89f;border-radius:12px;padding:11px 12px;font-size:10px;font-weight:900;line-height:1.55">📏 小型・中型・大型から探す<br><span style="font-size:8px;font-weight:700;color:#9a7b63">犬サイズ別の体験へ</span></a>
+    <a href="/brush-guide" style="display:block;background:#fff;color:#765f50;text-decoration:none;border:1px solid #edc89f;border-radius:12px;padding:11px 12px;font-size:10px;font-weight:900;line-height:1.55">🪮 ブラシの種類から選ぶ<br><span style="font-size:8px;font-weight:700;color:#9a7b63">毛玉・抜け毛・仕上げ別</span></a>
+    <a href="/review-insights" style="display:block;background:#fff;color:#765f50;text-decoration:none;border:1px solid #edc89f;border-radius:12px;padding:11px 12px;font-size:10px;font-weight:900;line-height:1.55">📊 体験データの傾向を見る<br><span style="font-size:8px;font-weight:700;color:#9a7b63">サイズ・毛質・特徴別</span></a>
+  </div>
 </section>`;
 
 const HOME_DOG_SIZE_SCRIPT = `<script data-home-dog-size-links>
@@ -70,7 +76,7 @@ const HOME_DOG_SIZE_SCRIPT = `<script data-home-dog-size-links>
     card.setAttribute('tabindex', '0');
     card.setAttribute('aria-label', card.textContent.trim() + 'の商品体験を全カテゴリから探す');
     card.style.cursor = 'pointer';
-    const go = () => { location.href = '/dog-size.html?size=' + size; };
+    const go = () => { location.href = '/dog-size?size=' + size; };
     card.addEventListener('click', go);
     card.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
@@ -85,10 +91,10 @@ const HOME_DOG_SIZE_SCRIPT = `<script data-home-dog-size-links>
 const HOME_TRAIT_LINK_SCRIPT = `<script data-home-trait-links>
 (() => {
   const rules = [
-    { text: 'ダブルコート', href: '/review-search.html?coat=double', label: 'ダブルコートの体験を700件から探す' },
-    { text: '怖がり', href: '/review-search.html?q=' + encodeURIComponent('怖がり'), label: '怖がりな犬の体験を700件から探す' },
-    { text: '子犬', href: '/review-search.html?q=' + encodeURIComponent('子犬'), label: '子犬の体験を700件から探す' },
-    { text: '時短', href: '/review-search.html?q=' + encodeURIComponent('時短'), label: '時短を重視した体験を700件から探す' }
+    { text: 'ダブルコート', href: '/review-search?coat=double', label: 'ダブルコートの体験を750件から探す' },
+    { text: '怖がり', href: '/review-search?q=' + encodeURIComponent('怖がり'), label: '怖がりな犬の体験を750件から探す' },
+    { text: '子犬', href: '/review-search?q=' + encodeURIComponent('子犬'), label: '子犬の体験を750件から探す' },
+    { text: '時短', href: '/review-search?q=' + encodeURIComponent('時短'), label: '時短を重視した体験を750件から探す' }
   ];
   document.querySelectorAll('.tags .tag').forEach((tag) => {
     const text = tag.textContent || '';
@@ -280,6 +286,9 @@ async function serveHomeWithSearchPromo(request: Request, env: Env) {
   if (!asset.ok || !contentType.includes("text/html")) return asset;
 
   let html = await asset.text();
+  const homeDescriptionTag = `<meta name="description" content="${HOME_DESCRIPTION}">`;
+  const descriptionPattern = /<meta\b(?=[^>]*\bname=["']description["'])[^>]*>/i;
+  if (descriptionPattern.test(html)) html = html.replace(descriptionPattern, homeDescriptionTag);
   if (!html.includes("data-home-review-search")) {
     html = html.replace("<main>", `<main>\n${HOME_SEARCH_PROMO}`);
   }
