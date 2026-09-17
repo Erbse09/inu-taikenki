@@ -80,6 +80,92 @@ const SEO_DESCRIPTIONS: Record<string, string> = {
   "/dog-ear-cleaner": "楽天市場の公開購入者レビューとメーカー・販売元情報をもとに、犬用イヤークリーナー6商品・50件の体験を整理。垂れ耳、刺激の少なさ、香り、におい・汚れ、耳掃除嫌い、容量などを比較し、うちの子に近い実体験から選べます。",
 };
 
+type RelatedGuideLink = {
+  href: string;
+  label: string;
+  note: string;
+};
+
+type RelatedGuideConfig = {
+  title: string;
+  links: RelatedGuideLink[];
+};
+
+const DISCOVERY_GUIDES: RelatedGuideLink[] = [
+  { href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がる原因とブラシ選びを整理" },
+  { href: "/dog-nail-care-dislike", label: "爪切りを嫌がるとき", note: "パチン音・黒い爪・電動やすりを比較" },
+  { href: "/dog-toothbrushing-dislike", label: "歯磨きを嫌がるとき", note: "歯ブラシ・ジェル・デンタルガムを使い分け" },
+  { href: "/dog-home-shampoo-guide", label: "おうちシャンプーの手順", note: "ブラシからシャンプー、コンディショナー、乾燥まで" },
+  { href: "/breed-toy-poodle", label: "トイプードルの公開体験", note: "犬種欄に明記された体験だけをカテゴリ横断で表示" },
+];
+
+const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
+  "/": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
+  "/index": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
+  "/review-search": { title: "条件検索とあわせて見る", links: DISCOVERY_GUIDES },
+  "/dog-size": {
+    title: "犬種からも探す",
+    links: [
+      { href: "/breed-toy-poodle", label: "トイプードルの公開体験", note: "犬種欄にトイプードルと明記された体験だけを見る" },
+    ],
+  },
+  "/brush-guide": {
+    title: "ブラッシング・お手入れで困ったら",
+    links: [
+      { href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "嫌がり方から原因とブラシ選びを整理" },
+      { href: "/dog-home-shampoo-guide", label: "おうちシャンプーの手順", note: "洗う前のブラッシングから乾燥まで確認" },
+    ],
+  },
+  "/brush-slicker": {
+    title: "ブラッシングで困ったら",
+    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+  },
+  "/brush-pin": {
+    title: "ブラッシングで困ったら",
+    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+  },
+  "/brush-comb": {
+    title: "ブラッシングで困ったら",
+    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+  },
+  "/brush-undercoat": {
+    title: "ブラッシングで困ったら",
+    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+  },
+  "/dog-nail-clipper": {
+    title: "爪ケアで困ったら",
+    links: [{ href: "/dog-nail-care-dislike", label: "犬が爪切りを嫌がるとき", note: "手動爪切りと電動やすりを嫌がり方から比較" }],
+  },
+  "/dog-nail-grinder": {
+    title: "爪ケアで困ったら",
+    links: [{ href: "/dog-nail-care-dislike", label: "犬が爪切りを嫌がるとき", note: "手動爪切りと電動やすりを嫌がり方から比較" }],
+  },
+  "/dog-toothbrush": {
+    title: "歯磨きで困ったら",
+    links: [{ href: "/dog-toothbrushing-dislike", label: "犬が歯磨きを嫌がるとき", note: "歯ブラシ・ジェル・デンタルガムの使い分けを整理" }],
+  },
+  "/dog-toothpaste": {
+    title: "歯磨きで困ったら",
+    links: [{ href: "/dog-toothbrushing-dislike", label: "犬が歯磨きを嫌がるとき", note: "歯ブラシ・ジェル・デンタルガムの使い分けを整理" }],
+  },
+  "/dog-dental-chew": {
+    title: "歯磨きで困ったら",
+    links: [{ href: "/dog-toothbrushing-dislike", label: "犬が歯磨きを嫌がるとき", note: "歯ブラシ・ジェル・デンタルガムの使い分けを整理" }],
+  },
+  "/dog-shampoo": {
+    title: "おうちシャンプーの流れも確認",
+    links: [{ href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" }],
+  },
+  "/dog-conditioner": {
+    title: "おうちシャンプーの流れも確認",
+    links: [{ href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" }],
+  },
+  "/pet-dryer": {
+    title: "おうちシャンプーの流れも確認",
+    links: [{ href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" }],
+  },
+};
+
 function updateCounts(html: string) {
   return html
     .replaceAll("700件", "750件")
@@ -139,6 +225,37 @@ function integrateEarCleaner(request: Request, html: string) {
   return html;
 }
 
+function integrateInternalLinks(request: Request, html: string) {
+  if (html.includes("data-inu-related-guides")) return html;
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  const config = RELATED_GUIDES[pathname];
+  if (!config) return html;
+
+  const links = config.links.filter(
+    ({ href }) => !html.includes(`href="${href}"`) && !html.includes(`href='${href}'`),
+  );
+  if (!links.length) return html;
+
+  const cards = links
+    .map(
+      ({ href, label, note }) => `<a href="${href}" style="display:block;background:#fff;border:1px solid #eee3d8;border-radius:14px;padding:13px 14px;text-decoration:none;color:#3a312b">
+<strong style="display:block;font-size:12px;line-height:1.5;margin-bottom:4px">${label}</strong>
+<span style="display:block;font-size:10px;line-height:1.65;color:#766b63">${note}</span>
+<span style="display:block;margin-top:7px;font-size:9px;font-weight:850;color:#d97828">詳しく見る →</span>
+</a>`,
+    )
+    .join("\n");
+
+  const section = `<section data-inu-related-guides aria-label="関連ガイド" style="margin:34px 0 28px">
+<div style="font-size:10px;font-weight:900;letter-spacing:.08em;color:#d97828">RELATED GUIDES</div>
+<h2 style="font-size:20px;line-height:1.5;margin:5px 0 11px;color:#3a312b">${config.title}</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px">${cards}</div>
+</section>`;
+
+  if (html.includes("</main>")) return html.replace("</main>", `${section}\n</main>`);
+  return html.replace("</body>", `${section}\n</body>`);
+}
+
 function integrateFavicons(html: string) {
   const faviconPattern = /<link\b[^>]*rel=["'][^"']*(?:icon|manifest)[^"']*["'][^>]*>\s*/gi;
   html = html.replace(faviconPattern, "");
@@ -194,6 +311,7 @@ export default {
     if (!contentType.includes("text/html")) return response;
 
     let html = integrateEarCleaner(request, await response.text());
+    html = integrateInternalLinks(request, html);
     html = integrateFavicons(html);
     html = integrateSeoTitle(request, html);
     html = integrateSeoDescription(request, html);
