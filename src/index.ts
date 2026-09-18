@@ -104,8 +104,6 @@ const HOME_TRAIT_LINK_SCRIPT = `<script data-home-trait-links>
     tag.setAttribute('tabindex', '0');
     tag.setAttribute('aria-label', rule.label);
     tag.style.cursor = 'pointer';
-    tag.style.textDecoration = 'underline';
-    tag.style.textUnderlineOffset = '3px';
     const go = () => { location.href = rule.href; };
     tag.addEventListener('click', go);
     tag.addEventListener('keydown', (event) => {
