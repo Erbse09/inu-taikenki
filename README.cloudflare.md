@@ -1,3 +1,5 @@
+> 大量レビュー対応ブランチの最新仕様・安全な移行手順は [REVIEW_FOUNDATION.md](REVIEW_FOUNDATION.md) を参照。以下の550件・全件返却に関する記述は旧仕様です。0018の本番適用前にこのブランチをmainへマージしないでください。
+
 # Cloudflare Workers + D1 production notes
 
 `inu-taikenki.com` is currently served by Cloudflare Workers + Static Assets with D1 as the review database. GitHub `main` is the production source branch and Cloudflare Git integration deploys updates automatically.
@@ -130,3 +132,4 @@ Production SEO discovery files live under `public/`:
 - `sitemap.xml`
 
 The sitemap includes the global review search and review insights pages. Google Search Console registration for `inu-taikenki.com` is a separate operational task and should be completed when Google account access is available.
+
