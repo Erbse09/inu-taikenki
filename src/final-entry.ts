@@ -305,6 +305,46 @@ function htmlResponse(response: Response, html: string) {
 
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
+    const requestUrl = new URL(request.url);
+    if (requestUrl.pathname === "/__tmp-chobirich-probe") {
+      const upstreamUrl =
+        "https://www.chobirich.com/logreco/ranking?logreco%5Bresponse_number%5D=15&logreco%5Bmethod_type%5D=2&logreco%5Bspot_name%5D=SPShopping_ranking&logreco%5Bcategory1%5D=%E3%81%8A%E8%B2%B7%E3%81%84%E7%89%A9%E3%81%A7%E8%B2%AF%E3%82%81%E3%82%8B";
+      try {
+        const upstream = await fetch(upstreamUrl, {
+          headers: {
+            Accept: "text/html, */*;q=0.9",
+            Referer: "https://www.chobirich.com/shopping",
+            "HX-Request": "true",
+            "HX-Target": "ShopRankingResponse",
+            "HX-Current-URL": "https://www.chobirich.com/shopping",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        });
+        const body = await upstream.text();
+        const marker = "CommonRankingBox__item";
+        const markerCount = body.split(marker).length - 1;
+        return Response.json(
+          {
+            ok: upstream.ok,
+            status: upstream.status,
+            bytes: new TextEncoder().encode(body).byteLength,
+            rankingMarkers: markerCount,
+            hasRankingHtml: markerCount > 0,
+          },
+          { headers: { "cache-control": "no-store" } },
+        );
+      } catch (error) {
+        return Response.json(
+          {
+            ok: false,
+            status: null,
+            error: error instanceof Error ? error.message : String(error),
+          },
+          { status: 502, headers: { "cache-control": "no-store" } },
+        );
+      }
+    }
+
     const response = await worker.fetch(request, env);
     if (request.method !== "GET" || !response.ok) return response;
     const contentType = response.headers.get("content-type") ?? "";
