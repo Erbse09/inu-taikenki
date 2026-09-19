@@ -49,23 +49,6 @@
     mischief: 'いたずら対策',
   };
 
-  const QUERY_ALIASES = {
-    怖がり: 'scared',
-    子犬: 'puppy',
-    シニア: 'senior',
-    時短: 'speed',
-    抜け毛: 'shedding',
-    毛玉: 'mat',
-    もつれ: 'tangle',
-    多頭: 'multi',
-    静音: 'quiet',
-    皮膚: 'skin',
-    カメラ: 'camera',
-    旅行: 'travel',
-    いたずら: 'mischief',
-    ハンズフリー: 'handsfree',
-  };
-
   const tokens = (value) => String(value ?? '')
     .trim()
     .split(/\s+/)
@@ -98,8 +81,9 @@
     if (!category || !select || !status || !list || !more || !controls) return;
 
     let currentData = null;
-    let visibleCount = INITIAL_COUNT;
     let categoryTotal = 0;
+    const productTotals = new Map();
+    let requestId = 0, controller, queryTimer;
     const filterState = { size: '', coat: '', query: '' };
 
     const note = section.querySelector('.db-review-note');
@@ -115,7 +99,7 @@
     const allSearchLink = document.createElement('a');
     allSearchLink.className = 'db-all-search-link';
     allSearchLink.href = '/review-search.html?category=' + encodeURIComponent(category);
-    allSearchLink.textContent = 'このカテゴリ50件をまとめて検索 →';
+    allSearchLink.textContent = 'このカテゴリの体験をまとめて検索 →';
     totalBadge.after(allSearchLink);
 
     const filters = document.createElement('div');
@@ -153,26 +137,7 @@
     const queryFilter = filters.querySelector('[data-db-query-filter]');
     const resetFilter = filters.querySelector('[data-db-filter-reset]');
 
-    const filteredReviews = () => {
-      if (!currentData) return [];
-      const query = filterState.query.trim().toLowerCase();
-      const alias = QUERY_ALIASES[query] || '';
-      return (currentData.reviews || []).filter((review) => {
-        if (filterState.size && !tokens(review.dog_size).includes(filterState.size)) return false;
-        if (filterState.coat && !tokens(review.coat_type).includes(filterState.coat)) return false;
-        if (query) {
-          const haystack = [
-            review.dog_breed,
-            review.dog_size,
-            review.coat_type,
-            review.needs,
-            review.summary,
-          ].filter(Boolean).join(' ').toLowerCase();
-          if (!haystack.includes(query) && (!alias || !haystack.includes(alias))) return false;
-        }
-        return true;
-      });
-    };
+    const filteredReviews = () => currentData?.reviews || [];
 
     const renderReviews = () => {
       if (!currentData) {
@@ -182,7 +147,7 @@
       }
 
       const reviews = filteredReviews();
-      const visible = reviews.slice(0, visibleCount);
+      const visible = reviews;
       list.innerHTML = visible.map((review) => {
         const tags = labelsForReview(review);
         const tagsHtml = tags.length
@@ -206,19 +171,18 @@
         list.innerHTML = '<div class="db-empty">この条件に合う体験はありません。条件を少し広げてみてください。</div>';
       }
 
-      const totalProductReviews = Number(currentData.count || 0);
-      status.textContent = reviews.length === totalProductReviews
+      const totalProductReviews = Number(productTotals.get(currentData.product.id) || 0);
+      status.textContent = currentData.count === totalProductReviews
         ? totalProductReviews + '件'
-        : '条件一致 ' + reviews.length + '件 / 商品全体 ' + totalProductReviews + '件';
+        : '条件一致 ' + currentData.count + '件 / 商品全体 ' + totalProductReviews + '件';
 
-      const remaining = Math.max(0, reviews.length - visibleCount);
-      more.hidden = remaining === 0;
+      const remaining = Math.max(0, currentData.count - reviews.length);
+      more.hidden = !currentData.has_more;
       more.textContent = remaining > 0 ? 'もっと見る（あと' + remaining + '件）' : 'すべて表示しました';
     };
 
     const resetVisibleAndRender = () => {
-      visibleCount = INITIAL_COUNT;
-      renderReviews();
+      loadReviews(select.value);
     };
 
     sizeFilter.addEventListener('change', () => {
@@ -231,7 +195,9 @@
     });
     queryFilter.addEventListener('input', () => {
       filterState.query = queryFilter.value;
-      resetVisibleAndRender();
+      controller?.abort();
+      clearTimeout(queryTimer);
+      queryTimer = setTimeout(resetVisibleAndRender, 250);
     });
     resetFilter.addEventListener('click', () => {
       filterState.size = '';
@@ -243,45 +209,46 @@
       resetVisibleAndRender();
     });
 
-    const loadReviews = async (productId) => {
-      if (!productId) {
-        currentData = null;
-        list.innerHTML = '';
-        status.textContent = '';
-        more.hidden = true;
-        return;
-      }
-
-      visibleCount = INITIAL_COUNT;
-      currentData = null;
-      status.textContent = '体験を読み込み中…';
-      list.innerHTML = '<div class="db-empty">体験を読み込み中…</div>';
-      more.hidden = true;
-
+    const loadReviews = async (productId, append = false) => {
+      clearTimeout(queryTimer);
+      controller?.abort(); controller = new AbortController();
+      const id = ++requestId;
+      if (!productId) { currentData = null; renderReviews(); return; }
+      const params = new URLSearchParams({limit: String(append ? PAGE_SIZE : INITIAL_COUNT)});
+      if (append && currentData?.next_cursor) params.set('cursor', currentData.next_cursor);
+      if (filterState.size) params.set('size', filterState.size);
+      if (filterState.coat) params.set('coat', filterState.coat);
+      if (filterState.query.trim()) params.set('q', filterState.query.trim());
+      if (!append) { currentData = null; list.innerHTML = ''; more.hidden = true; }
+      more.disabled = true; status.textContent = '体験を読み込み中…';
       try {
-        const res = await fetch('/api/products/' + encodeURIComponent(productId) + '/reviews');
+        const res = await fetch('/api/products/' + encodeURIComponent(productId) + '/reviews?' + params, {signal: controller.signal});
         if (!res.ok) throw new Error('reviews request failed');
-        currentData = await res.json();
+        const payload = await res.json();
+        if (id !== requestId) return;
+        payload.reviews = append ? [...(currentData?.reviews || []), ...payload.reviews] : payload.reviews;
+        currentData = payload;
         renderReviews();
       } catch (error) {
-        status.textContent = '読み込みに失敗しました';
-        list.innerHTML = '<div class="db-empty">データを取得できませんでした。</div>';
-        console.error(error);
-      }
+        if (error.name === 'AbortError' || id !== requestId) return;
+        status.textContent = '読み込みに失敗しました。もう一度お試しください';
+        if (!append) list.innerHTML = '<div class="db-empty">データを取得できませんでした。</div>';
+      } finally { if (id === requestId) more.disabled = false; }
     };
 
-    more.addEventListener('click', () => {
-      visibleCount += PAGE_SIZE;
-      renderReviews();
-    });
+    more.addEventListener('click', () => loadReviews(select.value, true));
 
     select.addEventListener('change', () => loadReviews(select.value));
 
     try {
-      const res = await fetch('/api/products?category=' + encodeURIComponent(category));
-      if (!res.ok) throw new Error('products request failed');
-      const data = await res.json();
-      const products = data.products || [];
+      const products = [];
+      let offset = 0;
+      do {
+        const res = await fetch('/api/products?limit=100&category=' + encodeURIComponent(category) + '&offset=' + offset);
+        if (!res.ok) throw new Error('products request failed');
+        const data = await res.json(); products.push(...data.products);
+        offset = data.next_offset;
+      } while (offset !== null);
 
       if (!products.length) {
         select.innerHTML = '<option value="">公開体験を準備中</option>';
@@ -291,6 +258,7 @@
         return;
       }
 
+      products.forEach(product => productTotals.set(product.id, Number(product.review_count || 0)));
       categoryTotal = products.reduce((sum, product) => sum + Number(product.review_count || 0), 0);
       totalBadge.innerHTML = '<strong>' + categoryTotal + '件</strong><span>このカテゴリで整理した公開体験</span>';
 
@@ -348,3 +316,4 @@
   appendAmazonSearchLinks(/\/auto-feeder\.html$/, '.product-grid .product');
   appendAmazonSearchLinks(/\/dog-clipper\.html$/, '.cards .card');
 })();
+

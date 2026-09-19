@@ -1,3 +1,4 @@
+import { reviewApi } from "./review-api";
 interface D1PreparedStatement {
   bind(...values: (string | number | null)[]): D1PreparedStatement;
   all<T>(): Promise<{ results?: T[] }>;
@@ -6,30 +7,6 @@ interface D1PreparedStatement {
 interface D1Database { prepare(query: string): D1PreparedStatement; }
 interface Fetcher { fetch(request: Request): Promise<Response>; }
 interface Env { DB: D1Database; ASSETS: Fetcher; }
-
-interface ProductRow {
-  id: string;
-  name: string;
-  category: string;
-  asin: string | null;
-  affiliate_url: string | null;
-  review_count?: number;
-}
-interface ReviewRow {
-  id: number;
-  product_id: string;
-  dog_breed: string | null;
-  dog_size: string | null;
-  coat_type: string | null;
-  needs: string | null;
-  summary: string;
-  source_type: string;
-  source_url: string | null;
-}
-interface CategoryReviewRow extends ReviewRow {
-  product_name: string;
-  category: string;
-}
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
@@ -157,95 +134,6 @@ const REVIEW_SEARCH_PARAM_SCRIPT = `<script data-review-search-params>
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data, null, 2), { status, headers });
 }
-function validSlug(value: string) {
-  return /^[a-z0-9][a-z0-9._-]{0,63}$/i.test(value);
-}
-function validProductId(value: string) {
-  return validSlug(value);
-}
-
-async function listProducts(env: Env, category: string | null) {
-  if (category) {
-    if (!validSlug(category)) return json({ error: "invalid_category" }, 400);
-    const result = await env.DB.prepare(
-      `SELECT p.id, p.name, p.category, p.asin, p.affiliate_url,
-              COUNT(r.id) AS review_count
-         FROM products p
-         LEFT JOIN reviews r ON r.product_id = p.id
-        WHERE p.active = 1 AND p.category = ?1
-        GROUP BY p.id, p.name, p.category, p.asin, p.affiliate_url
-        ORDER BY review_count DESC, p.name ASC`,
-    ).bind(category).all<ProductRow>();
-    return json({ category, products: result.results ?? [] });
-  }
-
-  const result = await env.DB.prepare(
-    `SELECT p.id, p.name, p.category, p.asin, p.affiliate_url,
-            COUNT(r.id) AS review_count
-       FROM products p
-       LEFT JOIN reviews r ON r.product_id = p.id
-      WHERE p.active = 1
-      GROUP BY p.id, p.name, p.category, p.asin, p.affiliate_url
-      ORDER BY p.category ASC, review_count DESC, p.name ASC`,
-  ).all<ProductRow>();
-  return json({ products: result.results ?? [] });
-}
-
-async function getReviewsByCategory(env: Env, category: string | null) {
-  if (category && !validSlug(category)) return json({ error: "invalid_category" }, 400);
-
-  if (!category) {
-    const result = await env.DB.prepare(
-      `SELECT r.id, r.product_id, p.name AS product_name, p.category,
-              r.dog_breed, r.dog_size, r.coat_type, r.needs,
-              r.summary, r.source_type, r.source_url
-         FROM reviews r
-         JOIN products p ON p.id = r.product_id
-        WHERE p.active = 1
-        ORDER BY p.category ASC, p.name ASC, r.id ASC`,
-    ).all<CategoryReviewRow>();
-    const reviews = result.results ?? [];
-    return json({ category: null, count: reviews.length, reviews });
-  }
-
-  const result = await env.DB.prepare(
-    `SELECT r.id, r.product_id, p.name AS product_name, p.category,
-            r.dog_breed, r.dog_size, r.coat_type, r.needs,
-            r.summary, r.source_type, r.source_url
-       FROM reviews r
-       JOIN products p ON p.id = r.product_id
-      WHERE p.active = 1 AND p.category = ?1
-      ORDER BY p.name ASC, r.id ASC`,
-  ).bind(category).all<CategoryReviewRow>();
-
-  const reviews = result.results ?? [];
-  return json({ category, count: reviews.length, reviews });
-}
-
-async function getReviewsByProductId(env: Env, productId: string) {
-  if (!validProductId(productId)) return json({ error: "invalid_product_id" }, 400);
-
-  const product = await env.DB.prepare(
-    `SELECT id, name, category, asin, affiliate_url
-       FROM products
-      WHERE id = ?1 AND active = 1
-      LIMIT 1`,
-  ).bind(productId).first<ProductRow>();
-
-  if (!product) return json({ error: "product_not_found", productId }, 404);
-
-  const result = await env.DB.prepare(
-    `SELECT id, product_id, dog_breed, dog_size, coat_type, needs,
-            summary, source_type, source_url
-       FROM reviews
-      WHERE product_id = ?1
-      ORDER BY id ASC`,
-  ).bind(productId).all<ReviewRow>();
-
-  const reviews = result.results ?? [];
-  return json({ product, count: reviews.length, reviews });
-}
-
 function htmlResponse(asset: Response, html: string) {
   const responseHeaders = new Headers(asset.headers);
   responseHeaders.delete("content-length");
@@ -347,18 +235,8 @@ export default {
       return json({ ok: row?.ok === 1, service: "inu-taikenki-worker" });
     }
 
-    if (request.method === "GET" && url.pathname === "/api/products") {
-      return listProducts(env, url.searchParams.get("category"));
-    }
-
-    if (request.method === "GET" && url.pathname === "/api/reviews") {
-      return getReviewsByCategory(env, url.searchParams.get("category"));
-    }
-
-    if (request.method === "GET") {
-      const match = url.pathname.match(/^\/api\/products\/([^/]+)\/reviews\/?$/);
-      if (match) return getReviewsByProductId(env, decodeURIComponent(match[1]));
-    }
+    const apiResponse = await reviewApi(request, env.DB);
+    if (apiResponse) return apiResponse;
 
     if (request.method === "GET" && url.pathname === "/pet-dryer") {
       return servePetDryerWithBrowser(request, env);
