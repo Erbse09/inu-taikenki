@@ -306,7 +306,7 @@ function htmlResponse(response: Response, html: string) {
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     const requestUrl = new URL(request.url);
-    if (requestUrl.pathname === "/__tmp-chobirich-probe") {
+    if (requestUrl.pathname === "/api/__tmp-chobirich-probe") {
       const upstreamUrl =
         "https://www.chobirich.com/logreco/ranking?logreco%5Bresponse_number%5D=15&logreco%5Bmethod_type%5D=2&logreco%5Bspot_name%5D=SPShopping_ranking&logreco%5Bcategory1%5D=%E3%81%8A%E8%B2%B7%E3%81%84%E7%89%A9%E3%81%A7%E8%B2%AF%E3%82%81%E3%82%8B";
       try {
