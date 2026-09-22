@@ -566,7 +566,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
   const DB_INITIAL_COUNT = 4;
   const DB_PAGE_SIZE = 6;
   let currentData = null;
-  let dbVisibleCount = DB_INITIAL_COUNT;
+  let controller, requestId=0;
 
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -581,7 +581,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
       moreBtn.hidden = true;
       return;
     }
-    const visible = currentData.reviews.slice(0, dbVisibleCount);
+    const visible = currentData.reviews;
     list.innerHTML = visible.map((review) => `
       <article class="exp-card">
         <div class="exp-top">
@@ -594,12 +594,13 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
       </article>
     `).join('');
 
-    const remaining = Math.max(0, currentData.reviews.length - dbVisibleCount);
-    moreBtn.hidden = remaining === 0;
+    const remaining = Math.max(0, currentData.count - currentData.reviews.length);
+    moreBtn.hidden = !currentData.has_more;
     moreBtn.textContent = remaining > 0 ? 'もっと見る（あと' + remaining + '件）' : 'すべて表示しました';
   }
 
-  async function loadReviews(productId) {
+  async function loadReviews(productId, append=false) {
+    controller?.abort(); controller=new AbortController();const id=++requestId; moreBtn.disabled=true;
     if (!productId) {
       currentData = null;
       list.innerHTML = '';
@@ -608,29 +609,34 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
       return;
     }
     status.textContent = '体験を読み込み中…';
-    list.innerHTML = '';
-    moreBtn.hidden = true;
-    dbVisibleCount = DB_INITIAL_COUNT;
+    if(!append){list.innerHTML = ''; moreBtn.hidden = true;}
     try {
-      const res = await fetch('/api/products/' + encodeURIComponent(productId) + '/reviews');
+      const params=new URLSearchParams({limit:String(append?DB_PAGE_SIZE:DB_INITIAL_COUNT)});if(append&&currentData?.next_cursor)params.set('cursor',currentData.next_cursor);
+      const res = await fetch('/api/products/' + encodeURIComponent(productId) + '/reviews?'+params,{signal:controller.signal});
       if (!res.ok) throw new Error('reviews request failed');
-      currentData = await res.json();
+      const payload = await res.json();if(id!==requestId)return;
+      if(append)payload.reviews=[...currentData.reviews,...payload.reviews];currentData=payload;
       status.textContent = currentData.count + '件';
       renderDbReviews();
     } catch (error) {
+      if(error.name==='AbortError'||id!==requestId)return;
+      if(append){status.textContent='読み込みに失敗しました。もう一度お試しください';return;}
       currentData = null;
       status.textContent = '読み込みに失敗しました';
       list.innerHTML = '<p>データを取得できませんでした。</p>';
       moreBtn.hidden = true;
       console.error(error);
-    }
+    } finally {if(id===requestId)moreBtn.disabled=false;}
   }
 
   async function init() {
     try {
-      const res = await fetch('/api/products');
-      if (!res.ok) throw new Error('products request failed');
-      const data = await res.json();
+      const data = {products: []}; let offset=0;
+      do {
+        const res = await fetch('/api/products?category=pet-dryer&limit=100&offset='+offset);
+        if (!res.ok) throw new Error('products request failed');
+        const page = await res.json(); data.products.push(...page.products); offset=page.next_offset;
+      } while(offset!==null);
       select.innerHTML = '<option value="">商品を選択</option>' +
         data.products.map((product) =>
           '<option value="' + esc(product.id) + '">' + esc(product.name) + '</option>'
@@ -648,8 +654,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
 
   select.addEventListener('change', () => loadReviews(select.value));
   moreBtn.addEventListener('click', () => {
-    dbVisibleCount += DB_PAGE_SIZE;
-    renderDbReviews();
+    loadReviews(select.value,true);
   });
   init();
 })();

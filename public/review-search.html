@@ -62,7 +62,7 @@ main{max-width:900px;margin:auto;padding:28px 18px 72px}.eyebrow{color:var(--ora
 (() => {
   const INITIAL = 12, PAGE = 12;
   const el = {category:document.getElementById('category'),size:document.getElementById('size'),coat:document.getElementById('coat'),query:document.getElementById('query'),reset:document.getElementById('reset'),status:document.getElementById('status'),list:document.getElementById('list'),more:document.getElementById('more'),articleJump:document.getElementById('articleJump')};
-  let data = [], visible = INITIAL;
+  let data = [], total = 0, nextCursor = null, requestId = 0, controller;
   let queryTrackTimer = null;
   const esc = v => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
   const tokens = v => String(v ?? '').trim().toLowerCase().split(/\s+/).filter(x=>x && x!=='null');
@@ -73,16 +73,28 @@ main{max-width:900px;margin:auto;padding:28px 18px 72px}.eyebrow{color:var(--ora
   const articleUrls={'pet-dryer':'/pet-dryer','auto-feeder':'/auto-feeder','brush-slicker':'/brush-slicker','brush-undercoat':'/brush-undercoat','brush-comb':'/brush-comb','brush-pin':'/brush-pin','dog-clipper':'/dog-clipper','nail-grinder':'/dog-nail-grinder','nail-clipper':'/dog-nail-clipper','dog-shampoo':'/dog-shampoo','dog-conditioner':'/dog-conditioner','dog-toothbrush':'/dog-toothbrush','dog-toothpaste':'/dog-toothpaste','dog-dental-chew':'/dog-dental-chew','dog-ear-cleaner':'/dog-ear-cleaner'};
   const labels = r => [...new Set([...tokens(r.dog_size).map(x=>sizeLabels[x]),...tokens(r.coat_type).map(x=>coatLabels[x]),...tokens(r.needs).map(x=>needLabels[x])].filter(Boolean))].slice(0,6);
   function updateArticleJump(){const selected=el.category.options[el.category.selectedIndex];el.articleJump.href=articleUrls[el.category.value]||'/';el.articleJump.textContent='選択中の「'+selected.textContent+'」比較記事を見る →';}
-  function filtered(){const q=el.query.value.trim().toLowerCase();const alias=aliases[q]||'';return data.filter(r=>{if(el.size.value&&!tokens(r.dog_size).includes(el.size.value))return false;if(el.coat.value&&!tokens(r.coat_type).includes(el.coat.value))return false;if(q){const hay=[r.product_name,r.dog_breed,r.dog_size,r.coat_type,r.needs,r.summary].filter(Boolean).join(' ').toLowerCase();if(!hay.includes(q)&&(!alias||!hay.includes(alias)))return false;}return true;});}
-  function render(){const rows=filtered();const shown=rows.slice(0,visible);el.list.innerHTML=shown.map(r=>{const ts=labels(r).map(t=>'<span class="tag">'+esc(t)+'</span>').join('');const source=r.source_url&&/^https?:\/\//i.test(r.source_url)?'<div class="source"><a href="'+esc(r.source_url)+'" target="_blank" rel="noopener noreferrer nofollow">確認元を見る ↗</a></div>':'';return '<article class="card"><div class="product">'+esc(r.product_name)+'</div><div class="dog">'+esc(r.dog_breed||'犬種情報なし')+'</div>'+(ts?'<div class="tags">'+ts+'</div>':'')+'<div class="summary">'+esc(r.summary)+'</div>'+source+'</article>';}).join('');if(!rows.length)el.list.innerHTML='<div class="empty">この条件に合う体験はありません。条件を少し広げてみてください。</div>';el.status.innerHTML='<strong>'+rows.length+'件</strong> 条件一致 / このカテゴリ '+data.length+'件';const rem=Math.max(0,rows.length-visible);el.more.hidden=rem===0;el.more.textContent=rem?'もっと見る（あと'+rem+'件）':'すべて表示しました';}
-  function trackFilter(type){if(typeof window.gtag!=='function')return;window.gtag('event','review_search_filter',{filter_type:type,category:el.category.value,dog_size:el.size.value||'all',coat_type:el.coat.value||'all',has_keyword:el.query.value.trim()?1:0,results_count:filtered().length});}
-  async function load(trackType=''){visible=INITIAL;updateArticleJump();el.status.textContent='体験を読み込み中…';el.list.innerHTML='<div class="empty">読み込み中…</div>';el.more.hidden=true;try{const res=await fetch('/api/reviews?category='+encodeURIComponent(el.category.value));if(!res.ok)throw new Error('request failed');const json=await res.json();data=json.reviews||[];render();if(trackType)trackFilter(trackType);}catch(e){el.status.textContent='読み込みに失敗しました';el.list.innerHTML='<div class="empty">データを取得できませんでした。</div>';console.error(e);}}
-  el.size.addEventListener('change',()=>{visible=INITIAL;render();trackFilter('size')});
-  el.coat.addEventListener('change',()=>{visible=INITIAL;render();trackFilter('coat')});
-  el.query.addEventListener('input',()=>{visible=INITIAL;render();clearTimeout(queryTrackTimer);queryTrackTimer=setTimeout(()=>trackFilter('keyword'),600);});
+  function filtered(){return data;}
+  function render(){const rows=filtered();const shown=rows;el.list.innerHTML=shown.map(r=>{const ts=labels(r).map(t=>'<span class="tag">'+esc(t)+'</span>').join('');const source=r.source_url&&/^https?:\/\//i.test(r.source_url)?'<div class="source"><a href="'+esc(r.source_url)+'" target="_blank" rel="noopener noreferrer nofollow">確認元を見る ↗</a></div>':'';return '<article class="card"><div class="product">'+esc(r.product_name)+'</div><div class="dog">'+esc(r.dog_breed||'犬種情報なし')+'</div>'+(ts?'<div class="tags">'+ts+'</div>':'')+'<div class="summary">'+esc(r.summary)+'</div>'+source+'</article>';}).join('');if(!rows.length)el.list.innerHTML='<div class="empty">この条件に合う体験はありません。条件を少し広げてみてください。</div>';el.status.innerHTML='<strong>'+total+'件</strong> 条件一致';const rem=Math.max(0,total-data.length);el.more.hidden=nextCursor===null;el.more.textContent=rem?'もっと見る（あと'+rem+'件）':'すべて表示しました';}
+  function trackFilter(type){if(typeof window.gtag!=='function')return;window.gtag('event','review_search_filter',{filter_type:type,category:el.category.value,dog_size:el.size.value||'all',coat_type:el.coat.value||'all',has_keyword:el.query.value.trim()?1:0,results_count:total});}
+  async function load(trackType='', append=false){
+    clearTimeout(queryTrackTimer); controller?.abort(); controller=new AbortController(); const id=++requestId;
+    updateArticleJump(); el.more.disabled=true;
+    if(!append){document.dispatchEvent(new Event('review-search-loading'));data=[];nextCursor=null;el.list.innerHTML='<div class="empty">読み込み中…</div>';el.more.hidden=true;}
+    el.status.textContent='体験を読み込み中…';
+    const params=new URLSearchParams({category:el.category.value,size:el.size.value,coat:el.coat.value,q:el.query.value.trim(),limit:String(PAGE)});
+    const initialParams=new URL(location.href).searchParams;
+    for(const key of ['breed','trait','product']) if(initialParams.get(key))params.set(key,initialParams.get(key));
+    if(append&&nextCursor)params.set('cursor',nextCursor);
+    try{const res=await fetch('/api/reviews?'+params,{signal:controller.signal});if(!res.ok)throw new Error('request failed');const json=await res.json();if(id!==requestId)return;data=append?[...data,...json.reviews]:json.reviews;total=json.count;nextCursor=json.next_cursor;render();if(trackType)trackFilter(trackType);document.dispatchEvent(new CustomEvent('review-search-results',{detail:{params:params.toString(),append}}));}
+    catch(e){if(e.name==='AbortError'||id!==requestId)return;el.status.textContent='読み込みに失敗しました。もう一度お試しください';document.dispatchEvent(new Event('review-search-error'));if(!append)el.list.innerHTML='<div class="empty">データを取得できませんでした。</div>';}
+    finally{if(id===requestId)el.more.disabled=false;}
+  }
+  el.size.addEventListener('change',()=>load('size'));
+  el.coat.addEventListener('change',()=>load('coat'));
+  el.query.addEventListener('input',()=>{controller?.abort();clearTimeout(queryTrackTimer);queryTrackTimer=setTimeout(()=>load('keyword'),250);});
   el.category.addEventListener('change',()=>load('category'));
-  el.more.addEventListener('click',()=>{visible+=PAGE;render()});
-  el.reset.addEventListener('click',()=>{el.size.value='';el.coat.value='';el.query.value='';visible=INITIAL;render();trackFilter('reset')});
+  el.more.addEventListener('click',()=>load('',true));
+  el.reset.addEventListener('click',()=>{el.size.value='';el.coat.value='';el.query.value='';const url=new URL(location.href);for(const key of ['breed','trait','product'])url.searchParams.delete(key);history.replaceState(null,'',url);load('reset')});
   const initialUrl=new URL(location.href);const requested=initialUrl.searchParams.get('category');if(requested&&[...el.category.options].some(o=>o.value===requested))el.category.value=requested;const requestedSize=initialUrl.searchParams.get('size');if(requestedSize&&[...el.size.options].some(o=>o.value===requestedSize))el.size.value=requestedSize;const requestedCoat=initialUrl.searchParams.get('coat');if(requestedCoat&&[...el.coat.options].some(o=>o.value===requestedCoat))el.coat.value=requestedCoat;const requestedQuery=initialUrl.searchParams.get('q');if(requestedQuery)el.query.value=requestedQuery;load();
 })();
 </script>
