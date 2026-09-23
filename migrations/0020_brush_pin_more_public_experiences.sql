@@ -20,7 +20,8 @@ INSERT OR IGNORE INTO product_listings(marketplace,external_id,product_id,source
 ('yahoo','petech:000953','kpro-groomer-pin-475','https://store.shopping.yahoo.co.jp/petech/000953.html'),
 ('yahoo','petech:000956','kpro-groomer-pin-485','https://store.shopping.yahoo.co.jp/petech/000956.html'),
 ('yahoo','petech:000957','kpro-groomer-pin-486','https://store.shopping.yahoo.co.jp/petech/000957.html'),
-('yahoo','petech:021819','kpro-groomer-pin-487','https://store.shopping.yahoo.co.jp/petech/021819.html');
+('yahoo','petech:021819','kpro-groomer-pin-487','https://store.shopping.yahoo.co.jp/petech/021819.html'),
+('rakuten','freebird:tr24se016','showtech-ultrapro-l','https://item.rakuten.co.jp/freebird/tr24se016/');
 
 WITH new_reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url) AS (
 VALUES
