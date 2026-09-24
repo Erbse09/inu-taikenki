@@ -40,26 +40,41 @@ def alnum_tokens(text):
 def words(text):
     return [w for w in norm(text).split() if w and w not in GENERIC]
 
+def rakuten_valid_token(token):
+    token = token.strip()
+    if not token:
+        return False
+    # Rakuten rejects one-character ASCII tokens and one-character kana/symbol tokens.
+    if token.isascii() and len(token) < 2:
+        return False
+    if len(token) == 1 and re.fullmatch(r"[ぁ-んァ-ヶー]", token):
+        return False
+    return True
+
+def clean_keyword(text):
+    parts = [p for p in norm(text).split() if rakuten_valid_token(p)]
+    q = " ".join(parts)
+    while len(q.encode("utf-8")) > 120 and len(parts) > 1:
+        parts.pop()
+        q = " ".join(parts)
+    if not q:
+        raw = norm(text).replace(" ", "")
+        q = raw[:8]
+    return q
+
 def search_query(name):
-    q = norm(name)
-    # Rakuten keyword limit is byte-sensitive; keep a conservative UTF-8 budget.
-    while len(q.encode("utf-8")) > 120 and " " in q:
-        q = q.rsplit(" ", 1)[0]
-    return q[:128]
+    return clean_keyword(name)
 
 def simplified_query(name):
-    parts = words(name)
-    keep = []
+    parts = [p for p in words(name) if rakuten_valid_token(p)]
     models = alnum_tokens(name)
+    keep = []
     for p in parts:
         if p in models or len(p) >= 3:
             keep.append(p)
     if not keep:
         keep = parts
-    q = " ".join(keep[:8]) or norm(name)
-    while len(q.encode("utf-8")) > 120 and " " in q:
-        q = q.rsplit(" ", 1)[0]
-    return q
+    return clean_keyword(" ".join(keep[:8]) or name)
 
 def score_candidate(product_name, item_name):
     a, b = norm(product_name), norm(item_name)
@@ -156,13 +171,23 @@ def audit():
     for idx, product in enumerate(products, 1):
         name = product.get("name", "")
         q1 = search_query(name)
-        items = rakuten_search(q1)
         used_query = q1
+        error = ""
+        try:
+            items = rakuten_search(q1)
+        except Exception as exc:
+            items = []
+            error = str(exc)
         if not items:
             q2 = simplified_query(name)
             if q2 and q2 != q1:
-                items = rakuten_search(q2)
                 used_query = q2
+                try:
+                    items = rakuten_search(q2)
+                    error = ""
+                except Exception as exc:
+                    items = []
+                    error = str(exc)
 
         ranked = []
         for item in items:
@@ -182,6 +207,7 @@ def audit():
             "existing_review_count": product.get("review_count"),
             "query": used_query,
             "candidate_count": len(items),
+            "error": error,
             "best_score": best_score,
             "confidence": conf,
             "candidates": []
@@ -211,7 +237,8 @@ def audit():
                 **c
             })
         results.append(rec)
-        print(f"[{idx}/{len(products)}] {rec['product_id']}: {conf} {best_score:.3f} ({len(items)} candidates)")
+        suffix = f" error={error[:120]}" if error else ""
+        print(f"[{idx}/{len(products)}] {rec['product_id']}: {conf} {best_score:.3f} ({len(items)} candidates){suffix}")
 
     (OUTPUT / "rakuten-affiliate-candidates.json").write_text(
         json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8"
