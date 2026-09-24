@@ -5,7 +5,7 @@ VALUES
 ('apdc-conditioner','ポメラニアン','small','long','scent smooth dilute','月1回ほどのシャンプー後に使い、ティーツリー系の香りとサラサラした手触りを気に入っている体験。500mlでも長く使え、2〜3倍に薄めて使用している。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=010989&store_id=petech'),
 ('apdc-conditioner','ビションフリーゼ','small','curly','fluffy lasting scent','ビションに使用し、ふわふわの仕上がりが長く続き、香りも好みだったという体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=4528636804206&store_id=inuomoi'),
 ('apdc-conditioner','犬種不明・3週間ごとに洗う犬',NULL,NULL,'scent fluffy odor','3週間ほどの間隔で使用し、他製品では途中から気になっていたベタつきやにおいが気になりにくく、香りとふわふわ感を気に入った体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=010989&store_id=petech'),
-('apdc-conditioner','ゴールデンレトリバー','large','long','mat coat-protection','セルフシャンプーの仕上げに導入し、毛玉ができやすいゴールデンの毛質保護と絡まり予防を期待しながら使用感を確認している体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=010989&store_id=petech'),
+('apdc-conditioner','トイプードル・10歳','small','curly','smooth comb scent','一度コンディショナーなしで洗った時に被毛がごわつき、再びシャンプーと併用するとサラッとして櫛通りが良く、香りも好みだと再確認した体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=010989&store_id=petech'),
 ('apdc-conditioner','10歳ヨークシャーテリア','small','long','senior long-use fluffy smooth','10歳のヨークシャーテリアに長年使い続け、ふんわりした仕上がりとサラサラ感、香りを気に入っている体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=010989&store_id=petech'),
 ('apdc-conditioner','10歳トイプードル','small','curly','senior brush tangle salon-like','10歳のトイプードルに使用し、乾かした後にブラシが通りやすく絡まりにくく、サロン帰りのような手触りになったと感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=010989&store_id=petech'),
 ('apdc-conditioner','皮膚トラブルが気になる犬',NULL,NULL,'frequent-wash cost scent','皮膚状態を気にしてこまめに洗う犬でシャンプーとセット使用し、希釈できるためコスト面にも納得し、ハーブ系の香りを気に入った体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=010989&store_id=petech'),
@@ -50,7 +50,7 @@ VALUES
 ('shizenryu-conditioner','白いポメラニアン','small','long','long-use fluffy praise','白いポメラニアンに長年使い、香りとふわふわ感を気に入り、周囲から被毛を褒められることが多いという体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=m11154&store_id=dog-penet'),
 ('shizenryu-conditioner','犬種不明・自宅シャンプーへ移行',NULL,NULL,'shine home-care','引っ越しを機にサロンと自宅シャンプーを交互にし、シャンプーだけでは艶が物足りずコンディショナーを追加して仕上がりを整えている体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=4963974005340&store_id=petgo-3rd'),
 ('shizenryu-conditioner','パグ','small','short','scent shedding brush fluffy','パグに使い、ハーブ系の香りで犬特有のにおいが気になりにくく、換毛期のブラシも通しやすくなりふわっと仕上がったと感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=4963974005340&store_id=petgo-3rd'),
-('shizenryu-conditioner','大型犬','large',NULL,'spray dilute trial','大型犬のケアで、まずは小容量を購入して薄めた液をスプレーボトルで使う方法を試そうとしている体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/278169_10005384/1.1/'),
+('shizenryu-conditioner','犬種不明・長期リピーター',NULL,NULL,'long-use fluffy smooth scent','長く自然流を使い続け、香りの良さとふわふわ・さらさらの仕上がりを気に入ってリピートしている体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/278169_10005384/1.1/'),
 ('shizenryu-conditioner','犬種不明・サロン仕上がり比較',NULL,NULL,'shine smooth scent value','自宅で使っても香り・艶・手触りが良く、安価なトリミングサロンより満足できる仕上がりと感じて継続している体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/278169_10005384/1.1/')
 )
 INSERT INTO reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url)
