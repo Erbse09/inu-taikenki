@@ -29,7 +29,7 @@ main{max-width:900px;margin:auto;padding:28px 18px 72px}.eyebrow{color:var(--ora
 <section class="hero">
 <div class="eyebrow">750 DOG PRODUCT EXPERIENCES</div>
 <h1>犬用品750件の公開体験を、<br>「うちの子条件」で探す。</h1>
-<p>15カテゴリそれぞれ50件の公開体験を整理。人気ランキングではなく、犬のサイズ・毛質・性格や困りごとから近い体験を探せます。</p>
+<p>15カテゴリで各50件以上の公開体験を整理。人気ランキングではなく、犬のサイズ・毛質・性格や困りごとから近い体験を探せます。</p>
 <div class="hero-stats"><div class="hero-stat"><b>750</b><span>整理した公開体験</span></div><div class="hero-stat"><b>15</b><span>犬用品カテゴリ</span></div><div class="hero-stat"><b>50</b><span>各カテゴリ最低件数</span></div></div>
 </section>
 <div class="notice"><strong>検索ルール：</strong> 犬種・サイズ・毛質・性格などは、元の公開レビューで確認できた情報だけを表示します。書かれていない属性を推測して補うことはありません。体験本文は比較しやすいよう要約しています。</div>
@@ -57,7 +57,7 @@ main{max-width:900px;margin:auto;padding:28px 18px 72px}.eyebrow{color:var(--ora
 </section>
 <p class="category-note">※ 同じレビューでも商品や犬の条件が異なるため、件数は「独立した公開体験の要約行」を数えています。商品選びの参考情報であり、医療上の判断や効果を保証するものではありません。</p>
 </main>
-<footer class="site-footer"><a href="/about">このサイトについて</a><a href="/editorial-policy">編集方針</a><a href="/privacy">プライバシー</a><br>© 犬用品みんなの体験記</footer>
+<footer class="site-footer"><a href="/about">このサイトについて</a><a href="/editorial-policy">編集方針</a><a href="/privacy">プライバシー</a><a href="/affiliate">広告・アフィリエイト</a><br>© 犬用品みんなの体験記</footer>
 <script>
 (() => {
   const INITIAL = 12, PAGE = 12;
@@ -79,14 +79,15 @@ main{max-width:900px;margin:auto;padding:28px 18px 72px}.eyebrow{color:var(--ora
   async function load(trackType='', append=false){
     clearTimeout(queryTrackTimer); controller?.abort(); controller=new AbortController(); const id=++requestId;
     updateArticleJump(); el.more.disabled=true;
-    if(!append){document.dispatchEvent(new Event('review-search-loading'));data=[];nextCursor=null;el.list.innerHTML='<div class="empty">読み込み中…</div>';el.more.hidden=true;}
-    el.status.textContent='体験を読み込み中…';
+    const hadVisibleRows=el.list.children.length>0;
+    if(!append){document.dispatchEvent(new Event('review-search-loading'));data=[];nextCursor=null;if(!hadVisibleRows)el.list.innerHTML='<div class="empty">体験を読み込んでいます…</div>';el.more.hidden=true;}
+    if(!el.status.hasAttribute('data-static-review-status'))el.status.textContent='体験を読み込んでいます…';
     const params=new URLSearchParams({category:el.category.value,size:el.size.value,coat:el.coat.value,q:el.query.value.trim(),limit:String(PAGE)});
     const initialParams=new URL(location.href).searchParams;
     for(const key of ['breed','trait','product']) if(initialParams.get(key))params.set(key,initialParams.get(key));
     if(append&&nextCursor)params.set('cursor',nextCursor);
-    try{const res=await fetch('/api/reviews?'+params,{signal:controller.signal});if(!res.ok)throw new Error('request failed');const json=await res.json();if(id!==requestId)return;data=append?[...data,...json.reviews]:json.reviews;total=json.count;nextCursor=json.next_cursor;render();if(trackType)trackFilter(trackType);document.dispatchEvent(new CustomEvent('review-search-results',{detail:{params:params.toString(),append}}));}
-    catch(e){if(e.name==='AbortError'||id!==requestId)return;el.status.textContent='読み込みに失敗しました。もう一度お試しください';document.dispatchEvent(new Event('review-search-error'));if(!append)el.list.innerHTML='<div class="empty">データを取得できませんでした。</div>';}
+    try{const res=await fetch('/api/reviews?'+params,{signal:controller.signal});if(!res.ok)throw new Error('request failed');const json=await res.json();if(id!==requestId)return;data=append?[...data,...json.reviews]:json.reviews;total=json.count;nextCursor=json.next_cursor;el.status.removeAttribute('data-static-review-status');el.list.removeAttribute('data-static-review-fallback');render();if(trackType)trackFilter(trackType);document.dispatchEvent(new CustomEvent('review-search-results',{detail:{params:params.toString(),append}}));}
+    catch(e){if(e.name==='AbortError'||id!==requestId)return;el.status.removeAttribute('data-static-review-status');el.status.textContent=hadVisibleRows?'表示中の体験を残しています。各カテゴリの比較記事もご覧いただけます。':'各カテゴリの比較記事から公開体験をご覧いただけます。';document.dispatchEvent(new Event('review-search-error'));if(!append&&!hadVisibleRows)el.list.innerHTML='<div class="empty">下のカテゴリ一覧から比較記事をご覧ください。</div>';}
     finally{if(id===requestId)el.more.disabled=false;}
   }
   el.size.addEventListener('change',()=>load('size'));
