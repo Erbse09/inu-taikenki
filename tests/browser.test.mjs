@@ -52,7 +52,7 @@ try{
           assert((await page.locator('#status').textContent()).includes('件'));
           assert(!await page.locator('#list').textContent().then(t=>t.includes('TEST SUMMARY')));
           await page.locator('#reset').click();await page.waitForTimeout(300);await page.waitForLoadState('networkidle');
-          fail=true;await page.locator('#size').selectOption('small');await page.waitForTimeout(300);await page.waitForLoadState('networkidle');assert((await page.locator('#status').textContent()).includes('失敗'));fail=false;
+          fail=true;await page.locator('#size').selectOption('small');await page.waitForTimeout(300);await page.waitForLoadState('networkidle');assert((await page.locator('#status').textContent()).includes('表示中の体験を残しています'));assert((await page.locator('#list .card').count())>0);fail=false;
           await page.locator('#reset').click();await page.waitForTimeout(300);await page.waitForLoadState('networkidle');assert((await page.locator('#status').textContent()).includes('180件'));
           await page.locator('#query').fill('存在しない検索語');await page.waitForTimeout(350);await page.waitForTimeout(300);await page.waitForLoadState('networkidle');assert((await page.locator('#status').textContent()).includes('0件'));
         }
