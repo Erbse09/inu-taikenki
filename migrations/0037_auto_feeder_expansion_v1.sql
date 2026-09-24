@@ -36,3 +36,50 @@ WHERE NOT EXISTS (
   WHERE r.product_id=n.product_id
     AND r.summary=n.summary
 );
+
+
+WITH new_reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url) AS (
+VALUES
+('take-one-p2pro',NULL,NULL,NULL,'setup stainless mic','ステンレス皿を外して洗える点と電源仕様は便利だった一方、オンライン説明書だけでは初期設定に手間取り、トーク機能もスマホ側のマイク設定を確認してようやく使えた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z45bp4i4if/review/'),
+('take-one-p2pro',NULL,NULL,NULL,'multi tray camera notification','2匹分の給餌に使い、給餌通知と留守中のカメラ確認は便利だった一方、受け皿は2匹には小さく、カメラにも死角があると感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z45bp4i4if/review/2/'),
+('take-one-p2pro','犬2頭・2台運用',NULL,NULL,'multi dog camera family portion','2匹目の犬にも同じ給餌器を追加し、それぞれのハウスを家族のスマホから確認。フードによって排出量が少し違うため実測して調整しながら使った体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z45bp4i4if/review/2/'),
+('take-one-p2pro',NULL,NULL,NULL,'portable-power remote-treat schedule','乾電池式の旧給餌器から変更し、ポータブル電源も使え、タイマー回数が多く、外出先からカメラを見ながら追加給餌できる点を便利に感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z45bp4i4if/review/2/'),
+('take-one-p2pro',NULL,NULL,NULL,'setup negative camera-quality','購入後なかなか接続できず1か月以上苦戦したが、接続成功後は以前の高価な機種よりカメラ映像が鮮明で評価が大きく変わった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z45bp4i4if/review/2/'),
+('take-one-p2pro',NULL,NULL,NULL,'schedule washability wide-camera','タイマーと細かな給餌量設定、広範囲のカメラ、取り外して洗える皿を日常使いしやすいと感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z45bp4i4if/review/2/'),
+('take-one-p2pro',NULL,NULL,NULL,'backup-power fixation dry-agent','設定時刻に給餌器の前で待つほど習慣化し、モバイルバッテリーでも動作確認できた一方、本体を前足で動かすため家具へ固定し、タンクの乾燥剤置き場も工夫した体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z45bp4i4if/review/2/'),
+('wtw-ipet2971',NULL,NULL,NULL,'camera setup manual','本体サイズとカメラ画質には満足し、説明書はやや分かりにくかったものの設定自体は問題なく完了した体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&store_id=wtw'),
+('wtw-ipet2971',NULL,NULL,NULL,'multi large-portion tray nightvision','多頭用に一度に約80g出すと皿へ山状に残りやすく、暗視では奥が暗く感じた一方、タンク容量の大きさは便利だった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&store_id=wtw'),
+('wtw-ipet2971',NULL,NULL,NULL,'portion variation schedule','夜食を自動化するため使い、設定量より最大8gほど多く出ることがあったため、複数回実測して設定量を減らして調整した体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&store_id=wtw'),
+('wtw-ipet2971',NULL,NULL,NULL,'quiet camera seal dish','説明書を見ながら約30分で接続でき、給餌音の静かさとカメラ・音声品質は高く感じた一方、プラスチック皿とタンクの密閉性は惜しいと感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&store_id=wtw'),
+('wtw-ipet2971',NULL,NULL,NULL,'realtime camera placement','カメラ映像がほぼリアルタイムで、設置角度を工夫すると留守中の行動まで確認でき、外出時の安心感につながった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&store_id=wtw'),
+('wtw-ipet2971',NULL,NULL,NULL,'quiet-feed loud-voice dish-removal','少量ずつ回数を分けて給餌でき、フード排出音は静かだった一方、録音音声は大きく、皿を外す際に本体を少し持ち上げる必要があり手間に感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&store_id=wtw'),
+('wtw-ipet2971',NULL,NULL,NULL,'camera-down stock app-separation','カメラを下向きにするとフード残量や実際の排出を確認しやすかった一方、皿が樹脂製で密閉性も気になり、同社の見守りカメラとは別アプリが必要だった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&store_id=wtw'),
+('wtw-ipet2971',NULL,NULL,NULL,'setup quiet smooth japanese-ui','アプリの日本語表現に分かりにくい部分はあったが30分ほどで接続でき、給餌動作は静かでスムーズ、カメラと音声も鮮明だと感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=gohan&store_id=wtw'),
+('petlibro-granary',NULL,NULL,NULL,'interval feeding low-food alert cleaning','早食い対策として食事を複数回に分け、時間と量をアプリから調整。分解清掃がしやすく、フード残量と乾燥剤交換の通知も便利だった体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661214'),
+('petlibro-granary',NULL,NULL,NULL,'server-outage schedule-failure negative','旅行中の定時給餌を任せていたところ、サービス障害中に予定給餌が実行されない事態があり、遠隔機器だけへ依存する怖さを感じた否定的体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661214'),
+('petlibro-granary',NULL,NULL,NULL,'multi special-diet timing','複数頭で食事内容を分けるため単体機を追加し、一方の給餌を1分早く設定することで別のフードを食べに行く問題を減らせた体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661214'),
+('petlibro-granary',NULL,NULL,NULL,'schedule outage-warning upsell','時間と量を簡単に設定でき音声呼びかけも使えた一方、システム障害の通知を見て外出中の給餌継続に不安を感じ、有料サービス案内の多さも気になった体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661214'),
+('petlibro-granary',NULL,NULL,NULL,'dual-bowl tarnish','シングル機から2皿モデルへ替え、2頭が別々の皿で食べやすくなった一方、2皿モデルのボウル表面が変色して見え、素材の耐久性が気になった体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661230'),
+('petlibro-granary',NULL,NULL,NULL,'weight-management schedule','食事スケジュールを整えながら摂取量を把握しやすくなり、体重管理に役立つと感じた体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661230'),
+('petlibro-granary',NULL,NULL,NULL,'away feeding simple','外出中の食事を任せる用途で、補充と操作が簡単で給餌時間を気にせず外出しやすくなった体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661230'),
+('petlibro-granary',NULL,NULL,NULL,'dual quiet even setup','2皿タイプを使い、静かで初期設定も簡単、フードも左右へ均等に出るケースでは多頭給餌が楽になった体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661230'),
+('petlibro-granary',NULL,NULL,NULL,'remote meal-call metal-bowl','遠方から操作でき、必要に応じて録音した食事呼びかけも使え、金属皿へフードが落ちる音自体が食事の合図になった体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661214'),
+('petlibro-granary',NULL,NULL,NULL,'large-capacity meal-sound','大容量タンクで決まった時刻に給餌でき、金属皿へ落ちる音だけでもペットが食事に気づくため、録音メッセージを使わず運用できた体験。','public_buyer_review_summary','https://www.chewy.com/petlibro-granary-wifi-24g-5g/product-reviews/661214')
+)
+INSERT INTO reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url)
+SELECT n.product_id,n.dog_breed,n.dog_size,n.coat_type,n.needs,n.summary,n.source_type,n.source_url
+FROM new_reviews n
+WHERE NOT EXISTS (
+  SELECT 1 FROM reviews r
+  WHERE r.product_id=n.product_id
+    AND r.summary=n.summary
+);
+
+SELECT COUNT(*) AS auto_feeder_product_count
+FROM products
+WHERE category='auto-feeder' AND active=1;
+
+SELECT COUNT(*) AS auto_feeder_review_count
+FROM reviews r
+JOIN products p ON p.id=r.product_id
+WHERE p.category='auto-feeder' AND p.active=1;
