@@ -22,3 +22,13 @@ test('no public client downloads unpaginated full review collections',()=>{
     const code=readFileSync('public/'+file,'utf8');assert(!/fetch\(['"]\/api\/reviews['"]\)/.test(code),file);
   }
 });
+
+
+test('runtime review totals are sourced from D1 instead of a fixed 750 rewrite',()=>{
+  const entry=readFileSync('src/final-entry.ts','utf8');
+  assert(entry.includes('readLiveCounts'));
+  assert(entry.includes('COUNT(*)'));
+  assert(entry.includes('COUNT(DISTINCT category)'));
+  assert(entry.includes('applyLiveCounts'));
+  assert(!entry.includes('.replaceAll("700件", "750件")'));
+});
