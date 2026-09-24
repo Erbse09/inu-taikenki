@@ -9,7 +9,8 @@
   const esc = v => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
   const box = document.createElement('section');
   box.className = 'experience-distribution';
-  box.innerHTML = '<div class="dist-title">📊 この条件の体験分布</div><p class="dist-note">条件に一致した体験が、どの商品に何件あるかを表示します。件数の多さはおすすめ順位・満足度・商品の優劣を意味しません。商品名をタップすると、その商品の体験だけに絞れます。</p><div class="dist-list" aria-live="polite">読み込み中…</div>';
+  box.hidden = true;
+  box.innerHTML = '<div class="dist-title">📊 この条件の体験分布</div><p class="dist-note">条件に一致した体験が、どの商品に何件あるかを表示します。件数の多さはおすすめ順位・満足度・商品の優劣を意味しません。商品名をタップすると、その商品の体験だけに絞れます。</p><div class="dist-list" aria-live="polite"></div>';
   status.insertAdjacentElement('afterend', box);
 
   const style = document.createElement('style');
@@ -24,20 +25,24 @@
       const res = await fetch('/api/reviews/stats?' + params, {signal:controller.signal});
       if (!res.ok) throw new Error('stats request failed');
       const payload = await res.json(); if (id !== requestId) return;
+      box.hidden = false;
       const ranked = payload.products || [];
       box.querySelector('.dist-list').innerHTML = ranked.map(p => '<button type="button" class="dist-row" data-product="'+esc(p.product_name)+'" aria-label="'+esc(p.product_name)+'の体験に絞り込む"><span class="dist-name">'+esc(p.product_name)+'</span><span class="dist-count">'+p.count+'件 →</span></button>').join('') + (payload.product_count>8 ? '<div class="dist-more">ほか '+(payload.product_count-8)+'商品</div>' : '') || '<div class="dist-empty">この条件では商品別の体験分布を表示できません。</div>';
     } catch (error) {
       if (error.name === 'AbortError' || id !== requestId) return;
-      box.querySelector('.dist-list').innerHTML = '<div class="dist-empty">体験分布を読み込めませんでした。</div>';
+      box.hidden = true;
+      box.querySelector('.dist-list').textContent = '';
     }
   }
   document.addEventListener('review-search-loading', () => {
     controller?.abort(); ++requestId;
-    box.querySelector('.dist-list').textContent = '読み込み中…';
+    box.hidden = true;
+    box.querySelector('.dist-list').textContent = '';
   });
   document.addEventListener('review-search-error', () => {
     controller?.abort(); ++requestId;
-    box.querySelector('.dist-list').textContent = '体験分布を読み込めませんでした。';
+    box.hidden = true;
+    box.querySelector('.dist-list').textContent = '';
   });
   document.addEventListener('review-search-results', event => {
     if (!event.detail.append) load(new URLSearchParams(event.detail.params));
