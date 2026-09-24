@@ -286,7 +286,7 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
   try {
     const pageUrl = new URL(request.url);
     const params = searchApiParams(request, true);
-    const apiRequest = new Request(new URL(\`/api/reviews?\${params.toString()}\`, pageUrl.origin), {
+    const apiRequest = new Request(new URL(`/api/reviews?${params.toString()}`, pageUrl.origin), {
       headers: { accept: "application/json" },
     });
     const apiResponse = await worker.fetch(apiRequest, env);
@@ -301,11 +301,11 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
 
 function renderReviewFallbackCard(row: ReviewFallbackRow) {
   const breed = row.dog_breed?.trim() || "犬種情報なし";
-  return \`<article class="card" data-static-review-card>
-<div class="product">\${escapeHtml(row.product_name || "犬用品")}</div>
-<div class="dog">\${escapeHtml(breed)}</div>
-<div class="summary">\${escapeHtml(row.summary || "")}</div>
-</article>\`;
+  return `<article class="card" data-static-review-card>
+<div class="product">${escapeHtml(row.product_name || "犬用品")}</div>
+<div class="dog">${escapeHtml(breed)}</div>
+<div class="summary">${escapeHtml(row.summary || "")}</div>
+</article>`;
 }
 
 async function integrateReviewSearchFallback(request: Request, html: string, env: WorkerEnv) {
@@ -317,9 +317,9 @@ async function integrateReviewSearchFallback(request: Request, html: string, env
 
   const count = Number(payload.count) || 0;
   const cards = payload.reviews?.slice(0, 6).map(renderReviewFallbackCard).join("\n") || "";
-  const status = \`<div class="status" id="status" aria-live="polite" data-static-review-status><strong>\${count}件</strong> 条件一致</div>\`;
+  const status = `<div class="status" id="status" aria-live="polite" data-static-review-status><strong>${count}件</strong> 条件一致</div>`;
   const list = cards
-    ? \`<div class="list" id="list" data-static-review-fallback>\${cards}</div>\`
+    ? `<div class="list" id="list" data-static-review-fallback>${cards}</div>`
     : '<div class="list" id="list" data-static-review-fallback><div class="empty">この条件に合う体験はありません。条件を少し広げてみてください。</div></div>';
 
   html = html.replace(
@@ -338,7 +338,7 @@ async function readReviewStatsFallback(request: Request, env: WorkerEnv): Promis
       const value = pageUrl.searchParams.get(key);
       if (value) params.set(key, value);
     }
-    const apiRequest = new Request(new URL(\`/api/reviews/stats?\${params.toString()}\`, pageUrl.origin), {
+    const apiRequest = new Request(new URL(`/api/reviews/stats?${params.toString()}`, pageUrl.origin), {
       headers: { accept: "application/json" },
     });
     const apiResponse = await worker.fetch(apiRequest, env);
@@ -361,19 +361,19 @@ async function integrateReviewInsightsFallback(request: Request, html: string, e
   const count = Number(payload.count) || 0;
   const productCount = Number(payload.product_count) || 0;
   const coverage = payload.coverage || {};
-  const pct = (value: number | undefined) => count > 0 ? \`\${Math.round((Number(value) || 0) / count * 100)}%\` : "0%";
+  const pct = (value: number | undefined) => count > 0 ? `${Math.round((Number(value) || 0) / count * 100)}%` : "0%";
   const products = (payload.products || []).slice(0, 5).map((product) =>
-    \`<div class="product-item" data-static-insight-product><b>\${escapeHtml(product.product_name || "犬用品")}</b><span>\${Number(product.count) || 0}件の体験を収録</span></div>\`
+    `<div class="product-item" data-static-insight-product><b>${escapeHtml(product.product_name || "犬用品")}</b><span>${Number(product.count) || 0}件の体験を収録</span></div>`
   ).join("");
 
   html = html
-    .replace('<b id="total">…</b>', \`<b id="total">\${count}</b>\`)
-    .replace('<b id="products">…</b>', \`<b id="products">\${productCount}</b>\`)
-    .replace('<div class="summary" id="summary">読み込み中…</div>', \`<div class="summary" id="summary" data-static-review-summary><strong>\${count}件</strong> の公開体験を集計</div>\`)
-    .replace('<div class="product-list" id="topProducts"></div>', \`<div class="product-list" id="topProducts">\${products}</div>\`)
-    .replace('<b id="breedCov">…</b>', \`<b id="breedCov">\${pct(coverage.breed)}</b>\`)
-    .replace('<b id="sizeCov">…</b>', \`<b id="sizeCov">\${pct(coverage.size)}</b>\`)
-    .replace('<b id="coatCov">…</b>', \`<b id="coatCov">\${pct(coverage.coat)}</b>\`);
+    .replace('<b id="total">…</b>', `<b id="total">${count}</b>`)
+    .replace('<b id="products">…</b>', `<b id="products">${productCount}</b>`)
+    .replace('<div class="summary" id="summary">読み込み中…</div>', `<div class="summary" id="summary" data-static-review-summary><strong>${count}件</strong> の公開体験を集計</div>`)
+    .replace('<div class="product-list" id="topProducts"></div>', `<div class="product-list" id="topProducts">${products}</div>`)
+    .replace('<b id="breedCov">…</b>', `<b id="breedCov">${pct(coverage.breed)}</b>`)
+    .replace('<b id="sizeCov">…</b>', `<b id="sizeCov">${pct(coverage.size)}</b>`)
+    .replace('<b id="coatCov">…</b>', `<b id="coatCov">${pct(coverage.coat)}</b>`);
 
   return html;
 }
