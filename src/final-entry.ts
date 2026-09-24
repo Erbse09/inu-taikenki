@@ -198,6 +198,19 @@ async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
   }
 }
 
+function needsLiveCounts(html: string) {
+  return (
+    html.includes("700件") ||
+    html.includes("750件") ||
+    html.includes("700 EXPERIENCES") ||
+    html.includes("750 EXPERIENCES") ||
+    html.includes("14カテゴリ") ||
+    html.includes("15カテゴリ") ||
+    html.includes("14 CATEGORIES") ||
+    html.includes("15 CATEGORIES")
+  );
+}
+
 function applyLiveCounts(html: string, counts: LiveCounts | null) {
   if (!counts) return html;
 
@@ -358,7 +371,9 @@ export default {
     html = integrateFavicons(html);
     html = integrateSeoTitle(request, html);
     html = integrateSeoDescription(request, html);
-    html = applyLiveCounts(html, await readLiveCounts(env));
+    if (needsLiveCounts(html)) {
+      html = applyLiveCounts(html, await readLiveCounts(env));
+    }
     html = integrateReviewSourcePolicy(html);
     return htmlResponse(response, html);
   },
