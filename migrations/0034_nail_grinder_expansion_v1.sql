@@ -36,3 +36,50 @@ WHERE NOT EXISTS (
   WHERE r.product_id=n.product_id
     AND r.summary=n.summary
 );
+
+
+WITH new_reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url) AS (
+VALUES
+('dremel-7350-pet','足先を触られるのが苦手な犬',NULL,NULL,'finish scared','獣医が爪切り後の仕上げに使うのを参考にし、足先を嫌がる犬でも角を滑らかにする用途なら受け入れやすかった体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=60'),
+('dremel-7350-pet','ジャーマンシェパード＋ダックスフンド',NULL,NULL,'multi size','大型のシェパードと小型のダックスフンドの両方に同じ本体を使いやすかった体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=60'),
+('dremel-7350-pet','大型の保護ピットブル2頭','large','short','multi handling','大型の保護犬2頭の日常グルーミングに使い、家庭での爪ケアが以前より簡単になった体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=60'),
+('dremel-7350-pet','チワワ','small',NULL,'quiet relaxed','初回使用でもチワワが低い作動音をあまり気にせず、飼い主も扱いやすいと感じた体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=60'),
+('dremel-7350-pet','ゴールデンレトリバー系の大型犬','large',NULL,'home-care value','サロンへ行く間の自宅ケアに使い、扱いやすく爪のお手入れ費用を抑えられたと感じた体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=60'),
+('dremel-7350-pet','グレートデーン','large',NULL,'scared speed','爪切りを嫌がるグレートデーンでも短時間で削れ、操作も簡単だった体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=60'),
+('dremel-7350-pet','犬種不明・旧Dremelも所有',NULL,NULL,'safe handling','少しずつ削れるため切りすぎへの不安が少なく、操作も簡単で旧Dremelと併用している体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=60'),
+('dremel-7350-pet','犬種不明・静音と電池持ち重視',NULL,NULL,'quiet battery','犬の爪を整える用途で、一般用Dremelより静かに感じ、電池持ちも良いと評価した体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=60'),
+('dremel-7350-pet','犬種不明・家庭用',NULL,NULL,'quiet cordless battery','静かでバランスがよく、コードレスで扱いやすく、家庭の爪ケアには十分な電池持ちだと感じた体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools-oscillating-tools/5001939579?offset=180'),
+('dremel-7350-pet','ジャーマンシェパード・4歳','large',NULL,'quiet speed','子犬の頃からDremel系を使っている4歳のシェパードで、静かに短時間で爪を整えられた体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools-oscillating-tools/5001939579?offset=180'),
+('dremel-7350-pet','犬2頭',NULL,NULL,'multi quiet battery','2頭とも作動音を強く気にせず、1回の充電で両方の爪を整えられた体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools-oscillating-tools/5001939579?offset=180'),
+('dremel-7350-pet','過去に深爪した犬',NULL,NULL,'scared acclimation quiet','過去の深爪経験後、音と振動へ段階的に慣らすと驚かせにくく、安全に削りやすかった体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools-oscillating-tools/5001939579?offset=180'),
+('dremel-7350-pet','犬複数頭',NULL,NULL,'multi quiet battery single-speed','複数頭に使い、静かで電池も長持ちする一方、1速だけなので仕上げまで少し時間がかかった体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools-oscillating-tools/5001939579?offset=180'),
+('dremel-7350-pet','若い犬',NULL,NULL,'puppy handling','若い犬をじっとさせる難しさはあったが、本体サイズが持ちやすく爪を短く整えやすかった体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools-oscillating-tools/5001939579?offset=180'),
+('dremel-7350-pet','犬種不明・一人でケア',NULL,NULL,'beginner single-speed','補助なしで一人でも爪を整えられ、扱いやすかった一方、速度調整があればさらに便利と感じた体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools-oscillating-tools/5001939579?offset=180'),
+('dremel-7350-pet','犬種不明・サロン代節約',NULL,NULL,'value home-care','自宅で使いやすく、サロンへ爪切りに行く費用と手間を減らせたと感じた体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools-oscillating-tools/5001939579?offset=180'),
+('dremel-7350-pet','犬種不明・ペット用電動やすり初心者',NULL,NULL,'quiet easy safety','従来の爪切りより安全に感じ、静かで扱いやすいため犬も受け入れやすかった体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=40'),
+('dremel-7350-pet','犬種不明・ギフトで使用開始',NULL,NULL,'beginner control','贈り物でもらって使い始め、操作が簡単で深く切りすぎる不安を減らせた体験。','public_buyer_review_summary','https://www.lowes.com/reviews/dremel-7350-pet-rotary-tools/5001939579?offset=40'),
+('dremel-7350-pet','犬種不明・爪切りから変更',NULL,NULL,'easy quiet','従来の爪切りより犬が嫌がりにくく、家庭で爪を整えやすくなったと感じた体験。','public_buyer_review_summary','https://www.ebay.com/p/3052014346'),
+('dremel-7350-pet','犬種不明・長年爪切りを使用',NULL,NULL,'easy repeat','犬の爪ケアが大幅に簡単になり、もっと早く電動グラインダーを選べばよかったと感じた体験。','public_buyer_review_summary','https://www.ebay.com/p/3052014346'),
+('dremel-7350-pet','犬種不明・パワー重視',NULL,NULL,'power','犬の爪をしっかり削れるだけの出力があり、用途には十分と感じた体験。','public_buyer_review_summary','https://www.ebay.com/p/3052014346'),
+('dremel-7350-pet','犬種不明・製品は使えるが犬が苦手',NULL,NULL,'scared negative','製品自体は問題なく使えたものの、犬が作動を嫌がったため家庭では継続しにくかった体験。','public_buyer_review_summary','https://www.canadiantire.ca/en/pdp/dremel-7350-pet-rechargeable-rotary-tool-for-pet-grooming-0541100p.html'),
+('dremel-7350-pet','犬3頭',NULL,NULL,'multi compatibility caution','爪切りを嫌う3頭が7350なら比較的受け入れた一方、一部の別売りビットはそのまま装着できなかった体験。','public_buyer_review_summary','https://www.reddit.com/r/doggrooming/comments/wm2ltt'),
+('dremel-7350-pet','犬種不明・家庭用',NULL,NULL,'single-speed durability caution','家庭用では使えた一方、1速しかない点と落下への弱さが気になったという体験。','public_buyer_review_summary','https://www.reddit.com/r/grooming/comments/1mltcgh/dog_nail_clipper_recommendations/'),
+('dremel-7350-pet','大型犬・太い爪','large',NULL,'power negative','大型犬の太い爪では出力不足に感じ、全爪を終えるまで時間がかかるというグルーマーの体験。','public_buyer_review_summary','https://www.reddit.com/r/doggrooming/comments/1d82837')
+)
+INSERT INTO reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url)
+SELECT n.product_id,n.dog_breed,n.dog_size,n.coat_type,n.needs,n.summary,n.source_type,n.source_url
+FROM new_reviews n
+WHERE NOT EXISTS (
+  SELECT 1 FROM reviews r
+  WHERE r.product_id=n.product_id
+    AND r.summary=n.summary
+);
+
+SELECT COUNT(*) AS nail_grinder_product_count
+FROM products
+WHERE category='nail-grinder' AND active=1;
+
+SELECT COUNT(*) AS nail_grinder_review_count
+FROM reviews r
+JOIN products p ON p.id=r.product_id
+WHERE p.category='nail-grinder' AND p.active=1;
