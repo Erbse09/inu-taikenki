@@ -7,10 +7,11 @@ on:
       - feat/rakuten-affiliate-candidates
     paths:
       - scripts/rakuten_affiliate_candidates.py
+      - scripts/build_rakuten_affiliate_migration.py
       - .github/workflows/rakuten-affiliate-candidates.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   audit:
@@ -43,6 +44,22 @@ jobs:
           RAKUTEN_AFFILIATE_ID: "57debebc.ee086bd3.57debebd.cf9cea07"
         run: python scripts/rakuten_affiliate_candidates.py
 
+      - name: Build curated migration
+        run: python scripts/build_rakuten_affiliate_migration.py
+
+      - name: Save generated migration on audit branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add generated/0042_product_affiliate_links.sql
+          if git diff --cached --quiet; then
+            echo "Generated migration unchanged"
+          else
+            git commit -m "Generate verified Rakuten affiliate migration"
+            git push
+          fi
+
       - name: Upload candidate audit
         uses: actions/upload-artifact@v4
         with:
@@ -50,6 +67,8 @@ jobs:
           path: |
             output/rakuten-affiliate-candidates.csv
             output/rakuten-affiliate-candidates.json
+            output/curated-rakuten-links.json
             output/summary.md
+            generated/0042_product_affiliate_links.sql
           if-no-files-found: error
           retention-days: 14
