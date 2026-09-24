@@ -121,7 +121,29 @@ def load_products():
     unique = {p["id"]: p for p in products}
     return [unique[k] for k in sorted(unique)]
 
-def rakuten_search(keyword):
+def load_exact_rakuten_item_codes():
+    exact = {}
+    for path in Path("migrations").glob("*.sql"):
+        text = path.read_text(encoding="utf-8")
+        # product_listings rows already carry canonical marketplace itemCode.
+        for m in re.finditer(
+            r"\('rakuten'\s*,\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*'https://item\.rakuten\.co\.jp/[^']+'\)",
+            text,
+            re.I,
+        ):
+            item_code, product_id = m.group(1), m.group(2)
+            exact.setdefault(product_id, item_code)
+        # Direct Rakuten item URLs inside review rows are also exact enough to derive shop:item.
+        for line in text.splitlines():
+            pm = re.match(r"\s*\('([^']+)'", line)
+            if not pm:
+                continue
+            um = re.search(r"https://item\.rakuten\.co\.jp/([^/'?]+)/([^/'?]+)/?", line, re.I)
+            if um:
+                exact.setdefault(pm.group(1), f"{um.group(1)}:{um.group(2)}")
+    return exact
+
+def rakuten_search(keyword=None, item_code=None):
     global _last_rakuten_call
     elapsed = time.monotonic() - _last_rakuten_call
     if elapsed < 1.10:
@@ -131,12 +153,15 @@ def rakuten_search(keyword):
         "affiliateId": AFFILIATE_ID,
         "format": "json",
         "formatVersion": 2,
-        "keyword": keyword,
         "hits": 10,
         "availability": 1,
         "imageFlag": 1,
         "field": 0
     }
+    if item_code:
+        params["itemCode"] = item_code
+    else:
+        params["keyword"] = keyword
     url = RAKUTEN_ENDPOINT + "?" + urllib.parse.urlencode(params)
     try:
         data = fetch_json(url, headers={
@@ -173,6 +198,7 @@ def audit():
     products = load_products()
     if not products:
         raise RuntimeError("Production API returned zero products")
+    exact_codes = load_exact_rakuten_item_codes()
 
     results = []
     candidate_rows = []
@@ -184,17 +210,32 @@ def audit():
         q1 = search_query(name)
         used_query = q1
         error = ""
-        try:
-            items = rakuten_search(q1)
-        except Exception as exc:
-            items = []
-            error = str(exc)
+        exact_code = exact_codes.get(product.get("id"))
+        lookup_mode = "keyword"
+        items = []
+        if exact_code:
+            try:
+                items = rakuten_search(item_code=exact_code)
+                lookup_mode = "itemCode"
+                used_query = exact_code
+            except Exception as exc:
+                error = str(exc)
+        if not items:
+            try:
+                items = rakuten_search(keyword=q1)
+                lookup_mode = "keyword"
+                used_query = q1
+                error = ""
+            except Exception as exc:
+                items = []
+                error = str(exc)
         if not items:
             q2 = simplified_query(name)
             if q2 and q2 != q1:
                 used_query = q2
                 try:
-                    items = rakuten_search(q2)
+                    items = rakuten_search(keyword=q2)
+                    lookup_mode = "keyword-fallback"
                     error = ""
                 except Exception as exc:
                     items = []
@@ -217,6 +258,8 @@ def audit():
             "category": product.get("category"),
             "existing_review_count": product.get("review_count"),
             "query": used_query,
+            "lookup_mode": lookup_mode,
+            "exact_item_code": exact_code or "",
             "candidate_count": len(items),
             "error": error,
             "best_score": best_score,
