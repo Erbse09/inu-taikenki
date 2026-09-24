@@ -7,6 +7,7 @@ import time
 import unicodedata
 import urllib.parse
 import urllib.request
+import urllib.error
 from difflib import SequenceMatcher
 from pathlib import Path
 
@@ -82,8 +83,12 @@ def confidence(score):
 
 def fetch_json(url, headers=None, timeout=30):
     req = urllib.request.Request(url, headers=headers or {"User-Agent":"inu-taikenki-rakuten-audit/1.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as res:
-        return json.load(res)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            return json.load(res)
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", "replace")
+        raise RuntimeError(f"HTTP {exc.code}: {body[:500]}") from exc
 
 def load_products():
     products = []
@@ -122,6 +127,8 @@ def rakuten_search(keyword):
         data = fetch_json(url, headers={
             "User-Agent":"inu-taikenki-rakuten-audit/1.0",
             "accessKey": ACCESS_KEY,
+            "Origin":"https://inu-taikenki.com",
+            "Referer":"https://inu-taikenki.com/",
         })
     finally:
         _last_rakuten_call = time.monotonic()
