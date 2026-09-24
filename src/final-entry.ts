@@ -166,18 +166,61 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   },
 };
 
-function updateCounts(html: string) {
+type LiveCounts = {
+  total_reviews: number;
+  total_categories: number;
+};
+
+async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
+  try {
+    const row = await env.DB.prepare(`
+      SELECT
+        (SELECT COUNT(*)
+         FROM reviews r
+         JOIN products p ON p.id = r.product_id
+         WHERE p.active = 1) AS total_reviews,
+        (SELECT COUNT(DISTINCT category)
+         FROM products
+         WHERE active = 1) AS total_categories
+    `).first<LiveCounts>();
+
+    if (
+      !row ||
+      !Number.isFinite(row.total_reviews) ||
+      !Number.isFinite(row.total_categories) ||
+      row.total_reviews < 1 ||
+      row.total_categories < 1
+    ) return null;
+
+    return row;
+  } catch {
+    return null;
+  }
+}
+
+function applyLiveCounts(html: string, counts: LiveCounts | null) {
+  if (!counts) return html;
+
+  const reviewCount = String(counts.total_reviews);
+  const categoryCount = String(counts.total_categories);
+
   return html
-    .replaceAll("700件", "750件")
-    .replaceAll("700 EXPERIENCES", "750 EXPERIENCES")
-    .replaceAll("14カテゴリ", "15カテゴリ")
-    .replaceAll('<b>14</b><span>犬用品カテゴリ</span>', '<b>15</b><span>犬用品カテゴリ</span>')
-    .replaceAll('<b>14</b><span>カテゴリ</span>', '<b>15</b><span>カテゴリ</span>');
+    .replaceAll("700件", `${reviewCount}件`)
+    .replaceAll("750件", `${reviewCount}件`)
+    .replaceAll("700 EXPERIENCES", `${reviewCount} EXPERIENCES`)
+    .replaceAll("750 EXPERIENCES", `${reviewCount} EXPERIENCES`)
+    .replaceAll("14カテゴリ", `${categoryCount}カテゴリ`)
+    .replaceAll("15カテゴリ", `${categoryCount}カテゴリ`)
+    .replaceAll("14 CATEGORIES", `${categoryCount} CATEGORIES`)
+    .replaceAll("15 CATEGORIES", `${categoryCount} CATEGORIES`)
+    .replaceAll('<b>14</b><span>犬用品カテゴリ</span>', `<b>${categoryCount}</b><span>犬用品カテゴリ</span>`)
+    .replaceAll('<b>15</b><span>犬用品カテゴリ</span>', `<b>${categoryCount}</b><span>犬用品カテゴリ</span>`)
+    .replaceAll('<b>14</b><span>カテゴリ</span>', `<b>${categoryCount}</b><span>カテゴリ</span>`)
+    .replaceAll('<b>15</b><span>カテゴリ</span>', `<b>${categoryCount}</b><span>カテゴリ</span>`);
 }
 
 function integrateEarCleaner(request: Request, html: string) {
   const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
-  html = updateCounts(html);
 
   if (pathname === "/" || pathname === "/index") {
     html = html.replace(
@@ -315,6 +358,7 @@ export default {
     html = integrateFavicons(html);
     html = integrateSeoTitle(request, html);
     html = integrateSeoDescription(request, html);
+    html = applyLiveCounts(html, await readLiveCounts(env));
     html = integrateReviewSourcePolicy(html);
     return htmlResponse(response, html);
   },
