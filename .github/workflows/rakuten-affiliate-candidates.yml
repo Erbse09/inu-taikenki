@@ -1,0 +1,55 @@
+name: Rakuten affiliate candidate audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/rakuten-affiliate-candidates
+    paths:
+      - scripts/rakuten_affiliate_candidates.py
+      - .github/workflows/rakuten-affiliate-candidates.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate Rakuten secret
+        shell: bash
+        env:
+          RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+        run: |
+          if [ -z "$RAKUTEN_ACCESS_KEY" ]; then
+            echo "RAKUTEN_ACCESS_KEY is not configured"
+            exit 1
+          fi
+          echo "Rakuten access key is configured"
+
+      - name: Generate Rakuten candidates
+        env:
+          RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+          RAKUTEN_APPLICATION_ID: "371a8858-d425-4cde-8cdf-a1800d422d59"
+          RAKUTEN_AFFILIATE_ID: "57debebc.ee086bd3.57debebd.cf9cea07"
+        run: python scripts/rakuten_affiliate_candidates.py
+
+      - name: Upload candidate audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: rakuten-affiliate-candidates
+          path: |
+            output/rakuten-affiliate-candidates.csv
+            output/rakuten-affiliate-candidates.json
+            output/summary.md
+          if-no-files-found: error
+          retention-days: 14
