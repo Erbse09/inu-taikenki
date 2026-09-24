@@ -76,7 +76,12 @@ WHERE NOT EXISTS (
     AND r.summary=n.summary
 );
 
--- Expected from the verified production baseline immediately before this migration:
+-- Verified production baseline before this migration:
+-- all products: 109
+-- all reviews: 895
+-- brush-slicker: 4 products / 50 reviews
+--
+-- Expected after this migration:
 -- all products: 109
 -- all reviews: 945
 -- brush-slicker: 4 products / 100 reviews
