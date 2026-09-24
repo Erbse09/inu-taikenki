@@ -31,7 +31,7 @@ VALUES
 ('showtech-as-comb','トイプードル','small','curly','finish fluffy smooth','以前のコームより滑らかに通り、少し大きくても慣れると使いやすく、仕上げ後のふわふわ感が長持ちした体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z4tnph7mdq'),
 ('showtech-as-comb','トイプードル','small','curly','size finish','第一印象は大きく重かったが、実際に使うと扱いやすく、以前よりきれいに仕上がった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z4tnph7mdq'),
 ('showtech-as-comb','小型犬','small',NULL,'size handling coat-quality','小型犬には大きさと重さが少し心配だったが、実際には使いやすく、ブラシとコームを替えてから毛質が良くなったように感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z4tnph7mdq'),
-('showtech-as-comb','犬種不明','NULL',NULL,'root handling weight','トリマーから重めのコームを勧められ、適度な重さで自然に下へ降りるため余分な力を加えず梳かしやすかった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z4tnph7mdq'),
+('showtech-as-comb','犬種不明',NULL,NULL,'root handling weight','トリマーから重めのコームを勧められ、適度な重さで自然に下へ降りるため余分な力を加えず梳かしやすかった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/products/z4tnph7mdq'),
 
 ('showtech-greyhound-19cm','トイプードル','small','curly','finish fluffy','仕上げ用に使い、扱いやすくトイプードルの被毛がふわっと整った体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/360103_10002035/1.1/'),
 ('showtech-greyhound-19cm','ヨークシャーテリア・6か月','small','long','puppy tangle scared','生後半年のヨーキーに使い、絡まりをほぐしやすく、ブラッシングを嫌がらず受け入れた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/360103_10002035/1.1/'),
@@ -48,7 +48,7 @@ VALUES
 ('okano-double-comb','長毛の中型犬','medium','long','size finish','長毛の中型犬に大サイズを選び、このコーム1本でもかなり被毛がきれいに整うと感じた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/review/item/1/278169_10002472/1.1/'),
 ('okano-double-comb','犬種不明・複数頭',NULL,NULL,'gentle relaxed','以前使っていたGREYHOUND系コームと比べても肌当たりがやさしく、犬たちが大人しく気持ちよさそうに受け入れた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/review/item/1/278169_10002472/1.1/'),
 ('okano-double-comb','短毛の小型犬','small','short','scared durability','短毛小型犬に使い、嫌がらずブラッシングでき、日本製の丈夫さにも期待した体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=202450&store_id=chanet'),
-('okano-double-comb','犬種不明・自宅カット','NULL',NULL,'grooming weight','自宅で犬をカットするために使い、少し重さは感じるものの扱いやすかった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=202450&store_id=chanet'),
+('okano-double-comb','犬種不明・自宅カット',NULL,NULL,'grooming weight','自宅で犬をカットするために使い、少し重さは感じるものの扱いやすかった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list?page_key=202450&store_id=chanet'),
 ('okano-double-comb','柴犬','medium','double short','shedding face','柴犬に使い、予想以上に抜け毛が取れ、顔まわりなど細かな部分にも使いやすかった体験。','public_buyer_review_summary','https://review.rakuten.co.jp/review/review/item/1/278169_10002471/1.1/'),
 ('okano-double-comb','柴犬','medium','double short','relaxed','岡野製作所の金櫛を使うと、柴犬が特に気持ちよさそうにブラッシングを受けた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/review/review/review/item/1/389167_10000004/1.1/'),
 ('okano-double-comb','小型犬','small',NULL,'size face scared','大サイズは小型犬には大きいものの、お手入れを嫌がりやすい犬でも落ち着いている時なら顔近くまで手入れしやすかった体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/389167_10000085/1.1/'),
