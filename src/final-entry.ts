@@ -272,8 +272,8 @@ function escapeHtml(value: unknown) {
 function searchApiParams(request: Request, includeLimit = false) {
   const pageUrl = new URL(request.url);
   const params = new URLSearchParams();
-  const category = pageUrl.searchParams.get("category") || "pet-dryer";
-  params.set("category", category);
+  const category = pageUrl.searchParams.get("category");
+  if (category) params.set("category", category);
   for (const key of ["size", "coat", "q", "breed", "trait", "product"]) {
     const value = pageUrl.searchParams.get(key);
     if (value) params.set(key, value);
