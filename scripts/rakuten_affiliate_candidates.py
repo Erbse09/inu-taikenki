@@ -147,7 +147,18 @@ def rakuten_search(keyword):
         })
     finally:
         _last_rakuten_call = time.monotonic()
-    return data.get("items", [])
+    raw_items = data.get("items")
+    if raw_items is None:
+        raw_items = data.get("Items", [])
+    normalized = []
+    for entry in raw_items or []:
+        if isinstance(entry, dict) and "Item" in entry:
+            normalized.append(entry["Item"])
+        elif isinstance(entry, dict) and "item" in entry:
+            normalized.append(entry["item"])
+        else:
+            normalized.append(entry)
+    return normalized
 
 def first_image(item):
     imgs = item.get("mediumImageUrls") or item.get("smallImageUrls") or []
