@@ -36,3 +36,50 @@ WHERE NOT EXISTS (
   WHERE r.product_id=n.product_id
     AND r.summary=n.summary
 );
+
+
+WITH new_reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url) AS (
+VALUES
+('petaboo-l400','犬種不明・高音に敏感',NULL,NULL,'speed scared nozzle-length','普通のドライヤーより早く乾き、毛もパサつきにくかった一方、風量50前後の高い音では怯える様子があり、動く犬にはノズルがもう少し長いと扱いやすいと感じた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/405945_10000167/1.1/'),
+('petaboo-l400','犬種不明・初めての家シャンプー',NULL,NULL,'speed fluffy beginner','初めての自宅シャンプー後に使い、乾くのが早く、仕上がりもふわふわになって楽だった体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/405945_10000167/1.1/'),
+('dogone-quick-dry','顔まわりのドライが苦手な犬',NULL,NULL,'professional face scared low-heat','トリマーが使用し、最小風量でも人用ドライヤーより風は強いものの、ぬるめの温度で顔まわりが苦手な犬も嫌がり方が少なかった体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/282253_10008403'),
+('dogone-quick-dry','スタンダードプードル・短めカット','large','curly','root-dry stand no-brush','短めカットのスタンダードプードルにスタンド付きで使い、平たいノズルで毛を一定方向に分けながら根元まで乾かせ、ブラッシングしながらでなくても毛玉ができにくかった体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/282253_10008403'),
+('dogone-quick-dry','スタンダードプードル中心の犬3頭','large','curly','multi scared low-heat','3頭の犬、とくにスタンダードプードルへ使い、風量は十分だった一方、犬が風の強さで少しずつ逃げ、温風はもう少し高くてもよいと感じた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/282253_10008403/1.1/'),
+('dogone-quick-dry','犬種不明・人用上位ドライヤーから変更',NULL,NULL,'root-dry low-heat','人用の高性能ドライヤーを強風で使っていた家庭で切り替え、低温の強風で表面だけでなく地肌までしっかり乾かしやすいと感じた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/282253_10008403'),
+('dogone-quick-dry','パグ・10kg','medium','short','power warm finish','10kgのパグに最大風量と高めの温風で使い、トリミング慣れしていたため音にも比較的落ち着き、パワフルに乾かしてふわっと仕上がった体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/282253_10008403'),
+('dogone-quick-dry','大型犬','large',NULL,'speed stand safety','以前のブロワーで約50分かかっていた大型犬が、タオルドライと併用して約30分で乾き、スタンドのおかげで落下を気にせず使えた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/282253_10008403/1.1/'),
+('dogone-quick-dry','プードル3頭＋ダックス＋ペキニーズなど6頭','medium','mixed','multi handsfree speed finish','6頭の多頭飼い家庭で使い、プードルはブラシを使いながらふわっと仕上げ、ダックスやペキニーズも人用ドライヤーより早く乾かせた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/item/1/282253_10008403/1.1/'),
+('dogone-quick-dry','スタンダードプードル・自宅用','large','curly','professional home-use','トリマーが自宅のスタンダードプードル用に使い、家庭用としては十分な風量があり、ブロワーノズルも使いやすいと感じた体験。','public_buyer_review_summary','https://review.rakuten.co.jp/review/item/1/295394_10007730/1.1/'),
+('homerunpet-pd10','毛量の多い犬',NULL,'long','speed','毛量の多い犬に使い、短時間で乾かせてよく働いていると感じた体験。','public_buyer_review_summary','https://homerunpet.com/products/homerunpet-pet-hair-dryer'),
+('homerunpet-pd10','子犬たち',NULL,NULL,'puppy comfortable','複数の子犬に使い、乾かしている間も比較的快適そうに過ごしていたという体験。','public_buyer_review_summary','https://homerunpet.com/products/homerunpet-pet-hair-dryer'),
+('morisawa','ゴールデンレトリバー・6か月','large','long','puppy speed paws','人用ドライヤーでは2時間かけても生乾きだった6か月のゴールデンが、約半分の時間で乾き、散歩後に乾きにくかった肉球の間にも使いやすかった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','小型犬','small',NULL,'negative strong-air salon-finish','小型犬には最弱でも風量が強く感じた一方、根元から毛が立ち上がり、仕上がりはトリミング後のようにさらさらになった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','フレンチブルドッグ','small','double short','speed noise','尻尾まわりなど乾きにくいダブルコートのフレンチブルドッグに使い、ハンディ掃除機程度の音はするものの、乾燥が早くなり風量を段階的に上げて使えた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','長毛の小型犬','small','long','speed hose-stiff','長毛小型犬に使い、人用ハンドドライヤーの約半分の時間で乾いた一方、初回はホースが硬く感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','ゴールデンレトリバー','large','long','speed scared noise','ゴールデンの乾燥時間を短縮できるほどパワーがあった一方、音は大きめで犬が最初は怖がった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','犬種不明・人用ドライヤーから変更',NULL,NULL,'speed quiet','人用ドライヤーではかなり時間がかかっていた犬に使い、想像より音は大きくなく、乾燥時間もおよそ半分まで短くなったと感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','フレンチブルドッグ','small','short','speed root-dry','人用ドライヤーより強い風で根元から水分を飛ばせ、フレンチブルドッグを約20分で乾かせた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','皮膚トラブル後の犬',NULL,NULL,'skin-sensitive root-dry noise','人用ドライヤーで乾き残しがあり皮膚トラブルが出た経験から導入し、本体を扉の外へ置いて音を遠ざけながら、根元までしっかり乾かせた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','犬種不明・付属ノズルの音を嫌う犬',NULL,NULL,'scared nozzle low-heat','本体音は人用ドライヤーより静かに感じたが、付属ノズルを付けた時の音は犬が怖がったため、ノズルなしで使うと温度もちょうどよく乾かせた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','犬種不明・店舗で継続使用',NULL,NULL,'professional value hose-length','店舗で高価な海外製ブロワーを何台も使ってきた購入者が導入し、価格に対して十分な性能を感じた一方、ホースはもう少し長いと良いと感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','犬種不明・初回使用',NULL,NULL,'power towel-dry technique','初回は強い風量を楽しみにしてタオルドライを十分にしなかったため思ったより時間がかかり、次回は事前にしっかり水分を取って使おうと感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/2/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','トイプードル2頭','small','curly','negative strong-air face','2頭のトイプードルに使い、最弱でもティーカップサイズの犬には風が強く、特に顔まわりは嫌がるため距離を取る必要があった体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/3/?page_key=petgoods002&store_id=morisawa5628'),
+('morisawa','柴犬','medium','double','speed noise','ダブルコートの柴犬に使い、人用ドライヤーの約3分の1ほどの時間、約10分で乾かせた一方、音は大きめに感じた体験。','public_buyer_review_summary','https://shopping.yahoo.co.jp/review/item/list/3/?page_key=petgoods002&store_id=morisawa5628')
+)
+INSERT INTO reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_type,source_url)
+SELECT n.product_id,n.dog_breed,n.dog_size,n.coat_type,n.needs,n.summary,n.source_type,n.source_url
+FROM new_reviews n
+WHERE NOT EXISTS (
+  SELECT 1 FROM reviews r
+  WHERE r.product_id=n.product_id
+    AND r.summary=n.summary
+);
+
+SELECT COUNT(*) AS pet_dryer_product_count
+FROM products
+WHERE category='pet-dryer' AND active=1;
+
+SELECT COUNT(*) AS pet_dryer_review_count
+FROM reviews r
+JOIN products p ON p.id=r.product_id
+WHERE p.category='pet-dryer' AND p.active=1;
