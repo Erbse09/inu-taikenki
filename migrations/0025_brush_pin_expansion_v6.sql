@@ -17,9 +17,9 @@ VALUES
   'medium',
   'long',
   'feathering breakage gentle',
-  '耳や脚の飾り毛では、スリッカーによる切れ毛を避けるため、21mmピンのアルティメットピンブラシで根元から毛先まで整える使い方をしている体験。',
+  'ショー前の乾燥でアルティメットピンブラシを使い、飾り毛を傷めにくいよう約4分の3まで乾かしてから仕上げ用ブラシへ切り替えるグルーミング事例。',
   'existing_article_summary',
-  'https://www.thedoggroomingstore.com.au/blogs/blog/english-springer-spaniel-grooming'
+  'https://plushpuppyamerica.com/english-springer-spaniel/'
 ),
 (
   'plush-puppy-ultimate-pin',
@@ -29,7 +29,7 @@ VALUES
   'blow-dry coat-protection',
   'ダブルコートを乾かす際にアルティメットピンブラシを使い、被毛を上や前方向へ起こしながら7〜8割ほど乾かす手順。ピンの固定感がよく、被毛を傷めにくい道具として使っている体験。',
   'existing_article_summary',
-  'https://showmanagerservice.blob.core.windows.net/public-files/events/42877/BelgianShepherdDogClubofNSWInc_25-Apr-2025_SP_42877_Catalogue_d7d08516-9e89-4413-9f91-86f3f0d3a917.pdf'
+  'https://plushpuppy.co.nz/blogs/grooming-articles/belgian-shepherd'
 ),
 (
   'plush-puppy-ultimate-pin',
@@ -39,7 +39,7 @@ VALUES
   'blow-dry gentle',
   'ショー間の被毛ケアで、下側の長い被毛を冷風で乾かす初期段階にアルティメットピンブラシを使い、被毛に負担をかけにくく3/4程度まで乾かしてから別のブラシへ切り替える体験。',
   'existing_article_summary',
-  'https://plushpuppy.co.uk/wp-content/uploads/2022/03/Breed-Grooming-Article_Bearded-Collie.pdf'
+  'https://plushpuppy.co.nz/blogs/grooming-articles/bearded-collie'
 ),
 (
   'plush-puppy-ultimate-pin',
@@ -47,9 +47,9 @@ VALUES
   'large',
   'wire',
   'brushing coat-care',
-  '希釈したグルーミング剤を被毛へ行き渡らせたあと、アルティメットピンブラシを使ってブラッシングする手順として取り入れている体験。',
+  'リングサイドでグルーミングスプレーを約40倍に希釈し、アルティメットピンブラシと組み合わせて静電気を抑えながらブラッシングするグルーミング事例。',
   'existing_article_summary',
-  'https://plushpuppy.co.uk/wp-content/uploads/2022/04/Breed-Grooming-Article_Irish-Wolfhound-1.pdf'
+  'https://plushpuppyamerica.com/irish-wolfhound/'
 ),
 (
   'plush-puppy-ultimate-long-pin',
