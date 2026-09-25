@@ -153,8 +153,11 @@
         const tagsHtml = tags.length
           ? '<div class="db-review-tags">' + tags.map((tag) => '<span>' + esc(tag) + '</span>').join('') + '</div>'
           : '';
-        const sourceHtml = review.source_url && /^https?:\/\//i.test(review.source_url)
-          ? '<div class="db-review-source"><a href="' + esc(review.source_url) + '" target="_blank" rel="noopener noreferrer nofollow">確認元を見る ↗</a></div>'
+        const sourceUrl = review.source_url || '';
+        const sourceOk = /^https?:\/\//i.test(sourceUrl) || sourceUrl.startsWith('/');
+        const sourceLabel = review.source_type === 'existing_article_summary' ? '元にしたサイト内記事を見る →' : '確認元を見る ↗';
+        const sourceHtml = sourceOk
+          ? '<div class="db-review-source"><a href="' + esc(sourceUrl) + '"' + (/^https?:\/\//i.test(sourceUrl) ? ' target="_blank" rel="noopener noreferrer nofollow"' : '') + '>' + sourceLabel + '</a></div>'
           : '';
         return `
           <article class="db-review-card">
@@ -231,8 +234,10 @@
         renderReviews();
       } catch (error) {
         if (error.name === 'AbortError' || id !== requestId) return;
-        status.textContent = '読み込みに失敗しました。もう一度お試しください';
-        if (!append) list.innerHTML = '<div class="db-empty">データを取得できませんでした。</div>';
+        status.textContent = append
+          ? '追加の体験は更新できませんでした。表示中の内容を残しています。'
+          : '商品別のライブ表示を更新できませんでした。記事本文と条件検索をご覧ください。';
+        if (!append) list.innerHTML = '<div class="db-empty">記事本文の比較と「このカテゴリの体験をまとめて検索」から公開体験を確認できます。</div>';
       } finally { if (id === requestId) more.disabled = false; }
     };
 
@@ -251,9 +256,9 @@
       } while (offset !== null);
 
       if (!products.length) {
-        select.innerHTML = '<option value="">公開体験を準備中</option>';
-        status.textContent = 'このカテゴリの商品体験はまだ準備中です';
-        totalBadge.textContent = '公開体験 0件';
+        select.innerHTML = '<option value="">商品別の公開体験はありません</option>';
+        status.textContent = '記事本文の比較と条件検索をご覧ください';
+        totalBadge.textContent = '商品別の公開体験 0件';
         more.hidden = true;
         return;
       }
@@ -273,9 +278,9 @@
       select.value = initialProduct.id;
       await loadReviews(initialProduct.id);
     } catch (error) {
-      select.innerHTML = '<option value="">商品一覧を取得できません</option>';
-      status.textContent = '読み込みに失敗しました';
-      totalBadge.textContent = '体験件数を取得できませんでした';
+      select.innerHTML = '<option value="">商品別一覧を更新できません</option>';
+      status.textContent = '記事本文と条件検索をご覧ください';
+      totalBadge.textContent = '公開体験は条件検索から確認できます';
       more.hidden = true;
       console.error(error);
     }
