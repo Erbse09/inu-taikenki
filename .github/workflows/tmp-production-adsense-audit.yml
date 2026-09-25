@@ -1,0 +1,90 @@
+name: Temporary Production AdSense Audit
+
+on:
+  push:
+    branches:
+      - audit/postdeploy-adsense-20260925
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify production pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://inu-taikenki.com"
+          mkdir -p /tmp/inu-audit
+
+          pages=(
+            "/privacy"
+            "/review-search"
+            "/review-insights"
+            "/dog-size"
+            "/breed-toy-poodle"
+            "/about"
+            "/dog-nail-care-dislike"
+            "/dog-toothbrushing-dislike"
+          )
+          for path in "${pages[@]}"; do
+            file="/tmp/inu-audit/$(echo "$path" | tr '/?' '__').html"
+            code=$(curl -L --retry 3 --retry-delay 2 -A "Mozilla/5.0 AdSenseFinalAudit/1.0" -sS -o "$file" -w "%{http_code}" "$base$path")
+            test "$code" = "200"
+            test -s "$file"
+            echo "PASS $path HTTP $code bytes $(wc -c < "$file")"
+          done
+
+          curl -L --retry 3 -A "Googlebot" -fsS "$base/review-search" -o /tmp/inu-audit/review-search-googlebot.html
+          curl -L --retry 3 -A "Mediapartners-Google" -fsS "$base/review-search" -o /tmp/inu-audit/review-search-mediapartners.html
+          curl -L --retry 3 -A "Google-Display-Ads-Bot" -fsS "$base/review-insights" -o /tmp/inu-audit/review-insights-displaybot.html
+
+          curl -L --retry 3 -fsS "$base/api/reviews/stats" -o /tmp/inu-audit/stats.json
+          count=$(node -e "const j=require('/tmp/inu-audit/stats.json'); if(!Number.isFinite(j.count)||j.count<1) process.exit(2); process.stdout.write(String(j.count))")
+          categories=$(node -e "const j=require('/tmp/inu-audit/stats.json'); if(!Number.isFinite(j.category_count)||j.category_count<1) process.exit(2); process.stdout.write(String(j.category_count))")
+          products=$(node -e "const j=require('/tmp/inu-audit/stats.json'); if(!Number.isFinite(j.product_count)||j.product_count<1) process.exit(2); process.stdout.write(String(j.product_count))")
+          echo "LIVE STATS count=$count categories=$categories products=$products"
+
+          privacy=/tmp/inu-audit/_privacy.html
+          search=/tmp/inu-audit/_review-search.html
+          insights=/tmp/inu-audit/_review-insights.html
+          size=/tmp/inu-audit/_dog-size.html
+          breed=/tmp/inu-audit/_breed-toy-poodle.html
+          about=/tmp/inu-audit/_about.html
+          nail=/tmp/inu-audit/_dog-nail-care-dislike.html
+          tooth=/tmp/inu-audit/_dog-toothbrushing-dislike.html
+
+          grep -q "Google AdSense" "$privacy"
+          grep -q "https://adssettings.google.com/" "$privacy"
+          grep -q "第三者配信事業者" "$privacy"
+
+          for file in "$search" /tmp/inu-audit/review-search-googlebot.html /tmp/inu-audit/review-search-mediapartners.html; do
+            grep -q "data-static-review-fallback" "$file"
+            grep -q "${count}件" "$file"
+            ! grep -q "データを取得できませんでした" "$file"
+            ! grep -q "読み込みに失敗しました" "$file"
+          done
+
+          for file in "$insights" /tmp/inu-audit/review-insights-displaybot.html; do
+            grep -q "data-static-review-summary" "$file"
+            grep -q "data-static-insight-facets" "$file"
+            grep -q "${count}件" "$file"
+            ! grep -q "データを取得できませんでした" "$file"
+          done
+
+          grep -q "data-static-size-fallback" "$size"
+          grep -q "data-static-breed-fallback" "$breed"
+          grep -q "${count}件" "$about"
+          ! grep -q "750件以上から条件検索する" "$about"
+
+          for file in "$nail" "$tooth"; do
+            grep -q "${count}件" "$file"
+            ! grep -q "750件" "$file"
+            grep -q "記事で確認した50件" "$file"
+          done
+
+          curl -L --retry 3 -fsS "$base/ads.txt" -o /tmp/inu-audit/ads.txt
+          grep -q "google.com, pub-2224207953863103, DIRECT, f08c47fec0942fa0" /tmp/inu-audit/ads.txt
+
+          echo "PRODUCTION_ADSENSE_AUDIT_PASS"
