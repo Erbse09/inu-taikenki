@@ -522,7 +522,6 @@ export default {
     }
     html = await integrateReviewSearchFallback(request, html, env);
     html = await integrateReviewInsightsFallback(request, html, env);
-    html = integrateReviewSourcePolicy(html);
     return htmlResponse(response, html);
   },
 };
