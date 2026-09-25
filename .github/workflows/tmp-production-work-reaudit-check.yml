@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/verify-production.cjs <<'NODE'
+          cat > verify-production.cjs <<'NODE'
           const { chromium } = require('playwright');
           (async()=>{
             const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -84,5 +84,5 @@ jobs:
             } finally { await browser.close(); }
           })().catch(e=>{console.error(e);process.exit(1);});
           NODE
-          node /tmp/verify-production.cjs
+          node verify-production.cjs
           echo "PRODUCTION_RENDERED_REAUDIT_FIXES_PASS"
