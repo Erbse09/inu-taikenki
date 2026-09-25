@@ -246,6 +246,8 @@ type ReviewFallbackRow = {
   coat_type?: string | null;
   needs?: string | null;
   summary?: string | null;
+  source_type?: string | null;
+  source_url?: string | null;
 };
 
 type ReviewFallbackPayload = {
@@ -258,6 +260,7 @@ type ReviewStatsFallbackPayload = {
   product_count?: number;
   coverage?: { breed?: number; size?: number; coat?: number };
   products?: Array<{ product_name?: string | null; count?: number }>;
+  facets?: Array<{ kind?: string | null; value?: string | null; count?: number }>;
 };
 
 function escapeHtml(value: unknown) {
@@ -299,12 +302,21 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
   }
 }
 
+function renderReviewSource(row: ReviewFallbackRow) {
+  const url = row.source_url || "";
+  if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return "";
+  const label = row.source_type === "existing_article_summary" ? "元にしたサイト内記事を見る →" : "確認元を見る ↗";
+  const attrs = /^https?:\/\//i.test(url) ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
+  return '<div class="source"><a href="' + escapeHtml(url) + '"' + attrs + '>' + label + '</a></div>';
+}
+
 function renderReviewFallbackCard(row: ReviewFallbackRow) {
   const breed = row.dog_breed?.trim() || "犬種情報なし";
   return `<article class="card" data-static-review-card>
 <div class="product">${escapeHtml(row.product_name || "犬用品")}</div>
 <div class="dog">${escapeHtml(breed)}</div>
 <div class="summary">${escapeHtml(row.summary || "")}</div>
+${renderReviewSource(row)}
 </article>`;
 }
 
@@ -365,6 +377,15 @@ async function integrateReviewInsightsFallback(request: Request, html: string, e
   const products = (payload.products || []).slice(0, 5).map((product) =>
     `<div class="product-item" data-static-insight-product><b>${escapeHtml(product.product_name || "犬用品")}</b><span>${Number(product.count) || 0}件の体験を収録</span></div>`
   ).join("");
+  const facetCount = (kind: string, value: string) => Number((payload.facets || []).find((f) => f.kind === kind && f.value === value)?.count || 0);
+  const rowHtml = (kind: string, values: Array<[string,string]>) => values
+    .map(([value,label]) => [label,facetCount(kind,value)] as const)
+    .filter(([,n]) => n > 0)
+    .map(([label,n]) => '<div><div class="row"><span>' + label + '</span><b>' + n + '件</b></div><div class="bar"><div class="fill" style="width:' + Math.round(n / Math.max(1,count) * 100) + '%"></div></div></div>')
+    .join("");
+  const sizeRows = rowHtml("size", [["small","小型"],["medium","中型"],["large","大型"]]);
+  const coatRows = rowHtml("coat", [["short","短毛"],["long","長毛"],["double","ダブルコート"],["curly","巻毛"]]);
+  const traitRows = rowHtml("trait", [["scared","怖がり"],["puppy","子犬"],["senior","シニア"],["speed","時短"],["handsfree","ハンズフリー"],["shedding","抜け毛"],["mat","毛玉"],["multi","多頭"],["skin","皮膚配慮"],["quiet","静音"]]);
 
   html = html
     .replace('<b id="total">…</b>', `<b id="total">${count}</b>`)
@@ -373,7 +394,10 @@ async function integrateReviewInsightsFallback(request: Request, html: string, e
     .replace('<div class="product-list" id="topProducts"></div>', `<div class="product-list" id="topProducts">${products}</div>`)
     .replace('<b id="breedCov">…</b>', `<b id="breedCov">${pct(coverage.breed)}</b>`)
     .replace('<b id="sizeCov">…</b>', `<b id="sizeCov">${pct(coverage.size)}</b>`)
-    .replace('<b id="coatCov">…</b>', `<b id="coatCov">${pct(coverage.coat)}</b>`);
+    .replace('<b id="coatCov">…</b>', `<b id="coatCov">${pct(coverage.coat)}</b>`)
+    .replace('<div class="rows" id="sizes"></div>', '<div class="rows" id="sizes" data-static-insight-facets>' + sizeRows + '</div>')
+    .replace('<div class="rows" id="coats"></div>', '<div class="rows" id="coats" data-static-insight-facets>' + coatRows + '</div>')
+    .replace('<div class="rows" id="needs"></div>', '<div class="rows" id="needs" data-static-insight-facets>' + traitRows + '</div>');
 
   return html;
 }
