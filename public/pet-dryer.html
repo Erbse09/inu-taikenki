@@ -620,10 +620,10 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
       renderDbReviews();
     } catch (error) {
       if(error.name==='AbortError'||id!==requestId)return;
-      if(append){status.textContent='読み込みに失敗しました。もう一度お試しください';return;}
+      if(append){status.textContent='追加の体験は更新できませんでした。表示中の内容を残しています。';return;}
       currentData = null;
-      status.textContent = '読み込みに失敗しました';
-      list.innerHTML = '<p>データを取得できませんでした。</p>';
+      status.textContent = '商品別のライブ表示を更新できませんでした。記事本文をご覧ください。';
+      list.innerHTML = '<p>上の記事本文と条件検索から公開体験を確認できます。</p>';
       moreBtn.hidden = true;
       console.error(error);
     } finally {if(id===requestId)moreBtn.disabled=false;}
@@ -646,8 +646,8 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
         await loadReviews(data.products[0].id);
       }
     } catch (error) {
-      select.innerHTML = '<option value="">商品一覧を取得できません</option>';
-      status.textContent = '読み込みに失敗しました';
+      select.innerHTML = '<option value="">商品別一覧を更新できません</option>';
+      status.textContent = '記事本文と条件検索をご覧ください';
       console.error(error);
     }
   }
