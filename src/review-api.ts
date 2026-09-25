@@ -8,6 +8,7 @@ interface DB { prepare(sql: string): Statement; }
 type Value = string | number | null;
 type Row = Record<string, any>;
 const aliases: Record<string,string> = {怖がり:'scared',子犬:'puppy',シニア:'senior',時短:'speed',抜け毛:'shedding',毛玉:'mat',もつれ:'tangle',多頭:'multi',静音:'quiet',皮膚:'skin',カメラ:'camera',旅行:'travel',いたずら:'mischief',ハンズフリー:'handsfree'};
+const traitGroups: Record<string,string[]> = {multi:['multi','multi-dog'],'multi-dog':['multi','multi-dog'],skin:['skin','skin-sensitive'],'skin-sensitive':['skin','skin-sensitive']};
 const json = (data: unknown, status=200) => new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
 class InputError extends Error {}
 function integer(p: URLSearchParams, key: string, fallback: number, max: number, min=0) {
@@ -27,7 +28,12 @@ function filters(p: URLSearchParams) {
   for(const [key,alias,kind] of [['size','dog_size','size'],['coat','coat_type','coat'],['trait','needs','trait']]) {
     const value=p.get(key)||p.get(alias); if(!value)continue;
     if(kind==='trait' ? !/^[^\s\u0000-\u001f]{1,64}$/.test(value) : !/^[a-z0-9][a-z0-9_-]{0,63}$/i.test(value))throw new InputError(`invalid_${key}`);
-    add(`EXISTS (SELECT 1 FROM review_attributes a WHERE a.review_id = r.id AND a.kind = '${kind}' AND a.value = ?)`,value.toLowerCase());
+    const normalized=value.toLowerCase();
+    if(kind==='trait' && traitGroups[normalized]){
+      const group=traitGroups[normalized];
+      clauses.push(`EXISTS (SELECT 1 FROM review_attributes a WHERE a.review_id = r.id AND a.kind = 'trait' AND a.value IN (${group.map(()=>'?').join(',')}))`);
+      values.push(...group);
+    } else add(`EXISTS (SELECT 1 FROM review_attributes a WHERE a.review_id = r.id AND a.kind = '${kind}' AND a.value = ?)`,normalized);
   }
   const breed=p.get('breed');
   if(breed) {
@@ -81,8 +87,9 @@ export async function reviewApi(request: Request, db: DB): Promise<Response | nu
     }
     const total=await totals(db,where,values);
     if(path==='/api/reviews/stats'){
-      const facets=await rows(db,`SELECT a.kind,a.value,COUNT(*) AS count FROM review_attributes a JOIN reviews r ON r.id=a.review_id JOIN products p ON p.id=r.product_id WHERE ${where} GROUP BY a.kind,a.value ORDER BY a.kind,count DESC,a.value LIMIT 100`,values);
-      const coverage=await db.prepare(`SELECT SUM(CASE WHEN nullif(trim(r.dog_breed),'') IS NOT NULL THEN 1 ELSE 0 END) AS breed,SUM(CASE WHEN nullif(trim(r.dog_size),'') IS NOT NULL THEN 1 ELSE 0 END) AS size,SUM(CASE WHEN nullif(trim(r.coat_type),'') IS NOT NULL THEN 1 ELSE 0 END) AS coat ${from} WHERE ${where}`).bind(...values).first<Row>();
+      const canonicalTrait=`CASE WHEN a.kind='trait' AND a.value IN ('multi','multi-dog') THEN 'multi' WHEN a.kind='trait' AND a.value IN ('skin','skin-sensitive') THEN 'skin' ELSE a.value END`;
+      const facets=await rows(db,`SELECT a.kind,${canonicalTrait} AS value,COUNT(DISTINCT a.review_id) AS count FROM review_attributes a JOIN reviews r ON r.id=a.review_id JOIN products p ON p.id=r.product_id WHERE ${where} GROUP BY a.kind,${canonicalTrait} ORDER BY a.kind,count DESC,value LIMIT 100`,values);
+      const coverage=await db.prepare(`SELECT SUM(CASE WHEN nullif(trim(r.dog_breed),'') IS NOT NULL AND instr(r.dog_breed,'犬種不明')=0 THEN 1 ELSE 0 END) AS breed,SUM(CASE WHEN nullif(trim(r.dog_size),'') IS NOT NULL THEN 1 ELSE 0 END) AS size,SUM(CASE WHEN nullif(trim(r.coat_type),'') IS NOT NULL THEN 1 ELSE 0 END) AS coat ${from} WHERE ${where}`).bind(...values).first<Row>();
       const top=await rows(db,`SELECT p.id AS product_id,p.name AS product_name,COUNT(*) AS count ${from} WHERE ${where} GROUP BY p.id ORDER BY count DESC,p.id LIMIT 8`,values);
       const categories=await rows(db,`SELECT p.category,COUNT(*) AS count ${from} WHERE ${where} GROUP BY p.category ORDER BY p.category LIMIT 100`,values);
       return json({...total,facets,coverage,products:top,categories});
