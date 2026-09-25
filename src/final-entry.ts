@@ -290,7 +290,7 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
 function renderReviewSource(row: ReviewFallbackRow) {
   const url = row.source_url || "";
   if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return "";
-  const label = row.source_type === "existing_article_summary" ? "元にしたサイト内記事を見る →" : "確認元を見る ↗";
+  const label = row.source_type === "existing_article_summary" && url.startsWith("/") ? "元にしたサイト内記事を見る →" : "確認元を見る ↗";
   const attrs = /^https?:\/\//i.test(url) ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
   return '<div class="source"><a href="' + escapeHtml(url) + '"' + attrs + '>' + label + '</a></div>';
 }

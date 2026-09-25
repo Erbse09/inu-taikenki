@@ -155,7 +155,7 @@
           : '';
         const sourceUrl = review.source_url || '';
         const sourceOk = /^https?:\/\//i.test(sourceUrl) || sourceUrl.startsWith('/');
-        const sourceLabel = review.source_type === 'existing_article_summary' ? '元にしたサイト内記事を見る →' : '確認元を見る ↗';
+        const sourceLabel = review.source_type === 'existing_article_summary' && sourceUrl.startsWith('/') ? '元にしたサイト内記事を見る →' : '確認元を見る ↗';
         const sourceHtml = sourceOk
           ? '<div class="db-review-source"><a href="' + esc(sourceUrl) + '"' + (/^https?:\/\//i.test(sourceUrl) ? ' target="_blank" rel="noopener noreferrer nofollow"' : '') + '>' + sourceLabel + '</a></div>'
           : '';

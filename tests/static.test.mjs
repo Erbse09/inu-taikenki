@@ -85,6 +85,21 @@ test('final AdSense audit fixes stay present',()=>{
   assert(!dryer.includes('データを取得できませんでした'));
   assert(editorial.includes('記事の分析件数と現在の検索件数'));
 
+  const entryLayer=readFileSync('src/entry.ts','utf8');
+  const search=readFileSync('public/review-search.html','utf8');
+  assert(!entryLayer.includes('条件検索で表示する公開体験は50件です'));
+  assert(!entryLayer.includes('このページ下部から犬のサイズ・毛質・条件で50件の体験を絞り込めます'));
+  assert(!entryLayer.includes('各ブラシ種類ごとに50件の公開体験を整理しています'));
+  assert(!entryLayer.includes('このブラシ種類では50件の公開体験を整理しています'));
+  assert(entryLayer.includes('記事作成時の分析：50件'));
+  assert(entryLayer.includes('その後追加された分を含む現在の収録体験'));
+  assert(insights.includes("skin:'皮膚配慮'"));
+  assert(insights.includes('犬種そのものの判明率ではありません'));
+  assert(insights.includes('犬種欄に記載あり*'));
+  assert(browser.includes("sourceUrl.startsWith('/') ? '元にしたサイト内記事を見る →'"));
+  assert(search.includes("sourceUrl.startsWith('/')?'元にしたサイト内記事を見る →'"));
+  assert(entry.includes('row.source_type === "existing_article_summary" && url.startsWith("/")'));
+
   for(const file of readdirSync('public').filter(x=>x.endsWith('.html'))){
     const html=readFileSync('public/'+file,'utf8');
     assert(!html.includes('犬の大きさから50件の体験を見る'),file);

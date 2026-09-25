@@ -77,6 +77,14 @@ try{
           await page.locator('#reset').click();await page.waitForTimeout(300);await page.waitForLoadState('networkidle');assert((await page.locator('#status').textContent()).includes('180件'));
           await page.locator('#query').fill('存在しない検索語');await page.waitForTimeout(350);await page.waitForTimeout(300);await page.waitForLoadState('networkidle');assert((await page.locator('#status').textContent()).includes('0件'));
         }
+        if(path==='/review-insights'){
+          assert((await page.locator('.coverage').textContent()).includes('犬種欄に記載あり*'));
+          assert(!(await page.locator('.coverage').textContent()).includes('犬種情報あり'));
+          await page.locator('#need').selectOption('skin');await page.waitForTimeout(300);await page.waitForLoadState('networkidle');
+          const needsText=await page.locator('#needs').textContent();
+          assert(!needsText.includes('undefined'),needsText);
+          if(needsText.includes('24件')) assert(needsText.includes('皮膚配慮'));
+        }
         if(path==='/dog-size'){assert((await page.locator('#cards .card').count())>0);if(await page.locator('#more').isVisible()){const count=await page.locator('#cards .card').count();await page.locator('#more').click();await page.waitForTimeout(300);await page.waitForLoadState('networkidle');assert((await page.locator('#cards .card').count())>count);}}
         if(path==='/breed-toy-poodle'){assert((await page.locator('#results .product').count())>0);if(await page.locator('#breedMore').isVisible()){const count=await page.locator('#results .product').count();await page.locator('#breedMore').click();await page.waitForTimeout(300);await page.waitForLoadState('networkidle');assert((await page.locator('#results .product').count())>count);}}
       }
