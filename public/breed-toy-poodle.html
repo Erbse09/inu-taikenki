@@ -27,7 +27,7 @@ h2{font-size:21px;line-height:1.5;margin:38px 0 10px}.lead{font-size:11px;color:
 <div class="example"><div class="cat">バリカン</div><b>全身・部分・シニアの自宅ケア</b><p>全身カット、肉球まわり、高齢犬のサロン負担を減らす目的など、使う場面の異なる体験が集まっています。</p></div>
 </div></section>
 <section><div class="eyebrow">LIVE EXPERIENCE DATA</div><h2>カテゴリ別にトイプードルの公開体験を見る</h2><p class="lead">現在の公開体験データを読み込み、該当するカテゴリだけ表示します。レビュー追加後も自動で反映されます。</p><div id="results" class="category-grid"><div class="loading">🐩 トイプードルの体験を読み込んでいます…</div></div><button id="breedMore" type="button" class="article-link" hidden>もっと見る</button></section>
-<section><div class="eyebrow">NEXT STEP</div><h2>条件を変えて探す</h2><div class="route-grid"><a class="route" href="/review-search?size=small&coat=curly"><b>小型犬・巻毛で探す</b><span>犬種名以外の条件でも750件から検索。</span></a><a class="route" href="/dog-size?size=small"><b>小型犬全体を見る</b><span>小型犬と明記された体験を15カテゴリ横断。</span></a><a class="route" href="/brush-guide"><b>ブラシの種類から選ぶ</b><span>毛玉・日常ケア・仕上げ・抜け毛で4種類を比較。</span></a></div></section>
+<section><div class="eyebrow">NEXT STEP</div><h2>条件を変えて探す</h2><div class="route-grid"><a class="route" href="/review-search?size=small&coat=curly"><b>小型犬・巻毛で探す</b><span>犬種名以外の条件でも現在の公開体験から検索。</span></a><a class="route" href="/dog-size?size=small"><b>小型犬全体を見る</b><span>小型犬と明記された体験を15カテゴリ横断。</span></a><a class="route" href="/brush-guide"><b>ブラシの種類から選ぶ</b><span>毛玉・日常ケア・仕上げ・抜け毛で4種類を比較。</span></a></div></section>
 </main>
 <footer class="site-footer"><nav aria-label="サイト情報" class="site-footer-nav"><a href="/about">このサイトについて</a><a href="/editorial-policy">調査・編集方針</a><a href="/privacy">プライバシーポリシー</a><a href="/affiliate">広告・アフィリエイト</a></nav><p class="site-footer-note">犬用品みんなの体験記は、公開された飼い主体験・商品仕様・公式情報を整理し、犬種・サイズ・毛質・性格などから比較しやすくすることを目的としたサイトです。</p><div>© 犬用品みんなの体験記</div></footer>
 <script>
@@ -35,14 +35,14 @@ const categoryMeta={
 'pet-dryer':['ペットドライヤー','/pet-dryer'],'auto-feeder':['自動給餌器','/auto-feeder'],'dog-clipper':['犬用バリカン','/dog-clipper'],'brush-slicker':['スリッカーブラシ','/brush-slicker'],'brush-pin':['ピンブラシ','/brush-pin'],'brush-undercoat':['アンダーコート用ブラシ','/brush-undercoat'],'brush-comb':['犬用コーム','/brush-comb'],'nail-grinder':['電動爪やすり','/dog-nail-grinder'],'nail-clipper':['犬用爪切り','/dog-nail-clipper'],'dog-shampoo':['犬用シャンプー','/dog-shampoo'],'dog-conditioner':['犬用コンディショナー','/dog-conditioner'],'dog-toothbrush':['犬用歯ブラシ','/dog-toothbrush'],'dog-toothpaste':['歯磨きジェル・歯磨き粉','/dog-toothpaste'],'dog-dental-chew':['犬用デンタルガム','/dog-dental-chew'],'dog-ear-cleaner':['犬用イヤークリーナー','/dog-ear-cleaner']};
 const order=Object.keys(categoryMeta);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let groups=[],nextOffset=null;const more=document.getElementById('breedMore');
-async function load(append=false){more.disabled=true;try{
- const res=await fetch('/api/reviews/groups?breed='+encodeURIComponent('トイプードル')+'&limit=12&offset='+(append?nextOffset:0));if(!res.ok)throw Error('groups');const data=await res.json();groups=append?[...groups,...data.groups]:data.groups;nextOffset=data.next_offset;
- document.getElementById('reviewCount').textContent=data.count;document.getElementById('categoryCount').textContent=data.category_count;
+async function load(append=false){const results=document.getElementById('results');const hadStatic=!append&&results.hasAttribute('data-static-breed-fallback')&&results.children.length>0;more.disabled=true;try{
+ const res=await fetch('/api/reviews/groups?breed='+encodeURIComponent('トイプードル')+'&limit=12&offset='+(append?nextOffset:0));if(!res.ok)throw Error('groups');const data=await res.json();results.removeAttribute('data-static-breed-fallback');groups=append?[...groups,...data.groups]:data.groups;nextOffset=data.next_offset;
+ document.getElementById('reviewCount').removeAttribute('data-static-breed-count');document.getElementById('categoryCount').removeAttribute('data-static-breed-count');document.getElementById('reviewCount').textContent=data.count;document.getElementById('categoryCount').textContent=data.category_count;
  const byCat=new Map();for(const g of groups){if(!byCat.has(g.category))byCat.set(g.category,[]);byCat.get(g.category).push(g)}
  const cats=[...byCat.keys()].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
  document.getElementById('results').innerHTML=cats.map(cat=>{const gs=byCat.get(cat),meta=categoryMeta[cat]||[cat,'/review-search'];return `<article class="category"><div class="category-head"><h3>${esc(meta[0])}</h3><span class="category-count">表示商品の該当体験 ${gs.reduce((n,g)=>n+g.count,0)}件</span></div>${gs.map(g=>`<div class="product"><b>${esc(g.product_name)}</b>${g.reviews.map(r=>`<div class="experience">${esc(r.dog_breed)}｜${esc(r.summary)}</div>`).join('')}</div>`).join('')}<a class="article-link" href="${meta[1]}">${esc(meta[0])}の比較記事を見る →</a></article>`}).join('')||'<div class="loading">現在、該当する体験はありません。</div>';
  more.hidden=nextOffset===null;
-}catch(e){document.getElementById('reviewCount').textContent='—';document.getElementById('categoryCount').textContent='—';if(!append)document.getElementById('results').innerHTML='<div class="loading">体験データを読み込めませんでした。時間をおいて再度お試しください。</div>';}finally{more.disabled=false;}}
+}catch(e){if(!hadStatic){document.getElementById('reviewCount').textContent='—';document.getElementById('categoryCount').textContent='—';if(!append)results.innerHTML='<div class="loading">上の具体例と条件検索から公開体験をご覧いただけます。</div>';}}finally{more.disabled=false;}}
 more.addEventListener('click',()=>load(true));load();
 </script>
 </body></html>
