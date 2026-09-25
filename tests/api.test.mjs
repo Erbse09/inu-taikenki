@@ -91,3 +91,31 @@ test('large fixture: 30 products / 15000 additional summaries; bounded results a
   const log=[];const started=performance.now();const res=await reviewApi(new Request('https://inu.test/api/reviews?category=brush-pin&size=small&coat=curly&trait=scared&limit=12'),binding(large,log));const data=await res.json();assert.equal(res.status,200);assert.equal(data.reviews.length,12);assert(data.count>=15000);assert.equal(log.length,2);assert(data.has_more);
   const grouped=await request('/api/reviews/groups?category=brush-pin&limit=10',large);assert.equal(grouped.groups.length,10);assert(grouped.groups.every(g=>g.reviews.length===2));assert(performance.now()-started < 2000, 'selective queries must not regress to quadratic IN plans');console.log(`large fixture query ${Math.round(performance.now()-started)}ms; ${data.count} matches / 12 returned`);
 });
+
+
+test('equivalent trait tags share one filter meaning and canonical stats bucket',async()=>{
+  const local=legacyDatabase();migrate(local);
+  const product=local.prepare("SELECT id FROM products WHERE active=1 LIMIT 1").get().id;
+  local.prepare("INSERT INTO reviews(product_id,dog_breed,dog_size,coat_type,needs,summary) VALUES(?,?,?,?,?,?)").run(product,'テスト犬','small','short','multi-dog skin-sensitive','alias-a');
+  local.prepare("INSERT INTO reviews(product_id,dog_breed,dog_size,coat_type,needs,summary) VALUES(?,?,?,?,?,?)").run(product,'テスト犬','small','short','multi skin','alias-b');
+  const multi=await request('/api/reviews?trait=multi&limit=100',local);
+  const multiDog=await request('/api/reviews?trait=multi-dog&limit=100',local);
+  assert.deepEqual(multi.reviews.map(r=>r.id),multiDog.reviews.map(r=>r.id));
+  assert.equal(multi.count,multiDog.count);
+  const skin=await request('/api/reviews?trait=skin&limit=100',local);
+  const skinSensitive=await request('/api/reviews?trait=skin-sensitive&limit=100',local);
+  assert.deepEqual(skin.reviews.map(r=>r.id),skinSensitive.reviews.map(r=>r.id));
+  const stats=await request('/api/reviews/stats',local);
+  assert(!stats.facets.some(f=>f.kind==='trait'&&['multi-dog','skin-sensitive'].includes(f.value)));
+  assert(stats.facets.some(f=>f.kind==='trait'&&f.value==='multi'));
+  assert(stats.facets.some(f=>f.kind==='trait'&&f.value==='skin'));
+});
+
+test('breed coverage excludes rows explicitly marked 犬種不明',async()=>{
+  const local=legacyDatabase();migrate(local);
+  const product=local.prepare("SELECT id FROM products WHERE active=1 LIMIT 1").get().id;
+  local.prepare("INSERT INTO reviews(product_id,dog_breed,summary) VALUES(?,?,?)").run(product,'犬種不明・子犬','unknown-breed');
+  const stats=await request('/api/reviews/stats',local);
+  const actualKnown=local.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND nullif(trim(r.dog_breed),'') IS NOT NULL AND instr(r.dog_breed,'犬種不明')=0").get().n;
+  assert.equal(stats.coverage.breed,actualKnown);
+});

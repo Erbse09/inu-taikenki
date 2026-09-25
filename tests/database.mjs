@@ -6,7 +6,7 @@ export function legacyDatabase() {
   // Destructive historical seed is ONLY run in this disposable in-memory DB.
   db.exec(readFileSync('seed.sql','utf8'));
   for(const name of readdirSync('migrations').sort()) {
-    if(!/^\d/.test(name)||name.startsWith('0001_')||name.startsWith('0018_'))continue;
+    if(!/^\d/.test(name)||name.startsWith('0001_')||Number(name.slice(0,4))>=18)continue;
     db.exec(readFileSync('migrations/'+name,'utf8'));
   }
   return db;

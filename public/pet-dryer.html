@@ -201,7 +201,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
     </div>
   </section>
 
-  <div class="dog-condition-shortcuts"><b>🐕 犬の大きさから50件の体験を見る</b><div class="links"><a href="review-search?category=pet-dryer&size=small">小型犬</a><a href="review-search?category=pet-dryer&size=medium">中型犬</a><a href="review-search?category=pet-dryer&size=large">大型犬</a><a class="all" href="review-search?category=pet-dryer">このカテゴリの全体験</a></div></div>
+  <div class="dog-condition-shortcuts"><b>🐕 犬の大きさから現在の公開体験を見る</b><div class="links"><a href="review-search?category=pet-dryer&size=small">小型犬</a><a href="review-search?category=pet-dryer&size=medium">中型犬</a><a href="review-search?category=pet-dryer&size=large">大型犬</a><a class="all" href="review-search?category=pet-dryer">このカテゴリの全体験</a></div></div>
 <section class="tool-explainer" id="dryer-guide"><div class="eyebrow">PET DRYER GUIDE</div><h2>犬用ペットドライヤーは何が違う？</h2><p><strong>見る軸は「風量・温度・音・両手が空くか・ノズルの当てやすさ」</strong>です。犬の皮膚は熱に配慮が必要なので、高温で一気に乾かすより、タオルドライ後に風を使って根元まで乾かしやすいかを重視します。</p><div class="tool-points"><div><b>風量</b><span>毛量が多い・大型犬では乾燥時間に直結。強弱を調整できると怖がり犬にも合わせやすい。</span></div><div><b>温度</b><span>熱風を同じ場所へ当て続けない。低温〜適温で距離を取りやすい設計を確認。</span></div><div><b>音</b><span>「静音」表記だけで決めず、実際の犬の反応を見る。風音・モーター音の苦手さは個体差が大きい。</span></div><div><b>ハンズフリー</b><span>両手で毛を分けながら乾かせると、長毛・巻毛の根元確認やブラッシングをしやすい。</span></div></div><div class="difference-box"><h3>人用ドライヤーとの違いは「犬を乾かす前提の調整幅」</h3><p>ペット用は、低温・大風量・スタンド式など犬の全身を乾かしやすい設計の製品があります。人用でも乾かせますが、犬から距離を取り、同じ場所に熱を当て続けないことが重要です。</p><p>アニコムも、犬は被毛の根元に水分が残りやすく、特にダブルコートでは念入りな乾燥が必要と説明しています。また「熱で乾かす」より「風で乾かす」意識を勧めています。</p></div><div class="tablewrap"><table><thead><tr><th>条件</th><th>先に見るポイント</th><th>理由</th></tr></thead><tbody><tr><td>大型犬・多毛</td><td>風量・連続使用</td><td>乾燥時間が長くなりやすい</td></tr><tr><td>ダブルコート</td><td>根元まで風が届くか</td><td>表面だけ乾いても内側に水分が残りやすい</td></tr><tr><td>怖がり</td><td>風量調整・音</td><td>弱い設定から慣らしやすい</td></tr><tr><td>長毛・巻毛</td><td>ハンズフリー</td><td>毛を分けたりブラシを使いながら乾かしやすい</td></tr><tr><td>時短重視</td><td>風量＋タオルドライ</td><td>熱を上げるより事前の水分除去と風量が重要</td></tr></tbody></table></div><p class="tool-ref">参考：<a href="https://mag.anicom-sompo.co.jp/31851" target="_blank" rel="noopener">アニコム シャンプー後のドライで気をつけたいポイント</a> / <a href="https://www.anicom-sompo.co.jp/inu/1526.html" target="_blank" rel="noopener">アニコム 犬のシャンプーの方法</a></p></section>
 <section id="find">
     <div class="eyebrow">FIND BY DOG TYPE</div>
@@ -423,7 +423,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
       <button id="experienceMoreBtn" class="exp-more-btn" type="button" aria-controls="experienceGrid">もっと見る</button>
     </div>
 
-    <p class="source-line"><strong>記事内代表例：25件</strong>　上の25件は、既存調査で確認した公開体験から詳しく紹介している代表例です。このカテゴリでは公開体験50件を整理しており、犬のサイズ・毛質・条件で絞り込めます。</p>
+    <p class="source-line"><strong>記事内代表例：25件</strong>　上の25件は、既存調査で確認した公開体験から詳しく紹介している代表例です。この記事では既存調査の代表例を詳しく紹介しています。条件検索では、現在データベースに収録している公開体験を犬のサイズ・毛質・条件で絞り込めます。</p>
   </section>
 
   <section id="current-products">
@@ -620,10 +620,10 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
       renderDbReviews();
     } catch (error) {
       if(error.name==='AbortError'||id!==requestId)return;
-      if(append){status.textContent='読み込みに失敗しました。もう一度お試しください';return;}
+      if(append){status.textContent='追加の体験は更新できませんでした。表示中の内容を残しています。';return;}
       currentData = null;
-      status.textContent = '読み込みに失敗しました';
-      list.innerHTML = '<p>データを取得できませんでした。</p>';
+      status.textContent = '商品別のライブ表示を更新できませんでした。記事本文をご覧ください。';
+      list.innerHTML = '<p>上の記事本文と条件検索から公開体験を確認できます。</p>';
       moreBtn.hidden = true;
       console.error(error);
     } finally {if(id===requestId)moreBtn.disabled=false;}
@@ -646,8 +646,8 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
         await loadReviews(data.products[0].id);
       }
     } catch (error) {
-      select.innerHTML = '<option value="">商品一覧を取得できません</option>';
-      status.textContent = '読み込みに失敗しました';
+      select.innerHTML = '<option value="">商品別一覧を更新できません</option>';
+      status.textContent = '記事本文と条件検索をご覧ください';
       console.error(error);
     }
   }

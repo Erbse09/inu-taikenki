@@ -246,6 +246,8 @@ type ReviewFallbackRow = {
   coat_type?: string | null;
   needs?: string | null;
   summary?: string | null;
+  source_type?: string | null;
+  source_url?: string | null;
 };
 
 type ReviewFallbackPayload = {
@@ -258,6 +260,7 @@ type ReviewStatsFallbackPayload = {
   product_count?: number;
   coverage?: { breed?: number; size?: number; coat?: number };
   products?: Array<{ product_name?: string | null; count?: number }>;
+  facets?: Array<{ kind?: string | null; value?: string | null; count?: number }>;
 };
 
 function escapeHtml(value: unknown) {
@@ -299,12 +302,21 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
   }
 }
 
+function renderReviewSource(row: ReviewFallbackRow) {
+  const url = row.source_url || "";
+  if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return "";
+  const label = row.source_type === "existing_article_summary" ? "元にしたサイト内記事を見る →" : "確認元を見る ↗";
+  const attrs = /^https?:\/\//i.test(url) ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
+  return '<div class="source"><a href="' + escapeHtml(url) + '"' + attrs + '>' + label + '</a></div>';
+}
+
 function renderReviewFallbackCard(row: ReviewFallbackRow) {
   const breed = row.dog_breed?.trim() || "犬種情報なし";
   return `<article class="card" data-static-review-card>
 <div class="product">${escapeHtml(row.product_name || "犬用品")}</div>
 <div class="dog">${escapeHtml(breed)}</div>
 <div class="summary">${escapeHtml(row.summary || "")}</div>
+${renderReviewSource(row)}
 </article>`;
 }
 
@@ -365,6 +377,15 @@ async function integrateReviewInsightsFallback(request: Request, html: string, e
   const products = (payload.products || []).slice(0, 5).map((product) =>
     `<div class="product-item" data-static-insight-product><b>${escapeHtml(product.product_name || "犬用品")}</b><span>${Number(product.count) || 0}件の体験を収録</span></div>`
   ).join("");
+  const facetCount = (kind: string, value: string) => Number((payload.facets || []).find((f) => f.kind === kind && f.value === value)?.count || 0);
+  const rowHtml = (kind: string, values: Array<[string,string]>) => values
+    .map(([value,label]) => [label,facetCount(kind,value)] as const)
+    .filter(([,n]) => n > 0)
+    .map(([label,n]) => '<div><div class="row"><span>' + label + '</span><b>' + n + '件</b></div><div class="bar"><div class="fill" style="width:' + Math.round(n / Math.max(1,count) * 100) + '%"></div></div></div>')
+    .join("");
+  const sizeRows = rowHtml("size", [["small","小型"],["medium","中型"],["large","大型"]]);
+  const coatRows = rowHtml("coat", [["short","短毛"],["long","長毛"],["double","ダブルコート"],["curly","巻毛"]]);
+  const traitRows = rowHtml("trait", [["scared","怖がり"],["puppy","子犬"],["senior","シニア"],["speed","時短"],["handsfree","ハンズフリー"],["shedding","抜け毛"],["mat","毛玉"],["multi","多頭"],["skin","皮膚配慮"],["quiet","静音"]]);
 
   html = html
     .replace('<b id="total">…</b>', `<b id="total">${count}</b>`)
@@ -373,11 +394,91 @@ async function integrateReviewInsightsFallback(request: Request, html: string, e
     .replace('<div class="product-list" id="topProducts"></div>', `<div class="product-list" id="topProducts">${products}</div>`)
     .replace('<b id="breedCov">…</b>', `<b id="breedCov">${pct(coverage.breed)}</b>`)
     .replace('<b id="sizeCov">…</b>', `<b id="sizeCov">${pct(coverage.size)}</b>`)
-    .replace('<b id="coatCov">…</b>', `<b id="coatCov">${pct(coverage.coat)}</b>`);
+    .replace('<b id="coatCov">…</b>', `<b id="coatCov">${pct(coverage.coat)}</b>`)
+    .replace('<div class="rows" id="sizes"></div>', '<div class="rows" id="sizes" data-static-insight-facets>' + sizeRows + '</div>')
+    .replace('<div class="rows" id="coats"></div>', '<div class="rows" id="coats" data-static-insight-facets>' + coatRows + '</div>')
+    .replace('<div class="rows" id="needs"></div>', '<div class="rows" id="needs" data-static-insight-facets>' + traitRows + '</div>');
 
   return html;
 }
 
+type ReviewGroupFallback = {
+  product_id?: string | null;
+  product_name?: string | null;
+  category?: string | null;
+  count?: number;
+  reviews?: ReviewFallbackRow[];
+};
+
+type ReviewGroupsFallbackPayload = {
+  count?: number;
+  product_count?: number;
+  category_count?: number;
+  groups?: ReviewGroupFallback[];
+};
+
+const CATEGORY_LABELS: Record<string,string> = {
+  "pet-dryer":"ペットドライヤー","auto-feeder":"自動給餌器","dog-clipper":"犬用バリカン",
+  "brush-slicker":"スリッカーブラシ","brush-pin":"ピンブラシ","brush-undercoat":"アンダーコート用ブラシ","brush-comb":"犬用コーム",
+  "nail-grinder":"電動爪やすり","nail-clipper":"犬用爪切り","dog-shampoo":"犬用シャンプー","dog-conditioner":"犬用コンディショナー",
+  "dog-toothbrush":"犬用歯ブラシ","dog-toothpaste":"歯磨きジェル・歯磨き粉","dog-dental-chew":"犬用デンタルガム","dog-ear-cleaner":"犬用イヤークリーナー",
+};
+
+async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params: URLSearchParams): Promise<ReviewGroupsFallbackPayload | null> {
+  try {
+    const pageUrl = new URL(request.url);
+    const apiUrl = new URL("/api/reviews/groups?" + params.toString(), pageUrl.origin);
+    const apiResponse = await worker.fetch(new Request(apiUrl, { headers: { accept: "application/json" } }), env);
+    if (!apiResponse.ok) return null;
+    const payload = await apiResponse.json() as ReviewGroupsFallbackPayload;
+    if (!Number.isFinite(payload.count) || !Array.isArray(payload.groups)) return null;
+    return payload;
+  } catch { return null; }
+}
+
+function renderGroupReviewSamples(group: ReviewGroupFallback) {
+  return (group.reviews || []).slice(0, 2).map((review) =>
+    '<div class="excerpt">' + escapeHtml(review.summary || "") + "</div>"
+  ).join("");
+}
+
+async function integrateDogSizeFallback(request: Request, html: string, env: WorkerEnv) {
+  const url = new URL(request.url);
+  if (url.pathname.replace(/\.html$/, "") !== "/dog-size") return html;
+  const requested = url.searchParams.get("size") || "small";
+  const size = ["small","medium","large"].includes(requested) ? requested : "small";
+  const params = new URLSearchParams({size,limit:"4",offset:"0"});
+  const payload = await readReviewGroupsFallback(request, env, params);
+  if (!payload) return html;
+  const sizeLabels: Record<string,string> = {small:"小型犬",medium:"中型犬",large:"大型犬"};
+  const sizeImages: Record<string,string> = {small:"/small-dogw.PNG",medium:"/medium-dogw.PNG",large:"/large-dog.PNG"};
+  const label = sizeLabels[size];
+  const summary = '<div id="summary" class="summary" data-static-size-summary><img id="summaryDog" src="' + sizeImages[size] + '" alt="' + label + '"><div class="summary-text"><b>' + label + "で体験が見つかった商品 " + (Number(payload.product_count) || 0) + '件</b><span>全15カテゴリ横断・該当体験 ' + (Number(payload.count) || 0) + "件</span></div></div>";
+  const cards = (payload.groups || []).slice(0,4).map((group) => {
+    const category = group.category || "";
+    const breedText = [...new Set((group.reviews || []).map((r) => r.dog_breed).filter(Boolean))].slice(0,4).join("・") || label;
+    return '<article class="card" data-static-size-card><span class="category">' + escapeHtml(CATEGORY_LABELS[category] || category) + '</span><h2>' + escapeHtml(group.product_name || "犬用品") + '</h2><div class="meta">' + (Number(group.count) || 0) + "件の" + label + "体験 ・ " + escapeHtml(breedText) + "</div>" + renderGroupReviewSamples(group) + '<div class="actions"><a class="action article" href="/review-search?category=' + encodeURIComponent(category) + "&size=" + encodeURIComponent(size) + '">この条件の体験を見る</a></div></article>';
+  }).join("");
+  const list = '<div id="cards" class="cards" data-static-size-fallback>' + (cards || '<article class="card">このサイズの公開体験は条件検索から確認できます。</article>') + "</div>";
+  html = html.replace(/<div id="summary" class="summary">[\s\S]*?<\/div><\/div><div id="cards"/, summary + '<div id="cards"');
+  html = html.replace(/<div id="cards" class="cards">[\s\S]*?<\/div><button id="more"/, list + '<button id="more"');
+  return html;
+}
+
+async function integrateBreedFallback(request: Request, html: string, env: WorkerEnv) {
+  if (new URL(request.url).pathname.replace(/\.html$/, "") !== "/breed-toy-poodle") return html;
+  const payload = await readReviewGroupsFallback(request, env, new URLSearchParams({breed:"トイプードル",limit:"6",offset:"0"}));
+  if (!payload) return html;
+  const cards = (payload.groups || []).slice(0,6).map((group) => {
+    const category = group.category || "";
+    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + escapeHtml(review.summary || "") + "</div>").join("");
+    return '<article class="category" data-static-breed-card><div class="category-head"><h3>' + escapeHtml(group.product_name || "犬用品") + '</h3><span class="category-count">' + (Number(group.count) || 0) + '件</span></div><span class="category-count">' + escapeHtml(CATEGORY_LABELS[category] || category) + "</span>" + samples + '<a class="article-link" href="/review-search?category=' + encodeURIComponent(category) + "&breed=" + encodeURIComponent("トイプードル") + '">この条件の体験を見る →</a></article>';
+  }).join("");
+  html = html.replace('<b id="reviewCount">…</b>', '<b id="reviewCount" data-static-breed-count>' + (Number(payload.count) || 0) + "</b>");
+  html = html.replace('<b id="categoryCount">…</b>', '<b id="categoryCount" data-static-breed-count>' + (Number(payload.category_count) || 0) + "</b>");
+  html = html.replace(/<div id="results" class="category-grid">[\s\S]*?<\/div><button id="breedMore"/, '<div id="results" class="category-grid" data-static-breed-fallback>' + (cards || '<div class="loading">トイプードルと明記された体験は条件検索から確認できます。</div>') + '</div><button id="breedMore"');
+  return html;
+}
 function integrateEarCleaner(request: Request, html: string) {
   const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
 
@@ -522,7 +623,8 @@ export default {
     }
     html = await integrateReviewSearchFallback(request, html, env);
     html = await integrateReviewInsightsFallback(request, html, env);
-    html = integrateReviewSourcePolicy(html);
+    html = await integrateDogSizeFallback(request, html, env);
+    html = await integrateBreedFallback(request, html, env);
     return htmlResponse(response, html);
   },
 };

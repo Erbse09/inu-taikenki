@@ -14,6 +14,27 @@ const product=db.prepare("SELECT id FROM products WHERE category='brush-pin' ORD
 const insert=db.prepare("INSERT INTO reviews(product_id,dog_breed,dog_size,coat_type,needs,summary,source_url)VALUES(?,'トイプードル','small','curly','scared',?,'https://example.test/review')");
 for(let i=0;i<130;i++)insert.run(product,'TEST SUMMARY '+i);
 const ASSETS={async fetch(req){let p=new URL(req.url).pathname;if(p==='/')p='/index.html';if(!p.split('/').at(-1).includes('.'))p+='.html';const file=resolve('public','.'+p);if(!file.startsWith(resolve('public')+'/')||!existsSync(file))return new Response('',{status:404});return new Response(readFileSync(file),{headers:{'content-type':p.endsWith('.html')?'text/html':p.endsWith('.js')?'application/javascript':p.endsWith('.css')?'text/css':'text/plain'}});}};
+
+await test('crawler-facing discovery routes contain useful data before client JavaScript',async()=>{
+  for(const [path,marker] of [
+    ['/review-search','data-static-review-fallback'],
+    ['/review-insights','data-static-review-summary'],
+    ['/dog-size','data-static-size-fallback'],
+    ['/breed-toy-poodle','data-static-breed-fallback'],
+  ]){
+    const res=await worker.fetch(new Request('https://inu.test'+path),{DB:binding(db),ASSETS});
+    assert.equal(res.status,200,path);
+    const html=await res.text();
+    assert(html.includes(marker),path+' missing '+marker);
+    assert(!html.includes('データを取得できませんでした'),path);
+  }
+  const guide=await worker.fetch(new Request('https://inu.test/dog-brushing-dislike'),{DB:binding(db),ASSETS});
+  const guideHtml=await guide.text();
+  assert.equal(guide.status,200);
+  assert(!guideHtml.includes('750件'));
+  assert(guideHtml.includes('880件'));
+});
+
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
 try{
   await test('mobile routes, filtered pages, no whole-review downloads, pagination, race and failure handling',async()=>{

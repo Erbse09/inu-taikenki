@@ -51,3 +51,43 @@ test('AdSense-facing discovery pages keep useful server-rendered fallbacks',()=>
   assert(!about.includes('11カテゴリ'));
   assert(!about.includes('合計550件'));
 });
+
+
+test('final AdSense audit fixes stay present',()=>{
+  const privacy=readFileSync('public/privacy.html','utf8');
+  const entry=readFileSync('src/final-entry.ts','utf8');
+  const api=readFileSync('src/review-api.ts','utf8');
+  const insights=readFileSync('public/review-insights.html','utf8');
+  const browser=readFileSync('public/db-review-browser.js','utf8');
+  const dryer=readFileSync('public/pet-dryer.html','utf8');
+  const wrangler=readFileSync('wrangler.jsonc','utf8');
+  const editorial=readFileSync('public/editorial-policy.html','utf8');
+
+  assert(privacy.includes('Google AdSense'));
+  assert(privacy.includes('https://adssettings.google.com/'));
+  assert(privacy.includes('第三者配信事業者'));
+  assert(api.includes("traitGroups"));
+  assert(api.includes("COUNT(DISTINCT a.review_id)"));
+  assert(api.includes("instr(r.dog_breed,'犬種不明')=0"));
+  assert(insights.includes('<option value="multi">多頭</option>'));
+  assert(insights.includes('<option value="skin">皮膚配慮</option>'));
+  assert(!insights.includes('<option value="multi-dog">多頭</option>'));
+  assert(!insights.includes('<option value="skin-sensitive">皮膚配慮</option>'));
+  assert(entry.includes('integrateDogSizeFallback'));
+  assert(entry.includes('integrateBreedFallback'));
+  assert(entry.includes('data-static-insight-facets'));
+  assert(!entry.includes('html = integrateReviewSourcePolicy(html);'));
+  assert(wrangler.includes('"/breed-toy-poodle"'));
+  assert(wrangler.includes('"/dog-brushing-dislike"'));
+  assert(!browser.includes('読み込みに失敗しました'));
+  assert(!browser.includes('データを取得できませんでした'));
+  assert(!browser.includes('公開体験を準備中'));
+  assert(!dryer.includes('データを取得できませんでした'));
+  assert(editorial.includes('記事の分析件数と現在の検索件数'));
+
+  for(const file of readdirSync('public').filter(x=>x.endsWith('.html'))){
+    const html=readFileSync('public/'+file,'utf8');
+    assert(!html.includes('犬の大きさから50件の体験を見る'),file);
+    assert(!html.includes('このカテゴリの50件を検索'),file);
+  }
+});
