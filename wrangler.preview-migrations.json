@@ -1,0 +1,8 @@
+{
+  "d1_databases": [{
+    "binding": "PREVIEW_DB",
+    "database_name": "inu-taikenki-preview",
+    "database_id": "REQUIRES_VERIFIED_PREVIEW_D1_ID",
+    "migrations_dir": "release-data"
+  }]
+}
