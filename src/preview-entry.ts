@@ -1,5 +1,6 @@
 // Used only by wrangler.preview.json. Production keeps src/final-entry.ts.
 import site from "./final-entry";
+import {readOnlyDatabase} from "./readonly-db";
 type Env = Parameters<typeof site.fetch>[1] & { APP_ENV?: string };
 const ROBOTS = "noindex, nofollow, noarchive";
 
@@ -39,7 +40,8 @@ export default {
     if (["/sitemap.xml", "/ads.txt"].includes(url.pathname)) return protect(new Response("", {status:404}), head);
     if (!env.DB) return protect(new Response("Preview database unavailable", {status:503}), head);
     try {
-      let response = await site.fetch(head ? new Request(request.url, {headers:request.headers}) : request, env);
+      const safeEnv = Object.freeze({DB: readOnlyDatabase(env.DB), ASSETS: env.ASSETS});
+      let response = await site.fetch(head ? new Request(request.url, {headers:request.headers}) : request, safeEnv);
       if (response.headers.get("content-type")?.includes("text/html")) {
         response = new Response(previewHtml(await response.text()), {status:response.status, statusText:response.statusText, headers:response.headers});
       }

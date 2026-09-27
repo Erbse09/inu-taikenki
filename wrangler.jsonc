@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "inu-taikenki",
+  "build": { "command": "node scripts/production-build-guard.mjs" },
   "main": "src/final-entry.ts",
   "compatibility_date": "2026-09-02",
   "assets": {

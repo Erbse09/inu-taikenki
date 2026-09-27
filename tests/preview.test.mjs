@@ -5,13 +5,11 @@ import {readFileSync} from 'node:fs';
 import preview,{previewHtml} from '../src/preview-entry.ts';
 import {validateConfig} from '../scripts/preview.mjs';
 const req = (path='/',method='GET')=>new Request('https://preview.test'+path,{method});
-test('preview configuration fails closed until a separate database is configured',()=>{
- const p=JSON.parse(readFileSync('wrangler.preview.json')),m=JSON.parse(readFileSync('wrangler.preview-migrations.json')),prod=JSON.parse(readFileSync('wrangler.jsonc'));
- assert.throws(()=>validateConfig(p,m,prod));
- p.previews.d1_databases[0].database_id=m.d1_databases[0].database_id='11111111-1111-4111-8111-111111111111';
- validateConfig(p,m,prod);
- p.previews.d1_databases[0].database_id=m.d1_databases[0].database_id=prod.d1_databases[0].database_id;
- assert.throws(()=>validateConfig(p,m,prod),/Production D1/);
+test('preview references only the verified existing DB',()=>{
+ const p=JSON.parse(readFileSync('wrangler.preview.json')),prod=JSON.parse(readFileSync('wrangler.jsonc'));
+ validateConfig(p,prod);
+ p.previews.d1_databases[0].database_id='11111111-1111-4111-8111-111111111111';
+ assert.throws(()=>validateConfig(p,prod));
 });
 test('no runtime query on missing environment, production host, missing DB or write request',async()=>{
  const env={APP_ENV:'preview',DB:{prepare(){throw Error('must not query')}},ASSETS:{fetch(){throw Error('must not fetch')}}};
