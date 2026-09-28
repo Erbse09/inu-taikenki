@@ -80,7 +80,7 @@ const GA4_TAG = `<!-- Google tag (gtag.js) -->
   })();
 </script>`;
 
-const ARTICLE_COVERAGE_NOTE = `<div data-article-coverage style="margin:-15px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:10px 12px;font-size:10px;color:#765f50;line-height:1.65"><strong style="color:#d97828">記事作成時の分析：50件</strong>　50件はこの記事を作成した時点で本文まで確認して分析した範囲です。ページ下部の条件検索・商品別体験では、その後追加された分を含む現在の公開体験を絞り込めます。</div>`;
+const ARTICLE_COVERAGE_NOTE = `<div data-article-coverage style="margin:-15px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:10px 12px;font-size:13px;color:#765f50;line-height:1.65"><strong style="color:#d97828">記事作成時の分析：50件</strong>　50件はこの記事を作成した時点で本文まで確認して分析した範囲です。ページ下部の条件検索・商品別体験では、その後追加された分を含む現在の公開体験を絞り込めます。</div>`;
 
 const REPRESENTATIVE_EXAMPLE_PAGES = new Set([
   "/dog-shampoo",
@@ -156,7 +156,7 @@ function clarifyAutoFeederCoverage(request: Request, html: string) {
   const marker = '<h2>🐶 うちの子条件検索</h2>';
   if (!html.includes(marker)) return html;
 
-  const note = '<div data-auto-feeder-coverage style="margin:-17px 0 28px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:11px 13px;font-size:10px;color:#765f50;line-height:1.7"><strong style="color:#d97828">調査範囲について：</strong>この記事の調査では100件以上の公開口コミ本文を確認しています。下の条件検索・商品別体験は、その後追加された分を含む現在の収録体験を対象にします。記事の調査母数と現在の検索対象件数は別の数字です。</div>';
+  const note = '<div data-auto-feeder-coverage style="margin:-17px 0 28px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:11px 13px;font-size:13px;color:#765f50;line-height:1.7"><strong style="color:#d97828">調査範囲について：</strong>この記事の調査では100件以上の公開口コミ本文を確認しています。下の条件検索・商品別体験は、その後追加された分を含む現在の収録体験を対象にします。記事の調査母数と現在の検索対象件数は別の数字です。</div>';
   return html.replace(marker, `${note}\n${marker}`);
 }
 
@@ -164,7 +164,7 @@ function clarifyBrushCoverage(request: Request, html: string) {
   const pathname = new URL(request.url).pathname.replace(/\.html$/, "").replace(/\/$/, "");
   if (!BRUSH_COVERAGE_PAGES.has(pathname) || html.includes('data-brush-coverage')) return html;
 
-  const style = 'margin:10px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:11px 13px;font-size:10px;color:#765f50;line-height:1.7';
+  const style = 'margin:10px 0 26px;background:#fff7ed;border:1px solid #f0dcc6;border-radius:13px;padding:11px 13px;font-size:13px;color:#765f50;line-height:1.7';
   if (pathname === "/brush-guide") {
     const marker = '<section class="finder" id="dogFinder">';
     if (!html.includes(marker)) return html;
