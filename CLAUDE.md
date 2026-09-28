@@ -2,6 +2,13 @@
 
 詳しい運用手順は [DEVELOPMENT.md](DEVELOPMENT.md) を参照。以下は必ず守る。
 
+## CONTROL ROOM（Notion）
+
+- 作業開始時に、非公開Notionの「犬体験記 CONTROL ROOM」を確認し、GitHubの最新main・develop・作業ブランチ・Preview状態と照合してから作業する。
+- 作業終了時にCONTROL ROOMを最新化する。長い日報は書かず、現在状態・進捗・GitHub branch/commit・Preview・D1保全・ユーザー確認事項・質問・ブロッカー・次の作業だけを残す。
+- 「最終更新したAI」と「最終更新時刻（JST）」を必ず更新する。
+- CONTROL ROOMの更新は、mainへのmerge・本番公開・本番D1変更の承認の代わりにならない。
+
 ## ブランチ
 
 - 作業は必ず最新の `develop` を基準にする（`git fetch origin develop` → `origin/develop` から作業ブランチを作成）。
