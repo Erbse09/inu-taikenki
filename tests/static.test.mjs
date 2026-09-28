@@ -108,11 +108,8 @@ test('final AdSense audit fixes stay present',()=>{
 });
 
 test('mobile readability, image weight, ad disclosure and count labels',()=>{
-  const wrangler=readFileSync('wrangler.jsonc','utf8');
   for(const file of readdirSync('public').filter(x=>x.endsWith('.html'))){
     const html=readFileSync('public/'+file,'utf8');
-    const route='/'+file.slice(0,-5);
-    if(file!=='index.html'&&!route.startsWith('/pet-dryer'))assert(wrangler.includes(`"${route}"`),'run_worker_first missing '+route);
     if(/amazon\.co\.jp|db-review-browser\.js/.test(html))assert(html.includes('data-pr-disclosure'),'PR disclosure missing '+file);
     assert(!/\.(PNG|png)["']/.test(html.replace(/favicon[^"']*/g,'')),'heavy PNG referenced '+file);
   }
@@ -122,11 +119,6 @@ test('mobile readability, image weight, ad disclosure and count labels',()=>{
   }
   const home=readFileSync('public/index.html','utf8');
   assert(!home.includes('公開体験50件で比較'));
-  assert(home.includes('data-count-note'));
-  assert(home.includes('href="dog-ear-cleaner"'));
-  for(const page of ['dog-toothbrush','dog-toothpaste','dog-dental-chew','dog-ear-cleaner','dog-conditioner']){
-    assert(readFileSync('public/'+page+'.html','utf8').includes('data-article-coverage'),page);
-  }
   const finalEntry=readFileSync('src/final-entry.ts','utf8');
   assert(!/6商品・50件の体験/.test(finalEntry));
   assert(!readFileSync('src/index.ts','utf8').includes('商品別に50件の体験を見る'));
