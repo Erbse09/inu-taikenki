@@ -48,9 +48,9 @@ Base設定から余分なサービス・秘密情報を継承させない。Prev
 ## 日々の開発
 
 1. main/developをfetchして最新SHAと差分・未commit作業を確認。既存変更を捨てない。
-2. developで文言・記事・デザイン・検索などを修正。
+2. 最新developから作業ブランチを作成し、文言・記事・デザイン・検索などを修正。
 3. `npm ci` → `npm run check` → `npm run test:preview` → `npm run preview:check`。
-4. developへcommit/push。Workers Buildsの成功を確認し、固定Preview URLでユーザーとChatGPTが確認。
+4. 作業ブランチをpushし、develop向けPRを作成（developへ直接pushしない）。マージ後にWorkers Buildsの成功を確認し、固定Preview URLでユーザーとChatGPTが確認。
 5. 監査承認時は固定URLだけでなく対象SHAとDeployment URLも記録。以後変更すれば再監査。
 6. 普段はmainへマージしない。自動マージもしない。
 
