@@ -1,7 +1,7 @@
 // Read-only remote smoke audit. Does not replace browser/Safari or editorial review.
 import assert from 'node:assert/strict';
 const base = new URL(process.argv[2] || 'https://invalid.invalid');
-assert(base.protocol === 'https:' && base.hostname.endsWith('.workers.dev'), 'Pass the actual issued workers.dev Preview URL');
+assert(base.protocol === 'https:' && (base.hostname === 'develop.inu-taikenki.com' || base.hostname.endsWith('.workers.dev')), 'Pass the Preview URL (https://develop.inu-taikenki.com/), never production');
 assert(base.username === '' && base.password === '' && base.pathname === '/' && !base.search && !base.hash,'Pass only the Preview origin');
 const failures=[], pages=new Set(['/','/brush-pin','/pet-dryer','/review-search','/review-insights','/dog-size','/about','/privacy','/affiliate','/editorial-policy']);
 const links=new Set();

@@ -112,10 +112,10 @@ function alignHomepageReviewCounts(request: Request, html: string) {
   const pathname = new URL(request.url).pathname;
   if (pathname !== "/" && pathname !== "/index.html") return html;
 
-  html = html.replaceAll('<b>10</b><span>具体的な体験</span>', '<b>50</b><span>公開体験</span>');
+  html = html.replaceAll('<b>10</b><span>具体的な体験</span>', '<b>50</b><span>記事作成時の分析</span>');
   html = html.replace('犬の具体的な公開体験10件から「うちの子なら？」を比べます。', '記事作成時に公開体験50件を整理し、記事内の具体例から「うちの子なら？」を比べます。');
   html = html.replace('犬種が分かる公開体験を中心に25件整理。乾燥時間・音への反応・困った点まで比較しました。', '記事作成時に犬種が分かる公開体験50件を整理。記事内では代表例も掲載し、乾燥時間・音への反応・困った点まで比較しました。');
-  html = html.replace('<b>25</b><span>具体的な体験</span>', '<b>50</b><span>公開体験</span>');
+  html = html.replace('<b>25</b><span>具体的な体験</span>', '<b>50</b><span>記事作成時の分析</span>');
   return html;
 }
 
@@ -185,8 +185,7 @@ function removeVisibleDatabaseWording(html: string) {
     .replaceAll('DBに整理', '整理')
     .replaceAll('商品別DB収録', '商品別に収録')
     .replaceAll('公開レビューを整理したDBの分布', '公開レビューを整理した体験データの分布')
-    .replaceAll('ここではDB内の「分布」だけを表示しています。', 'ここでは整理した体験の「分布」だけを表示しています。')
-    .replaceAll('D1に保存した公開購入者レビューの要約50件', '整理した公開購入者レビューの要約50件');
+    .replaceAll('ここではDB内の「分布」だけを表示しています。', 'ここでは整理した体験の「分布」だけを表示しています。');
 }
 
 function injectStructuredSeo(request: Request, html: string) {

@@ -131,3 +131,38 @@ test('mobile readability, image weight, ad disclosure and count labels',()=>{
   assert(!/6商品・50件の体験/.test(finalEntry));
   assert(!readFileSync('src/index.ts','utf8').includes('商品別に50件の体験を見る'));
 });
+
+test('fixed "50件" only appears as an explicit article-analysis count',()=>{
+  // Phrases that clearly refer to the article's own analysis, or to a true minimum per category.
+  const allowed=['50件から見えた','50件をどう読んだか','この記事で分析した50件','各50件以上','各カテゴリ50件以上','「50件」などの件数'];
+  const isExplicit=(text,index)=>/記事作成時/.test(text.slice(Math.max(0,index-30),index))
+    || allowed.some(phrase=>{const at=text.indexOf(phrase,Math.max(0,index-15));return at!==-1&&at<=index&&index<at+phrase.length;});
+  const files=[...readdirSync('public').filter(x=>x.endsWith('.html')).map(x=>'public/'+x),...readdirSync('src').filter(x=>x.endsWith('.ts')).map(x=>'src/'+x)];
+  for(const file of files){
+    const text=readFileSync(file,'utf8');
+    for(const m of text.matchAll(/(?<![\d,])50件/g)){
+      assert(isExplicit(text,m.index),`${file}: ambiguous fixed count "${text.slice(Math.max(0,m.index-30),m.index+10).replace(/\s+/g,' ')}"`);
+    }
+    if(!file.endsWith('.html'))continue;
+    const zones=[
+      ...[...text.matchAll(/<title>([\s\S]*?)<\/title>/gi)].map(x=>['title',x[1]]),
+      ...[...text.matchAll(/<meta\b(?=[^>]*\bname=["']description["'])[^>]*content=["']([^"']*)["']/gi)].map(x=>['description',x[1]]),
+      ...[...text.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/gi)].map(x=>['h1',x[1]]),
+      ...[...text.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/gi)].map(x=>['link',x[1]]),
+    ];
+    for(const [kind,value] of zones)assert(!/(?<![\d,])50件/.test(value),`${file}: fixed 50件 in ${kind}: ${value.replace(/<[^>]+>/g,'').slice(0,60)}`);
+    for(const m of text.matchAll(/<b>50<\/b><span>([^<]*)<\/span>/g)){
+      assert(['記事作成時の分析','各カテゴリ最低件数'].includes(m[1]),`${file}: unclear 50 stat label "${m[1]}"`);
+    }
+  }
+});
+
+test('DEVELOPMENT.md reflects the live develop Preview',()=>{
+  const doc=readFileSync('DEVELOPMENT.md','utf8');
+  assert(doc.includes('https://develop.inu-taikenki.com'));
+  assert(!doc.includes('未発行'));
+  assert(!doc.includes('初回：Cloudflare'));
+  assert(!/ChatGPT[^\n]*確認済み/.test(doc));
+  const audit=readFileSync('scripts/audit-preview.mjs','utf8');
+  assert(audit.includes("'develop.inu-taikenki.com'"));
+});
