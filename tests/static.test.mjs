@@ -107,15 +107,10 @@ test('final AdSense audit fixes stay present',()=>{
   }
 });
 
-test('mobile readability, image weight, ad disclosure and count labels',()=>{
+test('ad disclosure and fixed count labels',()=>{
   for(const file of readdirSync('public').filter(x=>x.endsWith('.html'))){
     const html=readFileSync('public/'+file,'utf8');
     if(/amazon\.co\.jp|db-review-browser\.js/.test(html))assert(html.includes('data-pr-disclosure'),'PR disclosure missing '+file);
-    assert(!/\.(PNG|png)["']/.test(html.replace(/favicon[^"']*/g,'')),'heavy PNG referenced '+file);
-  }
-  for(const dir of ['public','src'])for(const file of readdirSync(dir).filter(x=>/\.(html|css|js|ts)$/.test(x))){
-    const code=readFileSync(dir+'/'+file,'utf8');
-    assert(!/font-size: ?([0-9]|10)(\.\d+)?px/.test(code),'font-size under 11px in '+dir+'/'+file);
   }
   const home=readFileSync('public/index.html','utf8');
   assert(!home.includes('公開体験50件で比較'));

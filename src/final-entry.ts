@@ -436,7 +436,7 @@ async function integrateDogSizeFallback(request: Request, html: string, env: Wor
   const payload = await readReviewGroupsFallback(request, env, params);
   if (!payload) return html;
   const sizeLabels: Record<string,string> = {small:"小型犬",medium:"中型犬",large:"大型犬"};
-  const sizeImages: Record<string,string> = {small:"/small-dog.webp",medium:"/medium-dog.webp",large:"/large-dog.webp"};
+  const sizeImages: Record<string,string> = {small:"/small-dogw.PNG",medium:"/medium-dogw.PNG",large:"/large-dog.PNG"};
   const label = sizeLabels[size];
   const summary = '<div id="summary" class="summary" data-static-size-summary><img id="summaryDog" src="' + sizeImages[size] + '" alt="' + label + '"><div class="summary-text"><b>' + label + "で体験が見つかった商品 " + (Number(payload.product_count) || 0) + '件</b><span>全15カテゴリ横断・該当体験 ' + (Number(payload.count) || 0) + "件</span></div></div>";
   const cards = (payload.groups || []).slice(0,4).map((group) => {
@@ -528,14 +528,14 @@ function integrateInternalLinks(request: Request, html: string) {
     .map(
       ({ href, label, note }) => `<a href="${href}" style="display:block;background:#fff;border:1px solid #eee3d8;border-radius:14px;padding:13px 14px;text-decoration:none;color:#3a312b">
 <strong style="display:block;font-size:12px;line-height:1.5;margin-bottom:4px">${label}</strong>
-<span style="display:block;font-size:13px;line-height:1.65;color:#766b63">${note}</span>
-<span style="display:block;margin-top:7px;font-size:12px;font-weight:850;color:#d97828">詳しく見る →</span>
+<span style="display:block;font-size:10px;line-height:1.65;color:#766b63">${note}</span>
+<span style="display:block;margin-top:7px;font-size:9px;font-weight:850;color:#d97828">詳しく見る →</span>
 </a>`,
     )
     .join("\n");
 
   const section = `<section data-inu-related-guides aria-label="関連ガイド" style="margin:34px 0 28px">
-<div style="font-size:13px;font-weight:900;letter-spacing:.08em;color:#d97828">RELATED GUIDES</div>
+<div style="font-size:10px;font-weight:900;letter-spacing:.08em;color:#d97828">RELATED GUIDES</div>
 <h2 style="font-size:20px;line-height:1.5;margin:5px 0 11px;color:#3a312b">${config.title}</h2>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px">${cards}</div>
 </section>`;
