@@ -106,3 +106,30 @@ test('final AdSense audit fixes stay present',()=>{
     assert(!html.includes('このカテゴリの50件を検索'),file);
   }
 });
+
+test('ad disclosure and fixed count labels',()=>{
+  for(const file of readdirSync('public').filter(x=>x.endsWith('.html'))){
+    const html=readFileSync('public/'+file,'utf8');
+    if(/amazon\.co\.jp|db-review-browser\.js/.test(html))assert(html.includes('data-pr-disclosure'),'PR disclosure missing '+file);
+  }
+  const home=readFileSync('public/index.html','utf8');
+  assert(!home.includes('公開体験50件で比較'));
+  const finalEntry=readFileSync('src/final-entry.ts','utf8');
+  assert(!/6商品・50件の体験/.test(finalEntry));
+  assert(!readFileSync('src/index.ts','utf8').includes('商品別に50件の体験を見る'));
+});
+
+test('fixed "50件" only appears as an explicit article-analysis count',()=>{
+  // Phrases in the article body that clearly refer to the article's own analysis, or to the per-category minimum.
+  const allowed=['50件から見えた','50件をどう読んだか','この記事で分析した50件','各50件以上','各カテゴリ50件以上','「50件」などの件数'];
+  const isExplicit=(text,index)=>/記事作成時/.test(text.slice(Math.max(0,index-30),index))
+    || allowed.some(phrase=>{const at=text.indexOf(phrase,Math.max(0,index-15));return at!==-1&&at<=index&&index<at+phrase.length;});
+  // Static pages plus the Worker layers that inject titles, descriptions and headings.
+  const files=[...readdirSync('public').filter(x=>x.endsWith('.html')).map(x=>'public/'+x),'src/final-entry.ts','src/index.ts'];
+  for(const file of files){
+    const text=readFileSync(file,'utf8');
+    for(const m of text.matchAll(/(?<![\d,])50件/g)){
+      assert(isExplicit(text,m.index),`${file}: ambiguous fixed count "${text.slice(Math.max(0,m.index-30),m.index+10).replace(/\s+/g,' ')}"`);
+    }
+  }
+});
