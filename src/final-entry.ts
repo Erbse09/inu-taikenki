@@ -4,7 +4,7 @@ type WorkerEnv = Parameters<typeof worker.fetch>[1];
 
 const EAR_HOME_CARD = `<article class="research-card">
 <div class="article-badge">犬用イヤークリーナー</div>
-<h3>犬用イヤークリーナー6商品を公開体験50件で比較</h3>
+<h3>犬用イヤークリーナー6商品を公開体験で比較</h3>
 <p>垂れ耳・耳掃除嫌い・におい・汚れ・低刺激など、選び方が分かる公開体験を6商品で整理しました。</p>
 <div class="research-summary"><div class="research-stat"><b>50</b><span>公開体験</span></div><div class="research-stat"><b>6</b><span>比較商品</span></div><div class="research-stat"><b>6軸</b><span>選び方</span></div></div>
 <div class="breed-list"><span class="breed">ゴールデン</span><span class="breed">トイプードル</span><span class="breed">チワックス</span><span class="breed">垂れ耳</span></div>
@@ -59,10 +59,10 @@ const SEO_DESCRIPTIONS: Record<string, string> = {
   "/dog-nail-grinder": "Yahoo!ショッピング・海外小売レビュー・Redditなど複数の公開情報から犬用電動爪やすりの体験を横断整理。怖がり犬・黒い爪・大型犬などの条件ごとに、音・振動、削る速さ、太い爪への対応、使いやすさを比較し、うちの子に近い実体験から選べます。",
   "/dog-clipper": "楽天市場・Yahoo!ショッピングなど複数サイトの公開口コミ・体験を横断整理。犬種・年齢ごとに、全身用と足裏・顔まわり用の違い、音・振動、切れ味、怖がり犬やシニア犬での使いやすさを比較し、うちの子に近い実体験から選べます。",
   "/auto-feeder": "Yahoo!ショッピング・楽天市場・メーカー情報・Xなど複数の公開情報を横断整理。犬種・年齢・留守番スタイルごとに、給餌スケジュール、1回量、容量、停電・Wi-Fi切断時の動作、カメラ機能を比較し、うちの子に近い実体験から選べます。",
-  "/dog-toothbrush": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用歯ブラシ6商品・50件の体験を整理。小型犬・小さい口、毛のやわらかさ、歯磨き嫌い、シニア、噛み癖などを比較し、うちの子に近い実体験から選べます。",
-  "/dog-toothpaste": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用歯磨きジェル・歯磨き粉6商品・50件の体験を整理。味・香り、ジェルとペーストの違い、歯磨き嫌い、子犬、シニアなどを比較し、うちの子に近い実体験から選べます。",
-  "/dog-dental-chew": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用デンタルガム6商品・50件の体験を整理。噛む時間、サイズ、子犬・シニア、口臭ケア、カロリー、丸飲みしやすさなどを比較し、うちの子に近い実体験から選べます。",
-  "/dog-ear-cleaner": "楽天市場の公開購入者レビューとメーカー・販売元情報をもとに、犬用イヤークリーナー6商品・50件の体験を整理。垂れ耳、刺激の少なさ、香り、におい・汚れ、耳掃除嫌い、容量などを比較し、うちの子に近い実体験から選べます。",
+  "/dog-toothbrush": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用歯ブラシ6商品の体験を整理。小型犬・小さい口、毛のやわらかさ、歯磨き嫌い、シニア、噛み癖などを比較し、うちの子に近い実体験から選べます。",
+  "/dog-toothpaste": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用歯磨きジェル・歯磨き粉6商品の体験を整理。味・香り、ジェルとペーストの違い、歯磨き嫌い、子犬、シニアなどを比較し、うちの子に近い実体験から選べます。",
+  "/dog-dental-chew": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用デンタルガム6商品の体験を整理。噛む時間、サイズ、子犬・シニア、口臭ケア、カロリー、丸飲みしやすさなどを比較し、うちの子に近い実体験から選べます。",
+  "/dog-ear-cleaner": "楽天市場の公開購入者レビューとメーカー・販売元情報をもとに、犬用イヤークリーナー6商品の体験を整理。垂れ耳、刺激の少なさ、香り、におい・汚れ、耳掃除嫌い、容量などを比較し、うちの子に近い実体験から選べます。",
 };
 
 type RelatedGuideLink = {
@@ -469,8 +469,8 @@ function integrateEarCleaner(request: Request, html: string) {
 
   if (pathname === "/" || pathname === "/index") {
     html = html.replace(
-      '<div class="article-badge">犬用デンタルガム</div>\n<h3>犬用歯磨きジェル・歯磨き粉6商品を公開体験50件で比較</h3>',
-      '<div class="article-badge">犬用デンタルガム</div>\n<h3>犬用デンタルガム6商品を公開体験50件で比較</h3>',
+      '<div class="article-badge">犬用デンタルガム</div>\n<h3>犬用歯磨きジェル・歯磨き粉6商品を公開体験で比較</h3>',
+      '<div class="article-badge">犬用デンタルガム</div>\n<h3>犬用デンタルガム6商品を公開体験で比較</h3>',
     );
     if (!html.includes('href="dog-ear-cleaner"')) {
       html = html.replace('<div class="article-grid">', `<div class="article-grid">\n${EAR_HOME_CARD}`);

@@ -16,7 +16,7 @@ const headers = {
 const PET_DRYER_BROWSER = `
 <section class="db-review-browser" data-db-review-browser data-category="pet-dryer">
   <div class="eyebrow">PRODUCT EXPERIENCES</div>
-  <h2>ペットドライヤーの商品別に50件の体験を見る</h2>
+  <h2>ペットドライヤーの商品別に体験を見る</h2>
   <p class="db-review-note">商品を選ぶと、その商品について確認できた公開体験を表示します。</p>
   <div class="db-controls">
     <label>商品</label>
