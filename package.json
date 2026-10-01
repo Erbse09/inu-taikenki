@@ -11,7 +11,7 @@
     "db:migrate:remote": "wrangler d1 migrations apply inu-taikenki --remote",
     "db:seed:local": "wrangler d1 execute inu-taikenki --local --file=./seed.sql",
     "db:seed:remote": "wrangler d1 execute inu-taikenki --remote --file=./seed.sql",
-    "test": "node --test tests/api.test.mjs tests/static.test.mjs",
+    "test": "node --test tests/api.test.mjs tests/static.test.mjs tests/seo.test.mjs",
     "test:browser": "node --test tests/browser.test.mjs",
     "preview:check": "node scripts/preview.mjs check",
     "preview:publish": "node scripts/preview.mjs publish",
