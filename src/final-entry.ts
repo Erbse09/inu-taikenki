@@ -46,6 +46,7 @@ const SEO_TITLES: Record<string, string> = {
   "/dog-toothpaste": "味・香り・歯磨き嫌いから選ぶ犬用歯磨きジェル・歯磨き粉｜公開レビューを横断比較",
   "/dog-dental-chew": "噛む時間・サイズ・カロリーから選ぶ犬用デンタルガム｜公開レビューを横断比較",
   "/dog-ear-cleaner": "垂れ耳・低刺激・耳掃除嫌いから選ぶ犬用イヤークリーナー｜公開レビューを横断比較",
+  "/dog-harness": "引っ張り・すっぽ抜け・気管への負担から選ぶ犬用ハーネス｜公開レビューを横断比較",
 };
 
 const SEO_DESCRIPTIONS: Record<string, string> = {
@@ -63,6 +64,7 @@ const SEO_DESCRIPTIONS: Record<string, string> = {
   "/dog-toothpaste": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用歯磨きジェル・歯磨き粉6商品の体験を整理。味・香り、ジェルとペーストの違い、歯磨き嫌い、子犬、シニアなどを比較し、うちの子に近い実体験から選べます。",
   "/dog-dental-chew": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用デンタルガム6商品の体験を整理。噛む時間、サイズ、子犬・シニア、口臭ケア、カロリー、丸飲みしやすさなどを比較し、うちの子に近い実体験から選べます。",
   "/dog-ear-cleaner": "楽天市場の公開購入者レビューとメーカー・販売元情報をもとに、犬用イヤークリーナー6商品の体験を整理。垂れ耳、刺激の少なさ、香り、におい・汚れ、耳掃除嫌い、容量などを比較し、うちの子に近い実体験から選べます。",
+  "/dog-harness": "楽天市場・Yahoo!ショッピングの公開購入者レビューと飼い主の公開動画をもとに、犬用ハーネス6商品の体験を整理。引っ張り癖、後ずさりでのすっぽ抜け、気管・咳への配慮、脇の擦れ、装着のしやすさ、サイズの合わせ方を比較し、うちの子に近い実体験から選べます。",
 };
 
 type RelatedGuideLink = {
@@ -407,6 +409,7 @@ const CATEGORY_LABELS: Record<string,string> = {
   "brush-slicker":"スリッカーブラシ","brush-pin":"ピンブラシ","brush-undercoat":"アンダーコート用ブラシ","brush-comb":"犬用コーム",
   "nail-grinder":"電動爪やすり","nail-clipper":"犬用爪切り","dog-shampoo":"犬用シャンプー","dog-conditioner":"犬用コンディショナー",
   "dog-toothbrush":"犬用歯ブラシ","dog-toothpaste":"歯磨きジェル・歯磨き粉","dog-dental-chew":"犬用デンタルガム","dog-ear-cleaner":"犬用イヤークリーナー",
+  "dog-harness":"犬用ハーネス",
 };
 
 async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params: URLSearchParams): Promise<ReviewGroupsFallbackPayload | null> {
