@@ -572,6 +572,42 @@ function integrateInternalLinks(request: Request, html: string) {
   return html.replace("</body>", `${section}\n</body>`);
 }
 
+// FAQPage structured data built only from the FAQ that is visible on the page (no extra Q&A).
+const FAQ_SCHEMA_PAGES = new Set(["/brush-pin", "/brush-slicker", "/brush-undercoat", "/brush-comb"]);
+
+function plainText(fragment: string) {
+  return fragment
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'")
+    .replaceAll("&amp;", "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function integrateFaqSchema(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  if (!FAQ_SCHEMA_PAGES.has(pathname) || html.includes("data-inu-faq-schema")) return html;
+  const items = [...html.matchAll(/<details class="faq-item"><summary>([\s\S]*?)<\/summary><div class="faq-answer">([\s\S]*?)<\/div><\/details>/g)]
+    .map(([, question, answer]) => ({ question: plainText(question), answer: plainText(answer) }))
+    .filter(({ question, answer }) => question && answer);
+  if (!items.length) return html;
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map(({ question, answer }) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  };
+  const json = JSON.stringify(schema).replaceAll("<", "\\u003c");
+  return html.replace("</head>", `<script type="application/ld+json" data-inu-faq-schema>${json}</script>\n</head>`);
+}
+
 function integrateFavicons(html: string) {
   const faviconPattern = /<link\b[^>]*rel=["'][^"']*(?:icon|manifest)[^"']*["'][^>]*>\s*/gi;
   html = html.replace(faviconPattern, "");
@@ -623,6 +659,7 @@ export default {
 
     let html = integrateEarCleaner(request, await response.text());
     html = integrateInternalLinks(request, html);
+    html = integrateFaqSchema(request, html);
     html = integrateFavicons(html);
     html = integrateSeoTitle(request, html);
     html = integrateSeoDescription(request, html);

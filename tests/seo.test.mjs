@@ -63,3 +63,21 @@ test('problem guides and the breed page are linked from many related pages, neve
     assert.equal((rendered[guide].match(/data-inu-related-guides/g)||[]).length,1,guide+' related section count');
   }
 });
+
+test('brush explainers answer とは/違い/選び方 and FAQ schema mirrors the visible FAQ only',async()=>{
+  for(const [page,word] of [['brush-pin','ピンブラシ'],['brush-slicker','スリッカー'],['brush-undercoat','アンダーコート'],['brush-comb','コーム']]){
+    const html=await (await get('https://inu-taikenki.com/'+page)).text();
+    const explainer=html.match(/<section class="tool-explainer">[\s\S]*?<\/section>/)[0];
+    assert(explainer.includes('とは？'),page);
+    assert(explainer.includes('違い'),page);
+    assert(explainer.includes('<strong>選び方：</strong>'),page);
+    const visible=[...html.matchAll(/<details class="faq-item"><summary>([\s\S]*?)<\/summary>/g)].map(m=>m[1].replace(/<[^>]+>/g,'').trim());
+    assert(visible.some(q=>q.includes('選び方')),page+' FAQ lacks 選び方');
+    assert(visible.some(q=>q.includes(word)&&q.includes('違い'))||visible.some(q=>q.includes('違い')),page+' FAQ lacks 違い');
+    const schemas=[...html.matchAll(/<script type="application\/ld\+json" data-inu-faq-schema>([\s\S]*?)<\/script>/g)];
+    assert.equal(schemas.length,1,page);
+    const faq=JSON.parse(schemas[0][1]);
+    assert.equal(faq['@type'],'FAQPage');
+    assert.deepEqual(faq.mainEntity.map(q=>q.name),visible,page+' schema must equal visible questions');
+  }
+});
