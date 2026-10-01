@@ -84,34 +84,59 @@ const DISCOVERY_GUIDES: RelatedGuideLink[] = [
   { href: "/breed-toy-poodle", label: "トイプードルの公開体験", note: "犬種欄に明記された体験だけをカテゴリ横断で表示" },
 ];
 
+const TOY_POODLE_GUIDE: RelatedGuideLink = {
+  href: "/breed-toy-poodle",
+  label: "トイプードルの公開体験",
+  note: "犬種欄にトイプードルと明記された体験だけをカテゴリ横断で表示",
+};
+
+const BRUSHING_DISLIKE_GUIDE: RelatedGuideLink = {
+  href: "/dog-brushing-dislike",
+  label: "ブラッシングを嫌がるとき",
+  note: "逃げる・噛む・痛がるときの確認ポイント",
+};
+
+// Guide pages link to each other (never to themselves) so each one is reachable from more than the homepage.
+function discoveryGuidesExcept(href: string): RelatedGuideLink[] {
+  return DISCOVERY_GUIDES.filter((link) => link.href !== href);
+}
+
+const OTHER_GUIDES_TITLE = "ほかの困りごと・犬種から探す";
+
 const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   "/": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
   "/index": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
   "/review-search": { title: "条件検索とあわせて見る", links: DISCOVERY_GUIDES },
-  "/dog-size": {
-    title: "犬種からも探す",
-    links: [
-      { href: "/breed-toy-poodle", label: "トイプードルの公開体験", note: "犬種欄にトイプードルと明記された体験だけを見る" },
-    ],
-  },
+  "/review-insights": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
+  "/dog-size": { title: "困りごと・犬種からも探す", links: DISCOVERY_GUIDES },
+  "/dog-brushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-brushing-dislike") },
+  "/dog-nail-care-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-nail-care-dislike") },
+  "/dog-toothbrushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-toothbrushing-dislike") },
+  "/dog-home-shampoo-guide": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-home-shampoo-guide") },
+  "/breed-toy-poodle": { title: "困りごとからも探す", links: discoveryGuidesExcept("/breed-toy-poodle") },
   "/brush-guide": {
     title: "ブラッシング・お手入れで困ったら",
     links: [
       { href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "嫌がり方から原因とブラシ選びを整理" },
       { href: "/dog-home-shampoo-guide", label: "おうちシャンプーの手順", note: "洗う前のブラッシングから乾燥まで確認" },
+      TOY_POODLE_GUIDE,
     ],
   },
   "/brush-slicker": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
   },
   "/brush-pin": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
   },
   "/brush-comb": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
+  },
+  "/dog-clipper": {
+    title: "犬種からも探す",
+    links: [TOY_POODLE_GUIDE],
   },
   "/brush-undercoat": {
     title: "ブラッシングで困ったら",
@@ -139,7 +164,10 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   },
   "/dog-shampoo": {
     title: "おうちシャンプーの流れも確認",
-    links: [{ href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" }],
+    links: [
+      { href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" },
+      TOY_POODLE_GUIDE,
+    ],
   },
   "/dog-conditioner": {
     title: "おうちシャンプーの流れも確認",

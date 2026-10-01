@@ -49,3 +49,17 @@ test('sitemap lists every public page once, with canonical URLs only',async()=>{
   const pages=readdirSync('public').filter(f=>f.endsWith('.html')).map(f=>f==='index.html'?'https://inu-taikenki.com/':'https://inu-taikenki.com/'+f.slice(0,-5));
   assert.deepEqual([...locs].sort(),[...pages].sort(),'sitemap and public pages differ');
 });
+
+test('problem guides and the breed page are linked from many related pages, never from themselves',async()=>{
+  const {readdirSync}=await import('node:fs');
+  const pages=readdirSync('public').filter(f=>f.endsWith('.html')).map(f=>f==='index.html'?'/':'/'+f.slice(0,-5));
+  const rendered={};
+  for(const p of pages)rendered[p]=await (await get('https://inu-taikenki.com'+p)).text();
+  for(const guide of ['/dog-brushing-dislike','/dog-nail-care-dislike','/dog-toothbrushing-dislike','/dog-home-shampoo-guide','/breed-toy-poodle']){
+    const from=pages.filter(p=>p!==guide&&new RegExp(`href=["']https?://inu-taikenki\\.com${guide}["']|href=["']${guide}["']|href=["']${guide.slice(1)}["']`).test(rendered[p]));
+    assert(from.length>=10,`${guide} linked from only ${from.length} pages`);
+    const related=rendered[guide].match(/<section data-inu-related-guides[\s\S]*?<\/section>/)?.[0]||'';
+    assert(!related.includes(`href="${guide}"`),guide+' links to itself');
+    assert.equal((rendered[guide].match(/data-inu-related-guides/g)||[]).length,1,guide+' related section count');
+  }
+});
