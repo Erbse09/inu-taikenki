@@ -81,3 +81,23 @@ test('brush explainers answer とは/違い/選び方 and FAQ schema mirrors the
     assert.deepEqual(faq.mainEntity.map(q=>q.name),visible,page+' schema must equal visible questions');
   }
 });
+
+test('titles keep the search phrases that earned impressions (とは / 選び方 / 違い)',async()=>{
+  for(const [page,phrases] of [
+    ['brush-pin',['ピンブラシとは','違い']],
+    ['brush-slicker',['スリッカーブラシとは','違い']],
+    ['brush-undercoat',['アンダーコートブラシとは','違い']],
+    ['brush-comb',['コームとは','違い']],
+    ['dog-nail-grinder',['電動爪やすりとは','違い']],
+    ['auto-feeder',['自動給餌器の選び方']],
+    ['pet-dryer',['ペットドライヤーの選び方','違い']],
+    ['dog-nail-clipper',['ギロチン・ニッパーの違い']],
+  ]){
+    const html=await (await get('https://inu-taikenki.com/'+page)).text();
+    const titles=[...html.matchAll(/<title>([\s\S]*?)<\/title>/g)].map(m=>m[1]);
+    assert.equal(titles.length,1,page);
+    for(const phrase of phrases)assert(titles[0].includes(phrase),`${page}: "${titles[0]}" lacks ${phrase}`);
+    const desc=html.match(/<meta name="description" content="([^"]+)">/)?.[1]||'';
+    assert(desc.length>=70,page+' description too short');
+  }
+});

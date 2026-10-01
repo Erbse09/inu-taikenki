@@ -208,7 +208,7 @@ function injectStructuredSeo(request: Request, html: string) {
   } else {
     const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
     const currentName = (titleMatch?.[1] ?? "犬用品みんなの体験記")
-      .replace(/\s*\|\s*犬用品みんなの体験記\s*$/u, "")
+      .replace(/\s*[|｜]\s*犬用品みんなの体験記\s*$/u, "")
       .trim();
 
     schema = {
