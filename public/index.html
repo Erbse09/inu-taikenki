@@ -152,17 +152,28 @@ main{max-width:760px;margin:auto;padding:0 18px 60px}section{margin-top:42px}.se
 .research-card{display:flex;flex-direction:column}
 .research-card .read-button{margin-top:auto}
 
+.find-entry{display:block;margin-top:26px;background:#fff;border:1px solid #f2d5b8;border-radius:16px;padding:16px 18px;box-shadow:0 5px 18px rgba(90,65,45,.05)}.find-entry b{display:block;font-size:16px;color:var(--ink);margin-bottom:4px}.find-entry span{display:block;font-size:13px;color:#756a62;line-height:1.6;margin-bottom:12px}.find-entry em{display:flex;align-items:center;justify-content:center;min-height:48px;background:var(--orange);color:#fff;border-radius:12px;font-style:normal;font-weight:800;font-size:14px}
 .site-footer{margin-top:42px;padding:30px 18px 42px;border-top:1px solid #eee4da;text-align:center;color:#92877e;font-size:11px;line-height:1.8}
 .site-footer-nav{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:14px}
 .site-footer-nav a{color:#7a6f67;text-decoration:none;font-weight:700}
 .site-footer-note{max-width:720px;margin:0 auto 8px}
 .dog-type{text-decoration:none;color:inherit}
 </style>
+<style id="tap-targets">
+/* タップしやすさ改善: 見た目はそのままに、押せる範囲だけ広げる（40〜44px） */
+.site-footer-nav{row-gap:0}.site-footer-nav a{display:inline-block;padding:12px 4px}
+.chips a,.links a,.quicknav a,.quick-links a,.route-links a,.back{display:inline-flex;align-items:center;justify-content:center;min-height:40px}
+.find-btn,.reset-btn,.db-filter-reset,.db-all-search-link,.amazon-search-cta,.reset{min-height:44px}
+.chip,.cats .cat,.hub-links a,.head .back,.header-inner .back,.reset,.amazon-btn,.amazon-cta{min-height:40px}
+.article-link{display:inline-block;padding:10px 0}
+.toc a{padding:10px 0}
+</style>
 </head>
 <body>
 <header><div class="header-inner"><div class="paw">🐾</div><div><div class="site-name">犬用品みんなの体験記</div><div class="site-mini">REAL EXPERIENCES FROM DOG OWNERS</div></div></div></header>
 <div class="hero"><div class="hero-label">🐶 飼い主たちのリアルな体験を調査</div><h1>「うちの子なら？」で<br/><span>犬用品を選ぼう。</span></h1><p>飼い主たちの「実際どうだった？」を調査。<br/>犬種・サイズ・毛質・性格から、<br/>うちの子に近い体験を探せます。</p></div>
 <main>
+<a class="find-entry" href="/review-search"><b>🔍 口コミを条件で探す</b><span>犬用品のカテゴリ・犬のサイズ・毛質・キーワードから、うちの子に近い公開体験を絞り込めます。</span><em>口コミ検索を開く →</em></a>
 <section><div class="section-label">FIND BY DOG TYPE</div><h2>🐾 うちの子から探す</h2><p class="section-desc"><span>同じ犬用品でも、犬の大きさや毛質によって</span><span>使い心地は変わります。</span></p>
 <div class="dog-types">
 <a class="dog-type" href="/dog-size?size=small"><img alt="小型犬" class="dog-photo" src="small-dogw.PNG"/><strong>小型犬</strong><small>チワワ・ポメ・トイプーなど</small></a>
