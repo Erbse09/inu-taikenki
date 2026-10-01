@@ -80,7 +80,8 @@
   "routes": [
     {
       "pattern": "inu-taikenki.com",
-      "custom_domain": true
+      "custom_domain": true,
+      "previews_enabled": true
     },
     {
       "pattern": "www.inu-taikenki.com",
