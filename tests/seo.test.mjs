@@ -38,3 +38,14 @@ test('every canonical page renders a self-referencing https non-www canonical',a
     assert(!/<meta[^>]+name=["']robots["'][^>]+noindex/i.test(html),loc+' must stay indexable');
   }
 });
+
+test('sitemap lists every public page once, with canonical URLs only',async()=>{
+  const {readdirSync}=await import('node:fs');
+  const locs=[...readFileSync('public/sitemap.xml','utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
+  assert.equal(new Set(locs).size,locs.length,'duplicate <loc>');
+  for(const loc of locs){
+    assert.match(loc,/^https:\/\/inu-taikenki\.com\/[a-z0-9-]*$/,loc+' must be https, non-www, extensionless, without query');
+  }
+  const pages=readdirSync('public').filter(f=>f.endsWith('.html')).map(f=>f==='index.html'?'https://inu-taikenki.com/':'https://inu-taikenki.com/'+f.slice(0,-5));
+  assert.deepEqual([...locs].sort(),[...pages].sort(),'sitemap and public pages differ');
+});
