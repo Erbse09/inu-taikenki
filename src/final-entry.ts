@@ -28,20 +28,16 @@ const FAVICON_LINKS = `<link rel="icon" type="image/png" sizes="96x96" href="/fa
 <link rel="apple-touch-icon" href="/apple-touch-icon.svg">
 <link rel="manifest" href="/site.webmanifest">`;
 
+// Pages not listed here keep the <title> written in their HTML file.
+// /auto-feeder, /pet-dryer, /dog-nail-grinder and the four brush pages were removed on 2026-10-01 so that the
+// query-matching titles that were live before 2026-09-14 (「〇〇とは？」「選び方」「違い」) are served again.
 const SEO_TITLES: Record<string, string> = {
   "/": "犬用品の公開体験750件を犬種・条件別に比較｜犬体験記",
   "/index": "犬用品の公開体験750件を犬種・条件別に比較｜犬体験記",
-  "/brush-comb": "毛玉・仕上げから選ぶ犬用コーム｜公開レビューの実体験を横断比較",
-  "/brush-slicker": "毛玉・もつれから選ぶ犬用スリッカーブラシ｜複数サイトの実体験を横断比較",
-  "/brush-undercoat": "換毛期・抜け毛から選ぶ犬用アンダーコートブラシ｜複数サイトの実体験を横断比較",
-  "/brush-pin": "犬種・毛質から選ぶ犬用ピンブラシ｜複数サイトの実体験を横断比較",
   "/dog-shampoo": "低刺激・保湿・仕上がりから選ぶ犬用シャンプー｜複数サイトの実体験を横断比較",
   "/dog-conditioner": "毛質・仕上がりから選ぶ犬用コンディショナー｜複数サイトの実体験を横断比較",
   "/dog-nail-clipper": "ギロチン・ニッパーの違いから選ぶ犬用爪切り｜複数サイトの実体験を横断比較",
-  "/dog-nail-grinder": "音・振動・太い爪から選ぶ犬用電動爪やすり｜複数サイトの実体験を横断比較",
   "/dog-clipper": "全身・足裏・怖がり犬から選ぶ犬用バリカン｜複数サイトの実体験を横断比較",
-  "/auto-feeder": "留守番・停電対策・カメラから選ぶ犬用自動給餌器｜複数サイトの実体験を横断比較",
-  "/pet-dryer": "音・乾燥時間から選ぶ犬用ペットドライヤー｜複数サイトの実体験を横断比較",
   "/dog-toothbrush": "小さい口・歯磨き嫌いから選ぶ犬用歯ブラシ｜公開レビューの実体験を横断比較",
   "/dog-toothpaste": "味・香り・歯磨き嫌いから選ぶ犬用歯磨きジェル・歯磨き粉｜公開レビューを横断比較",
   "/dog-dental-chew": "噛む時間・サイズ・カロリーから選ぶ犬用デンタルガム｜公開レビューを横断比較",
@@ -50,7 +46,8 @@ const SEO_TITLES: Record<string, string> = {
 
 const SEO_DESCRIPTIONS: Record<string, string> = {
   "/pet-dryer": "Amazon・楽天など複数サイトの公開口コミ・体験を横断整理。犬種・サイズ・毛質ごとに、風量・音への反応・乾燥時間・ハンズフリーの使いやすさを比較し、うちの子に近い実体験から選べます。",
-  "/brush-slicker": "Amazon・楽天など複数サイトの公開口コミ・体験を横断整理。犬種・毛質ごとに、毛玉・もつれへの使いやすさ、ピンの硬さ、仕上がりを比較し、うちの子に近い実体験から選べます。",
+  "/brush-slicker": "犬用スリッカーブラシとは？細い金属ピンで毛玉・もつれをほぐすブラシです。ソフト・ハードの硬さ、ピンの長さ、コームやピンブラシとの違いを整理し、トイプードル・ポメラニアン・柴犬など犬種が分かる公開口コミから比較できます。",
+  "/brush-pin": "犬用ピンブラシとは？長めの金属ピンで長毛を広く整える、毎日のお手入れ向きのブラシです。スリッカーとの違い、ピンの長さの選び方を整理し、ゴールデン・ポメラニアン・トイプードルなど犬種が分かる公開体験から比較できます。",
   "/brush-undercoat": "楽天レビュー・Xなど複数の公開情報から犬用アンダーコートブラシの体験を横断整理。柴犬・コーギー・レトリバーなどダブルコート犬を中心に、換毛期の抜け毛、下毛の取れ方、嫌がり方、スリッカーとの違いを比較し、うちの子に近い実体験から選べます。",
   "/brush-comb": "楽天レビューなどの公開情報から犬用コームの体験を横断整理。トイプードル・マルチーズなど犬種や毛質ごとに、毛玉・もつれ、スリッカー後の仕上げ、根元確認、顔・足まわりでの使いやすさを比較し、うちの子に近い実体験から選べます。",
   "/dog-shampoo": "楽天・Yahoo!ショッピングなど複数サイトの犬用シャンプーの公開口コミ・体験を横断整理。短毛・長毛など毛質ごとに、低刺激・保湿・香り・泡立ち・すすぎやすさ・仕上がりを比較し、うちの子に近い実体験から選べます。",
@@ -84,34 +81,59 @@ const DISCOVERY_GUIDES: RelatedGuideLink[] = [
   { href: "/breed-toy-poodle", label: "トイプードルの公開体験", note: "犬種欄に明記された体験だけをカテゴリ横断で表示" },
 ];
 
+const TOY_POODLE_GUIDE: RelatedGuideLink = {
+  href: "/breed-toy-poodle",
+  label: "トイプードルの公開体験",
+  note: "犬種欄にトイプードルと明記された体験だけをカテゴリ横断で表示",
+};
+
+const BRUSHING_DISLIKE_GUIDE: RelatedGuideLink = {
+  href: "/dog-brushing-dislike",
+  label: "ブラッシングを嫌がるとき",
+  note: "逃げる・噛む・痛がるときの確認ポイント",
+};
+
+// Guide pages link to each other (never to themselves) so each one is reachable from more than the homepage.
+function discoveryGuidesExcept(href: string): RelatedGuideLink[] {
+  return DISCOVERY_GUIDES.filter((link) => link.href !== href);
+}
+
+const OTHER_GUIDES_TITLE = "ほかの困りごと・犬種から探す";
+
 const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   "/": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
   "/index": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
   "/review-search": { title: "条件検索とあわせて見る", links: DISCOVERY_GUIDES },
-  "/dog-size": {
-    title: "犬種からも探す",
-    links: [
-      { href: "/breed-toy-poodle", label: "トイプードルの公開体験", note: "犬種欄にトイプードルと明記された体験だけを見る" },
-    ],
-  },
+  "/review-insights": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
+  "/dog-size": { title: "困りごと・犬種からも探す", links: DISCOVERY_GUIDES },
+  "/dog-brushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-brushing-dislike") },
+  "/dog-nail-care-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-nail-care-dislike") },
+  "/dog-toothbrushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-toothbrushing-dislike") },
+  "/dog-home-shampoo-guide": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-home-shampoo-guide") },
+  "/breed-toy-poodle": { title: "困りごとからも探す", links: discoveryGuidesExcept("/breed-toy-poodle") },
   "/brush-guide": {
     title: "ブラッシング・お手入れで困ったら",
     links: [
       { href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "嫌がり方から原因とブラシ選びを整理" },
       { href: "/dog-home-shampoo-guide", label: "おうちシャンプーの手順", note: "洗う前のブラッシングから乾燥まで確認" },
+      TOY_POODLE_GUIDE,
     ],
   },
   "/brush-slicker": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
   },
   "/brush-pin": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
   },
   "/brush-comb": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
+  },
+  "/dog-clipper": {
+    title: "犬種からも探す",
+    links: [TOY_POODLE_GUIDE],
   },
   "/brush-undercoat": {
     title: "ブラッシングで困ったら",
@@ -139,7 +161,10 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   },
   "/dog-shampoo": {
     title: "おうちシャンプーの流れも確認",
-    links: [{ href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" }],
+    links: [
+      { href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" },
+      TOY_POODLE_GUIDE,
+    ],
   },
   "/dog-conditioner": {
     title: "おうちシャンプーの流れも確認",
@@ -544,6 +569,42 @@ function integrateInternalLinks(request: Request, html: string) {
   return html.replace("</body>", `${section}\n</body>`);
 }
 
+// FAQPage structured data built only from the FAQ that is visible on the page (no extra Q&A).
+const FAQ_SCHEMA_PAGES = new Set(["/brush-pin", "/brush-slicker", "/brush-undercoat", "/brush-comb"]);
+
+function plainText(fragment: string) {
+  return fragment
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'")
+    .replaceAll("&amp;", "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function integrateFaqSchema(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  if (!FAQ_SCHEMA_PAGES.has(pathname) || html.includes("data-inu-faq-schema")) return html;
+  const items = [...html.matchAll(/<details class="faq-item"><summary>([\s\S]*?)<\/summary><div class="faq-answer">([\s\S]*?)<\/div><\/details>/g)]
+    .map(([, question, answer]) => ({ question: plainText(question), answer: plainText(answer) }))
+    .filter(({ question, answer }) => question && answer);
+  if (!items.length) return html;
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map(({ question, answer }) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  };
+  const json = JSON.stringify(schema).replaceAll("<", "\\u003c");
+  return html.replace("</head>", `<script type="application/ld+json" data-inu-faq-schema>${json}</script>\n</head>`);
+}
+
 function integrateFavicons(html: string) {
   const faviconPattern = /<link\b[^>]*rel=["'][^"']*(?:icon|manifest)[^"']*["'][^>]*>\s*/gi;
   html = html.replace(faviconPattern, "");
@@ -595,6 +656,7 @@ export default {
 
     let html = integrateEarCleaner(request, await response.text());
     html = integrateInternalLinks(request, html);
+    html = integrateFaqSchema(request, html);
     html = integrateFavicons(html);
     html = integrateSeoTitle(request, html);
     html = integrateSeoDescription(request, html);
