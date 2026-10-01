@@ -48,9 +48,20 @@ const GA4_TAG = `<!-- Google tag (gtag.js) -->
         if (url && url.origin !== location.origin) {
           const host = url.hostname;
           const isAmazon = /(^|\\.)amazon\\./i.test(host) || /amzn\\.to$/i.test(host);
+          const extra = {};
+          if (isAmazon) {
+            // Which product / page / block produced an affiliate click (no personal data).
+            const box = a.closest('article, .product, .card, .item, li, section');
+            extra.affiliate_network = 'amazon';
+            extra.is_affiliate = url.searchParams.has('tag') ? 'yes' : 'no';
+            extra.product_name = (url.searchParams.get('k') || textOf(box?.querySelector('h3, h2'))).slice(0, 100);
+            extra.article_path = location.pathname;
+            extra.link_area = (box?.getAttribute('class') || box?.tagName || '').toString().slice(0, 60);
+          }
           send(isAmazon ? 'product_click' : 'outbound_click', {
             ...params,
-            destination_host: host
+            destination_host: host,
+            ...extra
           });
         } else if (/review-search/.test(href)) {
           send('review_search_click', params);

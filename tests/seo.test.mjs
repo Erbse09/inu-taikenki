@@ -101,3 +101,12 @@ test('titles keep the search phrases that earned impressions (とは / 選び方
     assert(desc.length>=70,page+' description too short');
   }
 });
+
+test('GA4 affiliate click event carries product and article info, and the injected script parses',async()=>{
+  const vm=await import('node:vm');
+  const html=await (await get('https://inu-taikenki.com/brush-pin')).text();
+  const script=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).find(s=>s.includes("'product_click'"));
+  assert(script,'GA4 click script missing');
+  new vm.Script(script);
+  for(const key of ['affiliate_network','is_affiliate','product_name','article_path'])assert(script.includes(key),key);
+});
