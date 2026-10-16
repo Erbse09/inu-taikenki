@@ -47,6 +47,7 @@
   color:#796c63;font-size:8px;font-weight:750
 }
 .db-review-summary{font-size:10px;color:var(--sub);line-height:1.75}
+.db-review-kind{display:inline-block;margin:0 0 6px;padding:2px 8px;border-radius:999px;background:#f3ece4;color:#7b6655;font-size:9px;font-weight:800}
 .db-review-source{margin-top:7px;font-size:8px}
 .db-review-source a{color:#8a7565;text-decoration:underline;text-underline-offset:2px}
 .db-empty{font-size:10px;color:var(--sub);background:var(--soft);border-radius:12px;padding:12px;line-height:1.7}

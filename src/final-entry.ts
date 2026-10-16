@@ -327,12 +327,15 @@ function renderReviewSource(row: ReviewFallbackRow) {
   return '<div class="source"><a href="' + escapeHtml(url) + '"' + attrs + '>' + label + '</a></div>';
 }
 
+const ARTICLE_KIND_LABEL = "サイト内記事の再整理";
+
 function renderReviewFallbackCard(row: ReviewFallbackRow) {
   const breed = row.dog_breed?.trim() || "犬種情報なし";
+  const kind = row.source_type === "existing_article_summary" ? `<div class="kind">${ARTICLE_KIND_LABEL}（他サイトの体験ではありません）</div>` : "";
   return `<article class="card" data-static-review-card>
 <div class="product">${escapeHtml(row.product_name || "犬用品")}</div>
 <div class="dog">${escapeHtml(breed)}</div>
-<div class="summary">${escapeHtml(row.summary || "")}</div>
+${kind}<div class="summary">${escapeHtml(row.summary || "")}</div>
 ${renderReviewSource(row)}
 </article>`;
 }
@@ -455,7 +458,7 @@ async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params
 
 function renderGroupReviewSamples(group: ReviewGroupFallback) {
   return (group.reviews || []).slice(0, 2).map((review) =>
-    '<div class="excerpt">' + escapeHtml(review.summary || "") + "</div>"
+    '<div class="excerpt">' + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + "</div>"
   ).join("");
 }
 
@@ -488,7 +491,7 @@ async function integrateBreedFallback(request: Request, html: string, env: Worke
   if (!payload) return html;
   const cards = (payload.groups || []).slice(0,6).map((group) => {
     const category = group.category || "";
-    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + escapeHtml(review.summary || "") + "</div>").join("");
+    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + "</div>").join("");
     return '<article class="category" data-static-breed-card><div class="category-head"><h3>' + escapeHtml(group.product_name || "犬用品") + '</h3><span class="category-count">' + (Number(group.count) || 0) + '件</span></div><span class="category-count">' + escapeHtml(CATEGORY_LABELS[category] || category) + "</span>" + samples + '<a class="article-link" href="/review-search?category=' + encodeURIComponent(category) + "&breed=" + encodeURIComponent("トイプードル") + '">この条件の体験を見る →</a></article>';
   }).join("");
   html = html.replace('<b id="reviewCount">…</b>', '<b id="reviewCount" data-static-breed-count>' + (Number(payload.count) || 0) + "</b>");
@@ -686,7 +689,7 @@ async function integrateProductProfiles(request: Request, html: string, env: Wor
   if (start === -1 || end === -1) return html;
   try {
     const fragment = await cachedFragment(request, `profiles-${category}`, async () =>
-      renderProfilesHtml(CATEGORY_LABELS[category] || category, await loadCategoryProfiles(env.DB, category)));
+      renderProfilesHtml(CATEGORY_LABELS[category] || category, await loadCategoryProfiles(env.DB, category), category));
     if (!fragment) return html;
     const insertAt = end + "</section>".length;
     return html.slice(0, insertAt) + "\n" + fragment + html.slice(insertAt);
@@ -706,6 +709,25 @@ async function integrateSourceBreakdown(request: Request, html: string, env: Wor
       return data ? renderSourceBreakdownHtml(data) : "";
     });
     return fragment ? html.replace("</main>", `${fragment}\n</main>`) : html;
+  } catch {
+    return html;
+  }
+}
+
+
+// Headline totals (e.g. 1595件) include rows that re-organise this site's own articles. Say so right under the headline.
+const COUNT_NOTE_PAGES = new Set(["/", "/index", "/review-search", "/dog-size", "/review-insights"]);
+
+async function integrateCountNote(request: Request, html: string, env: WorkerEnv) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  if (!COUNT_NOTE_PAGES.has(pathname) || html.includes("data-inu-count-note") || !html.includes("</h1>")) return html;
+  try {
+    const fragment = await cachedFragment(request, "count-note", async () => {
+      const data = await loadSourceBreakdown(env.DB);
+      if (!data || !data.article) return "";
+      return `<p data-inu-count-note style="font-size:13px;line-height:1.7;margin:10px 0 0;opacity:.9">件数の内訳：他サイトに公開されたレビュー等の要約が${data.external}件、サイト内の記事を再整理したものが${data.article}件（合計${data.total}件）です。サイト内記事の再整理は他サイトの体験ではないため、体験の横に印を付けています。<a href="/editorial-policy" style="color:inherit;text-decoration:underline">くわしく</a></p>`;
+    });
+    return fragment ? html.replace("</h1>", `</h1>\n${fragment}`) : html;
   } catch {
     return html;
   }
@@ -741,6 +763,7 @@ export default {
     html = await integrateBreedFallback(request, html, env);
     html = await integrateProductProfiles(request, html, env);
     html = await integrateSourceBreakdown(request, html, env);
+    html = await integrateCountNote(request, html, env);
     return htmlResponse(response, html);
   },
 };

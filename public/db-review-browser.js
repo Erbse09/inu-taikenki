@@ -164,6 +164,7 @@
             <div class="db-review-product">${esc(currentData.product.name)}</div>
             <div class="db-review-dog">${esc(review.dog_breed || '犬種情報なし')}</div>
             ${tagsHtml}
+            ${review.source_type === 'existing_article_summary' ? '<div class="db-review-kind">サイト内記事の再整理（他サイトの体験ではありません）</div>' : ''}
             <div class="db-review-summary">${esc(review.summary)}</div>
             ${sourceHtml}
           </article>

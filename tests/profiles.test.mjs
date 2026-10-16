@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {legacyDatabase,migrate,binding} from './database.mjs';
 const {default:worker}=await import('../src/final-entry.ts');
-const {buildProfiles,sourceKind,renderProfilesHtml}=await import('../src/product-profiles.ts');
+const {buildProfiles,buildConditionRows,sourceKind,renderProfilesHtml}=await import('../src/product-profiles.ts');
 const {assertReadQuery}=await import('../src/readonly-db.ts');
 
 const db=legacyDatabase();migrate(db);
@@ -22,7 +22,7 @@ test('category articles render the product overview without JavaScript, from sto
   assert(products.length>0);
   for(const p of products){
     assert(html.includes(`data-inu-profile="${p.id}"`),p.id);
-    assert(html.includes(`整理した体験 ${p.n}件`),`${p.id}: count ${p.n} must match stored rows`);
+    assert(html.includes(`<strong>${p.name}</strong>｜体験${p.n}件</summary>`),`${p.id}: count ${p.n} must match stored rows`);
   }
   // The interactive list is kept, and the overview comes after it.
   assert(html.indexOf('data-db-review-browser')<html.indexOf('data-inu-profiles'));
@@ -36,8 +36,8 @@ test('overview quotes existing summaries only and never invents text',async()=>{
   assert(quoted.length>0);
   const summaries=db.prepare("SELECT dog_breed,summary FROM reviews").all().map(r=>r.summary);
   for(const line of quoted){
-    const summary=line.includes('｜')?line.slice(line.indexOf('｜')+1):line;
-    assert(summaries.includes(summary),'quoted text is not a stored summary: '+line);
+    const summary=line.replace(/^［サイト内記事の再整理］/,'');const body=summary.includes('｜')?summary.slice(summary.indexOf('｜')+1):summary;
+    assert(summaries.includes(body),'quoted text is not a stored summary: '+line);
   }
 });
 
@@ -47,7 +47,7 @@ test('every category page with a product list gets the overview exactly once; ot
     const html=await (await get('https://inu-taikenki.com'+page)).text();
     assert.equal((html.match(/data-inu-profiles(?=[ >])/g)||[]).length,1,page);
     const n=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND p.category=?").get(category).n;
-    const shown=[...html.matchAll(/整理した体験 (\d+)件/g)].reduce((sum,m)=>sum+Number(m[1]),0);
+    const shown=[...html.matchAll(/｜体験(\d+)件<\/summary>/g)].reduce((sum,m)=>sum+Number(m[1]),0);
     assert.equal(shown,n,`${page}: overview total must equal stored reviews`);
   }
   for(const page of ['/','/about','/privacy','/affiliate','/dog-size']){
@@ -88,20 +88,49 @@ test('JSON API responses are crawlable but marked noindex; HTML pages are not',a
   assert(!/Disallow:\s*\/api/i.test(readFileSync('public/robots.txt','utf8')),'robots.txt must not block /api: pages render their lists from it');
 });
 
-test('buildProfiles groups by product, ignores unknown sizes and keeps source kinds apart',()=>{
-  const profiles=buildProfiles([{id:'a',name:'A'},{id:'b',name:'B'},{id:'c',name:'C'}],[
-    {product_id:'a',dog_breed:'トイプードル・2歳',dog_size:'small',coat_type:'curly',needs:'scared daily',summary:'小型犬に使い、怖がらずに使えた一方、音が少し気になった体験。',source_type:'public_buyer_review_summary',source_url:'https://review.rakuten.co.jp/x'},
-    {product_id:'a',dog_breed:null,dog_size:null,coat_type:null,needs:null,summary:'サイズ不明だが日常のケアに使えたという体験の要約。',source_type:'existing_article_summary',source_url:'/dog-clipper.html'},
-    {product_id:'b',dog_breed:'犬種不明',dog_size:'large',coat_type:'double',needs:'shedding',summary:'大型犬の換毛期に使い、抜け毛がよく取れたという体験。',source_type:'public_buyer_review_summary',source_url:'https://shopping.yahoo.co.jp/y'},
-  ]);
+test('buildProfiles groups by product, skips rows the interactive list already shows, keeps article rows apart',()=>{
+  const row=(id,product,extra={})=>({id,product_id:product,dog_breed:null,dog_size:null,coat_type:null,needs:null,summary:`商品${product}の${id}番目の体験について書かれた二十文字以上の要約文です。`,source_type:'public_buyer_review_summary',source_url:'https://review.rakuten.co.jp/x',...extra});
+  const rows=[
+    ...Array.from({length:8},(_,i)=>row(i+1,'a',{dog_size:i<3?'small':null,needs:'scared daily',dog_breed:i===0?'トイプードル・2歳':null})),
+    row(9,'b',{dog_size:'large',coat_type:'double',needs:'shedding',summary:'大型犬の換毛期に使い、抜け毛はよく取れた一方、音が少し気になった体験の要約。',source_url:'https://shopping.yahoo.co.jp/y'}),
+    row(10,'b',{source_type:'existing_article_summary',source_url:'/dog-clipper.html'}),
+  ];
+  const profiles=buildProfiles([{id:'a',name:'A'},{id:'b',name:'B'},{id:'c',name:'C'}],rows);
   assert.deepEqual(profiles.map(p=>p.id),['a','b']);
-  assert.equal(profiles[0].count,2);assert.equal(profiles[0].sizes.small,1);assert.equal(profiles[0].sizeUnknown,1);
-  assert.deepEqual(profiles[0].breeds,['トイプードル']);
-  assert.deepEqual(profiles[1].breeds,[]);
-  assert.equal(profiles[0].reservations.length,1);
-  assert.deepEqual(profiles[0].sources.map(([k])=>k).sort(),['サイト内記事の再整理','楽天市場']);
+  const [a,b]=profiles;
+  assert.equal(a.count,8);assert.equal(a.sizes.small,3);assert.equal(a.sizeUnknown,5);
+  assert.deepEqual(a.breeds,['トイプードル']);
+  // Product "a" is the one the interactive list opens on; its first six rows must not be quoted again.
+  for(const line of [...a.examples,...a.reservations])for(let id=1;id<=6;id++)assert(!line.includes(`${id}番目`),`row ${id} is already shown by the interactive list`);
+  assert.equal(a.examples.length,2);
+  assert.equal(b.reservations.length,1);assert(b.reservations[0].includes('一方'));
+  assert.equal(b.articleRows,1);
+  assert(b.examples.some(line=>line.startsWith('［サイト内記事の再整理］')),'article rows are labelled when quoted');
+  assert(!a.examples.some(line=>line.includes('サイト内記事の再整理')));
+  assert.deepEqual(b.sources.map(([k])=>k).sort(),['Yahoo!ショッピング','サイト内記事の再整理']);
   assert.equal(sourceKind({source_type:'x',source_url:'https://www.chewy.com/p'}),'海外小売サイト');
   assert.equal(renderProfilesHtml('x',[]),'');
+});
+
+test('condition table counts reviews per condition and links only to searchable conditions',()=>{
+  const rows=[
+    {id:1,product_id:'a',dog_breed:null,dog_size:'small',coat_type:'curly',needs:'scared',summary:'小型の巻毛の犬が怖がりで、少しずつ慣らして使えた体験の要約です。',source_type:'x',source_url:null},
+    {id:2,product_id:'a',dog_breed:null,dog_size:'small',coat_type:null,needs:'scared beginner',summary:'小型犬で怖がりだったが、初心者でも扱いやすかったという体験の要約。',source_type:'x',source_url:null},
+    {id:3,product_id:'b',dog_breed:null,dog_size:'large',coat_type:null,needs:'beginner',summary:'大型犬に使い、初心者でも扱いやすいと感じたという体験についての要約。',source_type:'x',source_url:null},
+  ];
+  const profiles=buildProfiles([{id:'a',name:'A'},{id:'b',name:'B'}],rows);
+  const conditions=buildConditionRows('dog-clipper',profiles);
+  const get=label=>conditions.find(c=>c.label===label);
+  assert.equal(get('小型犬の体験').total,2);assert.deepEqual(get('小型犬の体験').products,[['A',2]]);
+  assert.equal(get('大型犬の体験').total,1);
+  assert(!get('中型犬の体験'),'conditions with no experience are not listed');
+  assert.equal(get('「怖がり」が書かれた体験').total,2);
+  assert.match(get('「怖がり」が書かれた体験').href,/q=%E6%80%96%E3%81%8C%E3%82%8A/);
+  assert.equal(get('「初心者」が書かれた体験').href,null,'no link when the search page cannot filter by it');
+  assert.match(get('小型犬の体験').href,/^\/review-search\?category=dog-clipper&size=small$/);
+  const html=renderProfilesHtml('犬用バリカン',profiles,'dog-clipper');
+  assert(html.includes('体験が少ないため参考程度'));
+  assert(html.includes('犬の条件から見る：どの商品に体験が多いか'));
 });
 
 test('overview escapes stored text',()=>{
@@ -127,4 +156,32 @@ test('Preview entry renders the overview through the read-only wrapper and never
   assert.equal(JSON.stringify(['products','reviews'].map(t=>db.prepare(`SELECT count(*) n FROM ${t}`).get().n)),before);
   const post=await preview.fetch(new Request('https://develop.inu-taikenki.com/dog-clipper',{method:'POST',body:'x'}),env);
   assert.equal(post.status,405);
+});
+
+test('headline pages explain the count breakdown and article rows are marked in every renderer',async()=>{
+  const total=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1").get().n;
+  const internal=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.source_type='existing_article_summary'").get().n;
+  assert(internal>0&&internal<total);
+  for(const page of ['/','/review-search','/dog-size','/review-insights']){
+    const html=await (await get('https://inu-taikenki.com'+page)).text();
+    assert.equal((html.match(/data-inu-count-note/g)||[]).length,1,page);
+    const note=text(html.slice(html.indexOf('data-inu-count-note')));
+    assert(note.includes(`サイト内の記事を再整理したものが${internal}件（合計${total}件）`),page);
+    assert(html.indexOf('data-inu-count-note')<html.indexOf('</main>')||!html.includes('</main>'));
+  }
+  // Server-rendered search cards and every client-side renderer carry the same marker.
+  const ssr=await (await get('https://inu-taikenki.com/review-search?category=pet-dryer')).text();
+  assert(ssr.includes('<div class="kind">サイト内記事の再整理（他サイトの体験ではありません）</div>'));
+  for(const file of ['db-review-browser.js','pet-dryer.html','review-search.html'])assert(readFileSync('public/'+file,'utf8').includes('サイト内記事の再整理（他サイトの体験ではありません）'),file);
+  for(const file of ['dog-size.html','breed-toy-poodle.html'])assert(readFileSync('public/'+file,'utf8').includes('［サイト内記事の再整理］'),file);
+});
+
+test('site description of how summaries were made is truthful: AI-assisted, not individually verified',()=>{
+  for(const file of ['about.html','editorial-policy.html']){
+    const html=readFileSync('public/'+file,'utf8');
+    assert(html.includes('生成AI'),file);
+    assert(html.includes('原文と1件ずつ照合したわけではありません'),file);
+    assert(!/運営者が(?:読んで)?要約/.test(html),file+' must not claim the operator wrote each summary');
+  }
+  assert(!/運営者が要約/.test(readFileSync('src/product-profiles.ts','utf8')));
 });

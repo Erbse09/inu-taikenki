@@ -592,6 +592,7 @@ body:has(#need-handsfree:checked) #experienceGrid .exp-card:not([data-need~="han
             <div class="exp-dog">${esc(review.dog_breed || '犬種情報なし')}</div>
           </div>
         </div>
+        ${review.source_type === 'existing_article_summary' ? '<div style="display:inline-block;margin:8px 0 0;padding:2px 8px;border-radius:999px;background:#f3ece4;color:#7b6655;font-size:11px;font-weight:800">サイト内記事の再整理（他サイトの体験ではありません）</div>' : ''}
         <div class="exp-body">${esc(review.summary)}</div>
       </article>
     `).join('');
