@@ -5,6 +5,7 @@ interface Statement {
   first<T>(): Promise<T | null>;
 }
 interface DB { prepare(sql: string): Statement; }
+import { sourceCheck } from './review-source-check';
 type Value = string | number | null;
 type Row = Record<string, any>;
 const aliases: Record<string,string> = {怖がり:'scared',子犬:'puppy',シニア:'senior',時短:'speed',抜け毛:'shedding',毛玉:'mat',もつれ:'tangle',多頭:'multi',静音:'quiet',皮膚:'skin',カメラ:'camera',旅行:'travel',いたずら:'mischief',ハンズフリー:'handsfree'};
@@ -54,6 +55,8 @@ function filters(p: URLSearchParams) {
 const from='FROM reviews r JOIN products p ON p.id=r.product_id';
 const fields='r.id,r.product_id,p.name AS product_name,p.category,r.dog_breed,r.dog_size,r.coat_type,r.needs,r.summary,r.source_type,r.source_url';
 async function rows(db:DB,sql:string,values:Value[]=[]) {return (await db.prepare(sql).bind(...values).all<Row>()).results||[];}
+// Static audit result per row (not stored in D1). Rows that were never checked get null, never "verified".
+const withCheck=(list:Row[]):Row[]=>list.map(r=>({...r,source_check:sourceCheck(r.id)}));
 async function totals(db:DB,where:string,values:Value[]) {
   return await db.prepare(`SELECT COUNT(*) AS count,COUNT(DISTINCT p.id) AS product_count,COUNT(DISTINCT p.category) AS category_count ${from} WHERE ${where}`).bind(...values).first<Row>() || {count:0,product_count:0,category_count:0};
 }
@@ -97,11 +100,11 @@ export async function reviewApi(request: Request, db: DB): Promise<Response | nu
     if(path==='/api/reviews/groups'){
       const groups=await rows(db,`SELECT p.id AS product_id,p.name AS product_name,p.category,p.affiliate_url,COUNT(*) AS count ${from} WHERE ${where} GROUP BY p.id ORDER BY count DESC,p.id LIMIT ? OFFSET ?`,[...values,limit,offset]);
       // Two indexed samples per displayed product; never materialize its full reviews.
-      for(const group of groups)group.reviews=await rows(db,`SELECT ${fields} ${from} WHERE ${where} AND p.id=? ORDER BY r.id LIMIT 2`,[...values,group.product_id]);
+      for(const group of groups)group.reviews=withCheck(await rows(db,`SELECT ${fields} ${from} WHERE ${where} AND p.id=? ORDER BY r.id LIMIT 2`,[...values,group.product_id]));
       return json({...total,groups,limit,offset,has_more:offset+groups.length<total.product_count,next_offset:offset+groups.length<total.product_count?offset+groups.length:null});
     }
     const result=await rows(db,`SELECT ${fields} ${from} WHERE ${where} AND r.id > ? ORDER BY r.id LIMIT ? OFFSET ?`,[...values,cursor,limit+1,offset]);
-    const has_more=result.length>limit, reviews=result.slice(0,limit);
+    const has_more=result.length>limit, reviews=withCheck(result.slice(0,limit));
     return json({category:params.get('category'),...(product?{product}:{}),...total,reviews,limit,offset,has_more,next_cursor:has_more?reviews.at(-1)!.id:null,next_offset:has_more&&!cursor?offset+reviews.length:null});
   } catch(error){
     if(error instanceof InputError)return json({error:error.message},400);

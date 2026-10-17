@@ -5,6 +5,7 @@ interface Statement {
   bind(...values: (string | number | null)[]): Statement;
   all<T>(): Promise<{ results?: T[] }>;
 }
+import { ledgerTotals, sourceCheck } from "./review-source-check";
 interface DB { prepare(sql: string): Statement; }
 
 type ProductRow = { id: string; name: string };
@@ -81,6 +82,7 @@ export type ProductProfile = {
   allCoats: Record<string, number>;
   allNeeds: Record<string, number>;
   articleRows: number;
+  checks: { V: number; P: number; N: number; U: number; C: number; none: number };
   breeds: string[];
   sources: Array<[string, number]>;
   examples: string[];
@@ -115,8 +117,12 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     const breeds = new Map<string, number>();
     const sources = new Map<string, number>();
     let articleRows = 0;
+    const checks = { V: 0, P: 0, N: 0, U: 0, C: 0, none: 0 };
     for (const row of rows) {
       if (row.source_type === "existing_article_summary") articleRows++;
+      const status = sourceCheck(row.id)?.status;
+      if (status) checks[status]++;
+      else if (row.source_type !== "existing_article_summary") checks.none++;
       const sizeTokens = tokens(row.dog_size).filter((t) => t in sizes);
       if (!sizeTokens.length) sizeUnknown++;
       for (const t of new Set(sizeTokens)) sizes[t]++;
@@ -130,12 +136,15 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     }
     // Quote existing summaries only: prefer ones that name a breed, from different sources / dog sizes.
     // Third-party summaries first; the site's own re-organised article rows only when nothing else is available.
-    const quotable = rows.filter((r) => r.summary && r.summary.length >= 20 && !shownByInteractiveList.has(r));
+    // Rows whose matching source post was written by a cat owner are never quoted as dog experiences.
+    const quotable = rows.filter((r) => r.summary && r.summary.length >= 20 && !shownByInteractiveList.has(r) && sourceCheck(r.id)?.status !== "C");
     const thirdParty = quotable.filter((r) => r.source_type !== "existing_article_summary");
     const usable = thirdParty.length >= 2 ? thirdParty : quotable;
     const pick = (candidates: ReviewRow[], limit: number) => {
       // Prefer rows that name a breed, and spread the picks across different dog sizes when possible.
-      const ranked = [...candidates].sort((x, y) => Number(!!breedKey(y.dog_breed)) - Number(!!breedKey(x.dog_breed)));
+      // Rows whose source was checked (status V) come first; unverified rows are never preferred.
+      const rank = (r: ReviewRow) => (sourceCheck(r.id)?.status === "V" ? 2 : 0) + (breedKey(r.dog_breed) ? 1 : 0);
+      const ranked = [...candidates].sort((x, y) => rank(y) - rank(x));
       const chosen: ReviewRow[] = [];
       const seenSize = new Set<string>();
       for (const row of ranked) {
@@ -156,7 +165,9 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     const examples = pick(usable.filter((r) => !reservationIds.has(r)), 2);
     const line = (row: ReviewRow) => {
       const breed = breedKey(row.dog_breed);
-      return (row.source_type === "existing_article_summary" ? "［サイト内記事の再整理］" : "") + (breed ? breed + "｜" : "") + row.summary;
+      const check = sourceCheck(row.id);
+      const tag = row.source_type === "existing_article_summary" ? "［サイト内記事の再整理］" : check ? `［${check.short}］` : "［出典の確認は未実施］";
+      return tag + (breed ? breed + "｜" : "") + row.summary;
     };
     profiles.push({
       id: product.id,
@@ -169,6 +180,7 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
       allCoats: Object.fromEntries(coats),
       allNeeds: Object.fromEntries(needs),
       articleRows,
+      checks,
       breeds: top(breeds, 3).map(([name]) => name),
       sources: top(sources, 4),
       examples: examples.map(line),
@@ -197,6 +209,12 @@ const STYLE = `<style data-inu-profiles-style>
 [data-inu-profiles] ul{margin:4px 0 10px;padding-left:20px}
 [data-inu-profiles] .ip-label{font-weight:800;font-size:13px;margin:8px 0 2px;color:#8a5a2b}
 </style>`;
+
+function checkCell(profile: ProductProfile) {
+  const c = profile.checks;
+  const parts = [c.V && `確認済み${c.V}`, c.P && `部分一致${c.P}`, c.N && `見つからず${c.N}`, c.U && `確認不能${c.U}`, c.C && `猫の投稿の可能性${c.C}`, c.none && `未実施${c.none}`].filter(Boolean);
+  return parts.length ? parts.join("／") + "件" : "—";
+}
 
 function sizeCell(profile: ProductProfile) {
   const parts = (["small", "medium", "large"] as const)
@@ -245,7 +263,7 @@ export function renderProfilesHtml(categoryLabel: string, profiles: ProductProfi
   const withSize = profiles.reduce((sum, p) => sum + p.count - p.sizeUnknown, 0);
   const articleTotal = profiles.reduce((sum, p) => sum + p.articleRows, 0);
   const rows = profiles.map((p) =>
-    `<tr><th scope="row">${esc(p.name)}</th><td>${p.count}件</td><td>${esc(sizeCell(p))}</td><td>${esc(p.needs.map(([l]) => l).slice(0, 3).join("・") || "記載なし")}</td><td>${esc(p.breeds.join("・") || "記載なし")}</td></tr>`).join("");
+    `<tr><th scope="row">${esc(p.name)}</th><td>${p.count}件</td><td>${esc(sizeCell(p))}</td><td>${esc(p.needs.map(([l]) => l).slice(0, 3).join("・") || "記載なし")}</td><td>${esc(p.breeds.join("・") || "記載なし")}</td><td>${esc(checkCell(p))}</td></tr>`).join("");
   const conditions = category ? buildConditionRows(category, profiles) : [];
   const conditionRows = conditions.map((c) => {
     const names = c.products.map(([name, n]) => `${esc(name)}（${n}件）`).join("、");
@@ -268,7 +286,7 @@ export function renderProfilesHtml(categoryLabel: string, profiles: ProductProfi
     return `<details class="ip-card" data-inu-profile="${esc(p.id)}">
 <summary><strong>${esc(p.name)}</strong>｜体験${p.count}件</summary>
 <p class="ip-meta">犬のサイズ：${esc(sizeCell(p))}｜毛質の記載：${coats}｜条件の記載：${needs}</p>
-<p class="ip-meta">要約の元になった確認先：${sources}</p>
+<p class="ip-meta">要約の元になった確認先：${sources}｜出典の確認状況：${esc(checkCell(p))}</p>
 ${p.examples.length ? `<div class="ip-label">この商品の体験から（要約）</div><ul>${list(p.examples)}</ul>` : ""}
 ${p.reservations.length ? `<div class="ip-label">評価が分かれた・気になる点にも触れた体験（要約）</div><ul>${list(p.reservations)}</ul>` : ""}
 </details>`;
@@ -280,12 +298,12 @@ ${p.reservations.length ? `<div class="ip-label">評価が分かれた・気に�
 <h2>${esc(categoryLabel)}｜商品別に見る体験の傾向（${profiles.length}商品・${total}件）</h2>
 <p class="ip-note">下の表は、このサイトに整理した体験の記載から集計したものです。<strong>体験の件数が多い＝おすすめ順位ではありません</strong>。「うちの子と同じサイズ・毛質・条件の体験があるか」を見るための目安として使ってください。犬のサイズが書かれていた体験は${total}件中${withSize}件で、書かれていないものは推測で補っていません。${esc(articleNote)}</p>
 <div class="ip-scroll"><table>
-<thead><tr><th scope="col">商品</th><th scope="col">体験数</th><th scope="col">犬のサイズ（記載のあった体験）</th><th scope="col">よく書かれた条件</th><th scope="col">犬の記載例（犬種など）</th></tr></thead>
+<thead><tr><th scope="col">商品</th><th scope="col">体験数</th><th scope="col">犬のサイズ（記載のあった体験）</th><th scope="col">よく書かれた条件</th><th scope="col">犬の記載例（犬種など）</th><th scope="col">出典の確認状況</th></tr></thead>
 <tbody>${rows}</tbody></table></div>
 ${conditionTable}
 <h3>商品ごとの詳細（タップで開く）</h3>
 ${cards}
-<p class="ip-note">体験は、販売サイトなどに公開されたレビュー等を、生成AIを使って要約したものです（運営者自身の使用体験ではありません）。すべての要約を運営者が原文と1件ずつ照合したわけではなく、確認先ページに該当の投稿が見つからない場合があります。確認先の多くは商品のレビュー一覧ページで、個別の投稿へ直接リンクしているわけではありません。詳しくは<a href="/editorial-policy">調査・編集方針</a>をご覧ください。</p>
+<p class="ip-note">体験は、販売サイトなどに公開されたレビュー等を、生成AI（ChatGPT・Claude）を使って要約したものです（運営者自身の使用体験ではありません）。すべての要約を運営者が原文と1件ずつ照合したわけではなく、確認先ページに該当の投稿が見つからない場合があります。確認先の多くは商品のレビュー一覧ページで、個別の投稿へ直接リンクしているわけではありません。詳しくは<a href="/editorial-policy">調査・編集方針</a>をご覧ください。</p>
 </section>`;
 }
 
@@ -315,12 +333,19 @@ export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | nul
   return { external: rows.length - article, article, total: rows.length, byKind: top(counter, 8) };
 }
 
+function renderLedgerNote(): string {
+  const t = ledgerTotals();
+  const day = t.date.replace(/^(\d+)-(\d+)-(\d+)$/, (_m, y, mo, d) => `${y}年${Number(mo)}月${Number(d)}日`);
+  return `<p data-inu-source-ledger style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px"><strong>出典の確認状況（${esc(day)}時点）：</strong>他サイトの要約${t.all}件の確認を試みました。取得できた確認先ページの本文がある要約は、生成AI（Claude）が候補となる投稿と1件ずつ読み比べています（本文を取得できなかったものは確認不能、キーワードがまったく重ならなかったものは読み比べずに「見つけられず」としています）。一度きりの確認で、自動更新はされません。結果は、確認先の一覧で対応する投稿を確認できたもの${t.V}件、内容が一部一致するもの${t.P}件、対応する投稿を見つけられなかったもの${t.N}件、確認先ページを取得できず確認できなかったもの${t.U}件、対応すると思われる投稿が猫の飼い主によるものだったもの${t.C}件です。「見つけられなかった」「確認できなかった」は、作り話だと判明したという意味ではありません（確認先の一覧を全件取得できない、掲載が更新される、といった理由でも起こります）。一方で、確認できていない要約を実体験として保証するものでもありません。ラベルのない体験は確認を実施していません。</p>`;
+}
+
 export function renderSourceBreakdownHtml(data: SourceBreakdown): string {
   const kinds = data.byKind.map(([label, n]) => `<li>${esc(label)}：${n}件</li>`).join("");
   return `<section data-inu-source-breakdown style="margin:30px 0;background:#fff;border:1px solid #eadfd5;border-radius:18px;padding:18px 16px">
 <h2 style="font-size:20px;margin:0 0 8px">現在のデータの内訳</h2>
 <p style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px">当サイトに整理している体験は合計<strong>${data.total}件</strong>です。そのうち、他サイトに公開されたレビュー等を要約したものが<strong>${data.external}件</strong>、当サイト内の既存記事を再整理したものが<strong>${data.article}件</strong>です。後者は新しい第三者の体験ではないため、別に数えています。</p>
 <ul style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px;padding-left:20px">${kinds}</ul>
+${renderLedgerNote()}
 <p style="font-size:14px;line-height:1.8;color:#766c65;margin:0">この件数は閲覧時点の登録数から自動で表示しています。件数が多いことは、商品の品質や人気を示すものではありません。</p>
 </section>`;
 }

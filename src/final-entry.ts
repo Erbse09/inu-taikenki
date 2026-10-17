@@ -257,6 +257,7 @@ function applyLiveCounts(html: string, counts: LiveCounts | null) {
 
 
 type ReviewFallbackRow = {
+  source_check?: { status: string; label: string; short: string; url: string | null } | null;
   product_name?: string | null;
   dog_breed?: string | null;
   dog_size?: string | null;
@@ -320,9 +321,9 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
 }
 
 function renderReviewSource(row: ReviewFallbackRow) {
-  const url = row.source_url || "";
+  const url = row.source_check?.url || row.source_url || "";
   if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return "";
-  const label = row.source_type === "existing_article_summary" && url.startsWith("/") ? "元にしたサイト内記事を見る →" : "確認元を見る ↗";
+  const label = row.source_type === "existing_article_summary" && url.startsWith("/") ? "元にしたサイト内記事を見る →" : row.source_check?.url ? "確認できた投稿のあるページを見る ↗" : "確認元（レビュー一覧）を見る ↗";
   const attrs = /^https?:\/\//i.test(url) ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
   return '<div class="source"><a href="' + escapeHtml(url) + '"' + attrs + '>' + label + '</a></div>';
 }
@@ -336,6 +337,7 @@ function renderReviewFallbackCard(row: ReviewFallbackRow) {
 <div class="product">${escapeHtml(row.product_name || "犬用品")}</div>
 <div class="dog">${escapeHtml(breed)}</div>
 ${kind}<div class="summary">${escapeHtml(row.summary || "")}</div>
+${row.source_check ? `<div class="check check-${escapeHtml(row.source_check.status)}">${escapeHtml(row.source_check.label)}</div>` : ""}
 ${renderReviewSource(row)}
 </article>`;
 }
@@ -458,7 +460,7 @@ async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params
 
 function renderGroupReviewSamples(group: ReviewGroupFallback) {
   return (group.reviews || []).slice(0, 2).map((review) =>
-    '<div class="excerpt">' + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + "</div>"
+    '<div class="excerpt">' + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>"
   ).join("");
 }
 
@@ -491,7 +493,7 @@ async function integrateBreedFallback(request: Request, html: string, env: Worke
   if (!payload) return html;
   const cards = (payload.groups || []).slice(0,6).map((group) => {
     const category = group.category || "";
-    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + "</div>").join("");
+    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>").join("");
     return '<article class="category" data-static-breed-card><div class="category-head"><h3>' + escapeHtml(group.product_name || "犬用品") + '</h3><span class="category-count">' + (Number(group.count) || 0) + '件</span></div><span class="category-count">' + escapeHtml(CATEGORY_LABELS[category] || category) + "</span>" + samples + '<a class="article-link" href="/review-search?category=' + encodeURIComponent(category) + "&breed=" + encodeURIComponent("トイプードル") + '">この条件の体験を見る →</a></article>';
   }).join("");
   html = html.replace('<b id="reviewCount">…</b>', '<b id="reviewCount" data-static-breed-count>' + (Number(payload.count) || 0) + "</b>");

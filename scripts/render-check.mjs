@@ -14,6 +14,7 @@ import { createRequire } from 'node:module';
 const origin = process.argv.find((a) => /^https?:\/\//.test(a)) || 'https://inu-taikenki.com';
 const shots = process.argv.find((a) => a.startsWith('--shots='))?.slice(8);
 const { default: worker } = await import('../src/final-entry.ts');
+const { sourceCheck } = await import('../src/review-source-check.ts');
 
 const getJson = async (path) => {
   const res = await fetch(origin + path, { headers: { accept: 'application/json', 'user-agent': 'inu-taikenki-render-check' } });
@@ -106,6 +107,34 @@ for (const [page, category] of Object.entries(PAGES)) {
   const initial = new Set(top[1].sort((a, b) => a.id - b.id).slice(0, 6).map((r) => r.summary));
   const repeated = quotes.filter((q) => [...initial].some((s) => q.includes(s.replaceAll('&', '&amp;'))));
   check(repeated.length === 0, `${page}: ${repeated.length} quotes repeat rows the interactive list shows first`);
+  // Source-check labels: a quote may say "出典確認済み" only if a stored row with that exact summary is status V,
+  // and no quote may come from a row whose matching post was written by a cat owner.
+  const decode = (t) => t.replaceAll('&amp;', '&').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&#039;', "'");
+  for (const q of quotes) {
+    const m = decode(q).match(/^［([^］]+)］(?:[^｜]*｜)?([\s\S]*)$/);
+    check(!!m, `${page}: quote without a status tag: ${q.slice(0, 40)}`);
+    if (!m) continue;
+    const same = reviews.filter((r) => r.summary === m[2]);
+    check(same.length > 0, `${page}: quoted text is not a stored summary: ${q.slice(0, 40)}`);
+    if (m[1] === '出典確認済み') check(same.some((r) => sourceCheck(r.id)?.status === 'V'), `${page}: "出典確認済み" on an unverified row: ${q.slice(0, 40)}`);
+    check(!same.every((r) => sourceCheck(r.id)?.status === 'C'), `${page}: quote taken from a cat-owner source: ${q.slice(0, 40)}`);
+  }
+  // The "出典の確認状況" cells add up to the stored rows of the category, by ledger status.
+  const want = { V: 0, P: 0, N: 0, U: 0, C: 0, none: 0, article: 0 };
+  for (const r of reviews.filter((x) => x.category === category)) {
+    if (r.source_type === 'existing_article_summary') { want.article++; continue; }
+    const st = sourceCheck(r.id)?.status;
+    want[st || 'none']++;
+  }
+  const got = { V: 0, P: 0, N: 0, U: 0, C: 0, none: 0 };
+  const names = { 確認済み: 'V', 部分一致: 'P', 見つからず: 'N', 確認不能: 'U', 猫の投稿の可能性: 'C', 未実施: 'none' };
+  for (const cell of section.matchAll(/出典の確認状況：([^<]*)</g)) {
+    for (const part of cell[1].replace(/件$/, '').split('／')) {
+      const mm = part.match(/^(確認済み|部分一致|見つからず|確認不能|猫の投稿の可能性|未実施)(\d+)$/);
+      if (mm) got[names[mm[1]]] += Number(mm[2]);
+    }
+  }
+  for (const k of Object.keys(got)) check(got[k] === want[k], `${page}: 出典の確認状況 ${k}: shown ${got[k]} != ledger ${want[k]}`);
   // The shared list/JS stay untouched: the added block is the only difference except optional notes.
   const added = html.length - base.length;
   rows.push({ page, products: shown.length, reviews: shownTotal, quotes: quotes.length, addedKB: +(added / 1024).toFixed(1), totalKB: +(html.length / 1024).toFixed(1), ms: +ms.toFixed(1), queries });

@@ -36,7 +36,7 @@ test('overview quotes existing summaries only and never invents text',async()=>{
   assert(quoted.length>0);
   const summaries=db.prepare("SELECT dog_breed,summary FROM reviews").all().map(r=>r.summary);
   for(const line of quoted){
-    const summary=line.replace(/^［サイト内記事の再整理］/,'');const body=summary.includes('｜')?summary.slice(summary.indexOf('｜')+1):summary;
+    const summary=line.replace(/^［[^］]*］/,'');const body=summary.includes('｜')?summary.slice(summary.indexOf('｜')+1):summary;
     assert(summaries.includes(body),'quoted text is not a stored summary: '+line);
   }
 });
@@ -180,6 +180,9 @@ test('site description of how summaries were made is truthful: AI-assisted, not 
   for(const file of ['about.html','editorial-policy.html']){
     const html=readFileSync('public/'+file,'utf8');
     assert(html.includes('生成AI'),file);
+    assert(html.includes('ChatGPT')&&html.includes('Claude'),file+' must distinguish the two assistants');
+    assert(html.includes('未確認'),file+' must say the first ~750 rows are unverified');
+    assert(!/生成AI（Claude）/.test(html),file+' must not read as if only Claude was used');
     assert(html.includes('原文と1件ずつ照合したわけではありません'),file);
     assert(!/運営者が(?:読んで)?要約/.test(html),file+' must not claim the operator wrote each summary');
   }

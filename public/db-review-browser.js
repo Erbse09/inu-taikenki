@@ -153,9 +153,11 @@
         const tagsHtml = tags.length
           ? '<div class="db-review-tags">' + tags.map((tag) => '<span>' + esc(tag) + '</span>').join('') + '</div>'
           : '';
-        const sourceUrl = review.source_url || '';
+        const check = review.source_check || null;
+        const sourceUrl = (check && check.url) || review.source_url || '';
         const sourceOk = /^https?:\/\//i.test(sourceUrl) || sourceUrl.startsWith('/');
-        const sourceLabel = review.source_type === 'existing_article_summary' && sourceUrl.startsWith('/') ? '元にしたサイト内記事を見る →' : '確認元を見る ↗';
+        const sourceLabel = review.source_type === 'existing_article_summary' && sourceUrl.startsWith('/') ? '元にしたサイト内記事を見る →' : (check && check.url ? '確認できた投稿のあるページを見る ↗' : '確認元（レビュー一覧）を見る ↗');
+        const checkHtml = check ? '<div class="db-review-check db-review-check-' + esc(check.status) + '">' + esc(check.label) + '</div>' : '';
         const sourceHtml = sourceOk
           ? '<div class="db-review-source"><a href="' + esc(sourceUrl) + '"' + (/^https?:\/\//i.test(sourceUrl) ? ' target="_blank" rel="noopener noreferrer nofollow"' : '') + '>' + sourceLabel + '</a></div>'
           : '';
@@ -166,6 +168,7 @@
             ${tagsHtml}
             ${review.source_type === 'existing_article_summary' ? '<div class="db-review-kind">サイト内記事の再整理（他サイトの体験ではありません）</div>' : ''}
             <div class="db-review-summary">${esc(review.summary)}</div>
+            ${checkHtml}
             ${sourceHtml}
           </article>
         `;
