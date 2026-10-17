@@ -29,7 +29,7 @@ test('runtime review totals are sourced from D1 instead of a fixed 750 rewrite',
   assert(entry.includes('readLiveCounts'));
   assert(entry.includes('COUNT(*)'));
   assert(entry.includes('COUNT(DISTINCT category)'));
-  assert(entry.includes('applyLiveCounts'));
+  assert(entry.includes('applyLiveCounts')&&readFileSync('src/live-counts.ts','utf8').includes('data-fixed-count'));
   assert(!entry.includes('.replaceAll("700件", "750件")'));
 });
 
@@ -42,7 +42,7 @@ test('AdSense-facing discovery pages keep useful server-rendered fallbacks',()=>
   const about=readFileSync('public/about.html','utf8');
   assert(entry.includes('integrateReviewSearchFallback'));
   assert(entry.includes('integrateReviewInsightsFallback'));
-  assert(entry.includes('750 DOG PRODUCT EXPERIENCES'));
+  assert(readFileSync('src/live-counts.ts','utf8').includes('750 DOG PRODUCT EXPERIENCES'));
   assert(search.includes('各50件以上'));
   assert(!search.includes('読み込みに失敗しました'));
   assert(!search.includes('データを取得できませんでした'));
