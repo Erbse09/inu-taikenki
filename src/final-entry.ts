@@ -1,4 +1,5 @@
 import worker from "./entry";
+import { applyLiveCounts, needsLiveCounts, type LiveCounts } from "./live-counts";
 import {
   PROFILE_CATEGORIES,
   loadCategoryProfiles,
@@ -183,11 +184,6 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   },
 };
 
-type LiveCounts = {
-  total_reviews: number;
-  total_categories: number;
-};
-
 async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
   try {
     const row = await env.DB.prepare(`
@@ -214,47 +210,6 @@ async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
     return null;
   }
 }
-
-function needsLiveCounts(html: string) {
-  return (
-    html.includes("700件") ||
-    html.includes("750件") ||
-    html.includes("700 EXPERIENCES") ||
-    html.includes("750 EXPERIENCES") ||
-    html.includes("14カテゴリ") ||
-    html.includes("15カテゴリ") ||
-    html.includes("14 CATEGORIES") ||
-    html.includes("15 CATEGORIES")
-  );
-}
-
-function applyLiveCounts(html: string, counts: LiveCounts | null) {
-  if (!counts) return html;
-
-  const reviewCount = String(counts.total_reviews);
-  const categoryCount = String(counts.total_categories);
-
-  return html
-    .replaceAll("700件", `${reviewCount}件`)
-    .replaceAll("750件", `${reviewCount}件`)
-    .replaceAll("700 EXPERIENCES", `${reviewCount} EXPERIENCES`)
-    .replaceAll("750 EXPERIENCES", `${reviewCount} EXPERIENCES`)
-    .replaceAll("700 DOG PRODUCT EXPERIENCES", `${reviewCount} DOG PRODUCT EXPERIENCES`)
-    .replaceAll("750 DOG PRODUCT EXPERIENCES", `${reviewCount} DOG PRODUCT EXPERIENCES`)
-    .replaceAll("14カテゴリ", `${categoryCount}カテゴリ`)
-    .replaceAll("15カテゴリ", `${categoryCount}カテゴリ`)
-    .replaceAll("14 CATEGORIES", `${categoryCount} CATEGORIES`)
-    .replaceAll("15 CATEGORIES", `${categoryCount} CATEGORIES`)
-    .replaceAll('<b>700</b><span>整理した公開体験</span>', `<b>${reviewCount}</b><span>整理した公開体験</span>`)
-    .replaceAll('<b>750</b><span>整理した公開体験</span>', `<b>${reviewCount}</b><span>整理した公開体験</span>`)
-    .replaceAll('<b>700</b><span>公開体験</span>', `<b>${reviewCount}</b><span>公開体験</span>`)
-    .replaceAll('<b>750</b><span>公開体験</span>', `<b>${reviewCount}</b><span>公開体験</span>`)
-    .replaceAll('<b>14</b><span>犬用品カテゴリ</span>', `<b>${categoryCount}</b><span>犬用品カテゴリ</span>`)
-    .replaceAll('<b>15</b><span>犬用品カテゴリ</span>', `<b>${categoryCount}</b><span>犬用品カテゴリ</span>`)
-    .replaceAll('<b>14</b><span>カテゴリ</span>', `<b>${categoryCount}</b><span>カテゴリ</span>`)
-    .replaceAll('<b>15</b><span>カテゴリ</span>', `<b>${categoryCount}</b><span>カテゴリ</span>`);
-}
-
 
 type ReviewFallbackRow = {
   source_check?: { status: string; label: string; short: string; url: string | null } | null;
