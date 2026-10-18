@@ -5,7 +5,7 @@ interface Statement {
   first<T>(): Promise<T | null>;
 }
 interface DB { prepare(sql: string): Statement; }
-import { sourceCheck } from './review-source-check';
+import { sourceCheck, sourceCheckFromRegistry } from './review-source-check';
 type Value = string | number | null;
 type Row = Record<string, any>;
 const aliases: Record<string,string> = {怖がり:'scared',子犬:'puppy',シニア:'senior',時短:'speed',抜け毛:'shedding',毛玉:'mat',もつれ:'tangle',多頭:'multi',静音:'quiet',皮膚:'skin',カメラ:'camera',旅行:'travel',いたずら:'mischief',ハンズフリー:'handsfree'};
@@ -53,10 +53,11 @@ function filters(p: URLSearchParams) {
   return {where:clauses.join(' AND '),values};
 }
 const from='FROM reviews r JOIN products p ON p.id=r.product_id';
-const fields='r.id,r.product_id,p.name AS product_name,p.category,r.dog_breed,r.dog_size,r.coat_type,r.needs,r.summary,r.source_type,r.source_url';
+const fields='r.id,r.product_id,p.name AS product_name,p.category,r.dog_breed,r.dog_size,r.coat_type,r.needs,r.summary,r.source_type,r.source_url,(SELECT s.source_url FROM review_sources s WHERE s.review_id=r.id ORDER BY s.rowid LIMIT 1) AS registered_source_url';
 async function rows(db:DB,sql:string,values:Value[]=[]) {return (await db.prepare(sql).bind(...values).all<Row>()).results||[];}
-// Static audit result per row (not stored in D1). Rows that were never checked get null, never "verified".
-const withCheck=(list:Row[]):Row[]=>list.map(r=>({...r,source_check:sourceCheck(r.id)}));
+// Static audit result per row first; rows added later with an audit record carry it in D1 `review_sources`.
+// Rows that were never checked get null, never "verified".
+const withCheck=(list:Row[]):Row[]=>list.map(({registered_source_url,...r})=>({...r,source_check:sourceCheck(r.id)??sourceCheckFromRegistry(registered_source_url as string|null)}));
 async function totals(db:DB,where:string,values:Value[]) {
   return await db.prepare(`SELECT COUNT(*) AS count,COUNT(DISTINCT p.id) AS product_count,COUNT(DISTINCT p.category) AS category_count ${from} WHERE ${where}`).bind(...values).first<Row>() || {count:0,product_count:0,category_count:0};
 }

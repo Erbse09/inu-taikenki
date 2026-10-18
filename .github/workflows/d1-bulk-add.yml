@@ -7,10 +7,10 @@ on:
       entry:
         description: '追加するデータ名（release-data/bulk-manifest.json のキー）'
         required: true
-        default: 'dog-harness-689'
+        default: 'dog-harness-677'
         type: choice
         options:
-          - dog-harness-689
+          - dog-harness-677
       mode:
         description: 'dry-run=確認だけ(書き込まない) / apply=本番D1へ追加'
         required: true

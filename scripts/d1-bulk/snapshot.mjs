@@ -31,6 +31,7 @@ export async function takeSnapshot(query, entry, sql) {
   const [r] = await query(`SELECT
     (SELECT COUNT(*) FROM products WHERE category='${cat}') AS cat_products,
     (SELECT COUNT(*) FROM reviews WHERE ${own}) AS cat_reviews,
+    (SELECT COUNT(*) FROM review_sources WHERE review_id IN (SELECT id FROM reviews WHERE ${own})) AS cat_sources,
     (SELECT COUNT(*) FROM products WHERE id IN (${ids}) AND category<>'${cat}') AS id_conflicts`);
   return {...out, ...r};
 }
@@ -65,6 +66,7 @@ export function compareApply(entry, pre, post, preRangeDigestAfter) {
   const errs = [];
   if (post.cat_products !== entry.expected_products) errs.push(`対象商品 ${post.cat_products} ≠ ${entry.expected_products}`);
   if (post.cat_reviews !== entry.expected_reviews) errs.push(`対象口コミ ${post.cat_reviews} ≠ ${entry.expected_reviews}`);
+  if (entry.expected_review_sources !== undefined && post.cat_sources !== entry.expected_review_sources) errs.push(`対象の出典(review_sources) ${post.cat_sources} ≠ ${entry.expected_review_sources}`);
   const allowed = new Set(entry.allowed_tables);
   for (const [t, a] of Object.entries(pre.tables)) {
     const b = post.tables[t];

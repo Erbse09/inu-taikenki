@@ -47,8 +47,8 @@ WHERE NOT EXISTS (SELECT 1 FROM reviews r WHERE r.product_id=n.product_id AND r.
   const failed = verify(entry, sql).filter(r => !r.ok);
   assert.deepEqual(failed, []);
 });
-test('real migration (when present) passes local verification', { skip: !existsSync(manifest.entries['dog-harness-689'].file) }, () => {
-  const e = manifest.entries['dog-harness-689'];
+test('real migration (when present) passes local verification', { skip: !existsSync(manifest.entries['dog-harness-677'].file) }, () => {
+  const e = manifest.entries['dog-harness-677'];
   assert.deepEqual(verify(e, readFileSync(e.file, 'utf8')).filter(r => !r.ok), []);
 });
 

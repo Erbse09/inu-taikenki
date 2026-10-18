@@ -18,6 +18,7 @@ export function buildBaselineDb(skipNumber) {
 const snapshot = (db, category) => ({
   otherReviews: db.prepare(`SELECT id,product_id,summary,source_url,created_at FROM reviews WHERE product_id NOT IN (SELECT id FROM products WHERE category=?) ORDER BY id`).all(category),
   otherProducts: db.prepare(`SELECT * FROM products WHERE category<>? ORDER BY id`).all(category),
+  otherSources: db.prepare(`SELECT * FROM review_sources WHERE review_id NOT IN (SELECT r.id FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.category=?) ORDER BY review_id`).all(category),
 });
 const count = (db, sql, ...a) => db.prepare(sql).get(...a).c;
 
@@ -51,10 +52,17 @@ export function verify(entry, sql) {
   check(JSON.stringify(db.prepare('SELECT * FROM reviews WHERE id=?').get(pre.id)) === JSON.stringify(pre), '事前存在の口コミが削除・上書きされていない');
   check(JSON.stringify(db.prepare('SELECT * FROM products WHERE id=?').get(ids[0])) === JSON.stringify(preProduct), '事前存在の商品が上書きされていない(INSERT OR IGNORE)');
   check(count(db, 'SELECT COUNT(*) c FROM reviews WHERE product_id NOT IN (SELECT id FROM products)') === 0, '孤立した口コミなし');
+  if (entry.expected_review_sources !== undefined) {
+    const srcCount = () => count(db, `SELECT COUNT(*) c FROM review_sources s JOIN reviews r ON r.id=s.review_id JOIN products p ON p.id=r.product_id WHERE p.category=?`, cat);
+    check(srcCount() === entry.expected_review_sources, `review_sources が想定どおり${entry.expected_review_sources}件`);
+    check(count(db, `SELECT COUNT(*) c FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.category=? AND r.id NOT IN (SELECT review_id FROM review_sources)`, cat) === 1, '追加した口コミは全件 review_sources と対応(事前存在の1件のみ対応なし)');
+    check(count(db, `SELECT COUNT(*) c FROM review_sources WHERE source_url NOT GLOB 'https://*' OR length(trim(source_review_id))=0`) === 0, 'review_sources の URL/識別子が妥当');
+  }
 
-  const afterOnce = JSON.stringify(db.prepare('SELECT * FROM reviews ORDER BY id').all());
+  const dump = () => JSON.stringify([db.prepare('SELECT * FROM reviews ORDER BY id').all(), db.prepare('SELECT * FROM review_sources ORDER BY review_id').all(), db.prepare('SELECT * FROM products ORDER BY id').all()]);
+  const afterOnce = dump();
   db.exec(sql);
-  check(JSON.stringify(db.prepare('SELECT * FROM reviews ORDER BY id').all()) === afterOnce, '2回目の実行で口コミが1件も増減・変更しない(再実行安全)');
+  check(dump() === afterOnce, '2回目の実行で口コミ・出典・商品が1件も増減・変更しない(再実行安全)');
   db.exec(sql);
   check(count(db, 'SELECT COUNT(*) c FROM reviews') === afterReviews, '3回目も件数不変');
 
