@@ -83,3 +83,34 @@ test('content snapshot detects same-length edits, deletes and unrelated-table ch
   const e4 = await runCase("INSERT INTO review_sources(review_id, source_type, source_url, source_platform, source_review_id) SELECT id, 't', 'https://x', 'p', 'r1' FROM reviews LIMIT 1");
   assert(e4.some(m => m.includes('review_sources')), e4.join());
 });
+
+// 本番の事後照合(snapshot/compare)を、実際のSQLを使ってローカルで通す。
+const real = manifest.entries['dog-harness-677'];
+async function realRun(mutate) {
+  const sql = readFileSync(real.file, 'utf8');
+  const d = buildBaselineDb('0042');
+  const q = async (s) => d.prepare(s).all();
+  const pre = await takeSnapshot(q, real, sql);
+  d.exec(sql);
+  if (mutate) mutate(d);
+  const post = await takeSnapshot(q, real, sql);
+  return {errs: compareApply(real, pre, post, await digestUpTo(q, pre)), pre, post};
+}
+test('post-apply check passes for the real 0042 (review_attributes grows only for the new category)', async () => {
+  const {errs, pre, post} = await realRun();
+  assert.deepEqual(errs, []);
+  assert.equal(post.tables.review_sources.count - pre.tables.review_sources.count, 677);
+  assert.equal(post.cat_sources, 677);
+  assert.deepEqual(post.outside, pre.outside);
+  assert(post.tables.review_attributes.count > pre.tables.review_attributes.count, 'trigger-derived rows exist and are allowed');
+});
+test('post-apply check detects review_sources and other-category tampering', async () => {
+  const bad = async (mutate, re) => { const {errs} = await realRun(mutate); assert(errs.some(e => re.test(e)), re + ' :: ' + errs.join(' | ')); };
+  const firstOther = "(SELECT MIN(r.id) FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.category<>'dog-harness')";
+  await bad(d => d.exec(`INSERT INTO review_sources(review_id,source_type,source_url,source_platform,source_review_id) VALUES(${firstOther.replace('MIN','MIN')},'t','https://x','p','tamper-1')`), /review_sources/);
+  await bad(d => d.exec(`DELETE FROM review_sources WHERE source_review_id=(SELECT source_review_id FROM review_sources LIMIT 1)`), /review_sources/);
+  await bad(d => d.exec(`UPDATE review_sources SET source_url='https://other.example/' WHERE rowid=(SELECT MAX(rowid) FROM review_sources)`), /review_sources|増加/);
+  await bad(d => d.exec(`UPDATE reviews SET summary=summary||'!' WHERE id=${firstOther}`), /reviews/);
+  await bad(d => d.exec(`INSERT INTO review_attributes(review_id,kind,value) VALUES(${firstOther},'trait','tamper')`), /review_attributes/);
+  await bad(d => d.exec(`DELETE FROM review_sources WHERE rowid=(SELECT MAX(rowid) FROM review_sources)`), /review_sources/);
+});

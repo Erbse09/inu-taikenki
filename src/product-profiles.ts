@@ -5,7 +5,7 @@ interface Statement {
   bind(...values: (string | number | null)[]): Statement;
   all<T>(): Promise<{ results?: T[] }>;
 }
-import { ledgerTotals, sourceCheck } from "./review-source-check";
+import { ledgerTotals, sourceCheck, sourceCheckFromRegistry } from "./review-source-check";
 interface DB { prepare(sql: string): Statement; }
 
 type ProductRow = { id: string; name: string };
@@ -19,12 +19,17 @@ type ReviewRow = {
   summary: string;
   source_type: string | null;
   source_url: string | null;
+  // First review_sources.source_url registered for the row (rows added with an audit record); null/undefined otherwise.
+  registered_source_url?: string | null;
 };
+
+// Static ledger first (production rows audited on 2026-10-17); then the D1 registry for rows added later.
+const checkOf = (row: Pick<ReviewRow, "id" | "registered_source_url">) => sourceCheck(row.id) ?? sourceCheckFromRegistry(row.registered_source_url);
 
 export const PROFILE_CATEGORIES = new Set([
   "pet-dryer", "auto-feeder", "dog-clipper", "brush-slicker", "brush-pin", "brush-undercoat", "brush-comb",
   "nail-grinder", "nail-clipper", "dog-shampoo", "dog-conditioner", "dog-toothbrush", "dog-toothpaste",
-  "dog-dental-chew", "dog-ear-cleaner",
+  "dog-dental-chew", "dog-ear-cleaner", "dog-harness",
 ]);
 
 const SIZE_LABELS: Record<string, string> = { small: "小型", medium: "中型", large: "大型" };
@@ -120,7 +125,7 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     const checks = { V: 0, P: 0, N: 0, U: 0, C: 0, none: 0 };
     for (const row of rows) {
       if (row.source_type === "existing_article_summary") articleRows++;
-      const status = sourceCheck(row.id)?.status;
+      const status = checkOf(row)?.status;
       if (status) checks[status]++;
       else if (row.source_type !== "existing_article_summary") checks.none++;
       const sizeTokens = tokens(row.dog_size).filter((t) => t in sizes);
@@ -137,13 +142,13 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     // Quote existing summaries only: prefer ones that name a breed, from different sources / dog sizes.
     // Third-party summaries first; the site's own re-organised article rows only when nothing else is available.
     // Rows whose matching source post was written by a cat owner are never quoted as dog experiences.
-    const quotable = rows.filter((r) => r.summary && r.summary.length >= 20 && !shownByInteractiveList.has(r) && sourceCheck(r.id)?.status !== "C");
+    const quotable = rows.filter((r) => r.summary && r.summary.length >= 20 && !shownByInteractiveList.has(r) && checkOf(r)?.status !== "C");
     const thirdParty = quotable.filter((r) => r.source_type !== "existing_article_summary");
     const usable = thirdParty.length >= 2 ? thirdParty : quotable;
     const pick = (candidates: ReviewRow[], limit: number) => {
       // Prefer rows that name a breed, and spread the picks across different dog sizes when possible.
       // Rows whose source was checked (status V) come first; unverified rows are never preferred.
-      const rank = (r: ReviewRow) => (sourceCheck(r.id)?.status === "V" ? 2 : 0) + (breedKey(r.dog_breed) ? 1 : 0);
+      const rank = (r: ReviewRow) => (checkOf(r)?.status === "V" ? 2 : 0) + (breedKey(r.dog_breed) ? 1 : 0);
       const ranked = [...candidates].sort((x, y) => rank(y) - rank(x));
       const chosen: ReviewRow[] = [];
       const seenSize = new Set<string>();
@@ -165,7 +170,7 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     const examples = pick(usable.filter((r) => !reservationIds.has(r)), 2);
     const line = (row: ReviewRow) => {
       const breed = breedKey(row.dog_breed);
-      const check = sourceCheck(row.id);
+      const check = checkOf(row);
       const tag = row.source_type === "existing_article_summary" ? "［サイト内記事の再整理］" : check ? `［${check.short}］` : "［出典の確認は未実施］";
       return tag + (breed ? breed + "｜" : "") + row.summary;
     };
@@ -312,12 +317,12 @@ export async function loadCategoryProfiles(db: DB, category: string): Promise<Pr
     "SELECT p.id, p.name FROM products p WHERE p.active = 1 AND p.category = ? ORDER BY p.name, p.id",
   ).bind(category).all<ProductRow>()).results ?? [];
   const reviews = (await db.prepare(
-    "SELECT r.id, r.product_id, r.dog_breed, r.dog_size, r.coat_type, r.needs, r.summary, r.source_type, r.source_url FROM reviews r JOIN products p ON p.id = r.product_id WHERE p.active = 1 AND p.category = ? ORDER BY r.id LIMIT 1000",
+    "SELECT r.id, r.product_id, r.dog_breed, r.dog_size, r.coat_type, r.needs, r.summary, r.source_type, r.source_url, (SELECT s.source_url FROM review_sources s WHERE s.review_id = r.id ORDER BY s.rowid LIMIT 1) AS registered_source_url FROM reviews r JOIN products p ON p.id = r.product_id WHERE p.active = 1 AND p.category = ? ORDER BY r.id LIMIT 1000",
   ).bind(category).all<ReviewRow>()).results ?? [];
   return buildProfiles(products, reviews);
 }
 
-export type SourceBreakdown = { external: number; article: number; total: number; byKind: Array<[string, number]> };
+export type SourceBreakdown = { external: number; article: number; total: number; byKind: Array<[string, number]>; registered?: number };
 
 export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | null> {
   const rows = (await db.prepare(
@@ -330,13 +335,17 @@ export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | nul
     counter.set(kind, (counter.get(kind) ?? 0) + 1);
   }
   const article = counter.get("サイト内記事の再整理") ?? 0;
-  return { external: rows.length - article, article, total: rows.length, byKind: top(counter, 8) };
+  // Rows added together with an audit record (a specific public post found) carry it in review_sources.
+  const registered = (await db.prepare(
+    "SELECT COUNT(*) AS n FROM review_sources s JOIN reviews r ON r.id = s.review_id JOIN products p ON p.id = r.product_id WHERE p.active = 1",
+  ).all<{ n: number }>()).results?.[0]?.n ?? 0;
+  return { external: rows.length - article, article, total: rows.length, byKind: top(counter, 8), registered: Number(registered) || 0 };
 }
 
-function renderLedgerNote(): string {
+function renderLedgerNote(registered = 0): string {
   const t = ledgerTotals();
   const day = t.date.replace(/^(\d+)-(\d+)-(\d+)$/, (_m, y, mo, d) => `${y}年${Number(mo)}月${Number(d)}日`);
-  return `<p data-inu-source-ledger style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px"><strong>出典の確認状況（${esc(day)}時点）：</strong>他サイトの要約${t.all}件の確認を試みました。取得できた確認先ページの本文がある要約は、生成AI（Claude）が候補となる投稿と1件ずつ読み比べています（本文を取得できなかったものは確認不能、キーワードがまったく重ならなかったものは読み比べずに「見つけられず」としています）。一度きりの確認で、自動更新はされません。結果は、確認先の一覧で対応する投稿を確認できたもの${t.V}件、内容が一部一致するもの${t.P}件、対応する投稿を見つけられなかったもの${t.N}件、確認先ページを取得できず確認できなかったもの${t.U}件、対応すると思われる投稿が猫の飼い主によるものだったもの${t.C}件です。「見つけられなかった」「確認できなかった」は、作り話だと判明したという意味ではありません（確認先の一覧を全件取得できない、掲載が更新される、といった理由でも起こります）。一方で、確認できていない要約を実体験として保証するものでもありません。ラベルのない体験は確認を実施していません。</p>`;
+  return `<p data-inu-source-ledger style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px"><strong>出典の確認状況（${esc(day)}時点）：</strong>他サイトの要約${t.all}件の確認を試みました。取得できた確認先ページの本文がある要約は、生成AI（Claude）が候補となる投稿と1件ずつ読み比べています（本文を取得できなかったものは確認不能、キーワードがまったく重ならなかったものは読み比べずに「見つけられず」としています）。一度きりの確認で、自動更新はされません。結果は、確認先の一覧で対応する投稿を確認できたもの${t.V}件、内容が一部一致するもの${t.P}件、対応する投稿を見つけられなかったもの${t.N}件、確認先ページを取得できず確認できなかったもの${t.U}件、対応すると思われる投稿が猫の飼い主によるものだったもの${t.C}件です。「見つけられなかった」「確認できなかった」は、作り話だと判明したという意味ではありません（確認先の一覧を全件取得できない、掲載が更新される、といった理由でも起こります）。一方で、確認できていない要約を実体験として保証するものでもありません。ラベルのない体験は確認を実施していません。${registered > 0 ? `このほか、出典の監査を経て追加した体験のうち${registered}件は、確認できた投稿の識別情報を登録しており、各体験に「出典確認済み」と、確認できた投稿のあるページへのリンクを表示しています（人の目ではなくAIによる確認です）。` : ""}</p>`;
 }
 
 export function renderSourceBreakdownHtml(data: SourceBreakdown): string {
@@ -345,7 +354,7 @@ export function renderSourceBreakdownHtml(data: SourceBreakdown): string {
 <h2 style="font-size:20px;margin:0 0 8px">現在のデータの内訳</h2>
 <p style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px">当サイトに整理している体験は合計<strong>${data.total}件</strong>です。そのうち、他サイトに公開されたレビュー等を要約したものが<strong>${data.external}件</strong>、当サイト内の既存記事を再整理したものが<strong>${data.article}件</strong>です。後者は新しい第三者の体験ではないため、別に数えています。</p>
 <ul style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px;padding-left:20px">${kinds}</ul>
-${renderLedgerNote()}
+${renderLedgerNote(data.registered ?? 0)}
 <p style="font-size:14px;line-height:1.8;color:#766c65;margin:0">この件数は閲覧時点の登録数から自動で表示しています。件数が多いことは、商品の品質や人気を示すものではありません。</p>
 </section>`;
 }
