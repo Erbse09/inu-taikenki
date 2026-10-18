@@ -91,3 +91,7 @@ node scripts/audit-preview.mjs https://develop.inu-taikenki.com/
 - https://developers.cloudflare.com/workers/previews/
 - https://developers.cloudflare.com/workers/previews/configuration/
 - https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
+
+## D1一括追加
+
+GitHub Actionsの手動実行でD1へ追加データを入れる運用は [docs/D1_BULK_ADD.md](docs/D1_BULK_ADD.md)。自動実行・本番D1への直接コマンドは使わない。
