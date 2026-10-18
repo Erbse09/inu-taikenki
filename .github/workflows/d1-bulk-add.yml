@@ -80,13 +80,18 @@ jobs:
         run: node scripts/d1-bulk/remote.mjs gate "$ENTRY" "$MODE"
       - name: 接続先が固定のD1(inu-taikenki)か確認
         run: node scripts/d1-bulk/remote.mjs guard
-      - name: 実行前の件数・指紋（読み取りのみ）
+      - name: 実行前の件数と全行の内容ハッシュ（読み取りのみ）
         run: node scripts/d1-bulk/remote.mjs snapshot "$ENTRY" "$RUNNER_TEMP/pre.json"
-      - name: バックアップ（Time Travel の復元地点を記録・SQLエクスポートで読み出し確認）
+      - name: 復元地点(Time Travel bookmark)を記録
+        # DBの中身(エクスポート)はRunnerに保存しない・アップロードしない。復元はCloudflare側のTime Travelを使う。
         run: |
-          npx wrangler d1 time-travel info inu-taikenki
-          npx wrangler d1 export inu-taikenki --remote --output "$RUNNER_TEMP/backup.sql"
-          echo "バックアップ行数: $(wc -l < "$RUNNER_TEMP/backup.sql")"
+          {
+            echo '### 実行前の復元地点（Time Travel）'
+            echo '```'
+            npx wrangler d1 time-travel info inu-taikenki
+            echo '```'
+            echo '復元コマンドは docs/D1_BULK_ADD.md の「失敗したとき」を参照。'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: 追加の見込み確認
         run: node scripts/d1-bulk/remote.mjs compare "$ENTRY" "$RUNNER_TEMP/pre.json" "$RUNNER_TEMP/pre.json" dry-run
       - name: 本番D1へ追加（apply のときだけ）

@@ -13,8 +13,25 @@ Cloudflare管理画面で口コミを50件ずつコピペする作業をなく�
 | 内容固定 | `release-data/bulk-manifest.json` のsha256とSQLが違うと停止 |
 | 三重の確認 | ①manifestの `approved_for_apply: true`（PRレビュー）②GitHub Environment `production-d1` の承認 ③確認文字 `ADD inu-taikenki` |
 | 認証情報 | GitHub Secretsのみ。コード・ログ・チャットに出さない |
-| 事前 | 接続先確認 → 件数/指紋の記録 → Time Travel復元地点の記録 → SQLエクスポート |
-| 事後 | 対象カテゴリの件数が想定通りか、他カテゴリの既存口コミ・商品が1行も変わっていないかを照合 |
+| 事前 | 接続先確認 → 全テーブルの件数と**全行の内容ハッシュ**を記録 → Time Travel復元地点をログに記録 |
+| 事後 | 実行前に存在した全行（全テーブル）を同じ範囲で再計算したハッシュと比較。1文字の書き換え・削除も検知。想定外のテーブル変更・件数も停止 |
+| 非公開データ | DBのエクスポートはRunnerに保存せず、Artifactやリポジトリにもアップロードしない。ハッシュ値だけを扱う（本文は出力しない） |
+
+## ⚠️ iPhoneの Run workflow ボタンが出る条件（mainへの導入が必要）
+
+GitHub Actionsの手動実行（`workflow_dispatch`）は、**ワークフローのファイルがデフォルトブランチ（main）にないと、Actions画面の左一覧に出ず「Run workflow」も押せません**。
+したがって「developにマージすればiPhoneから実行できる」は誤りでした。developだけでは、画面から手動実行できません。
+
+### mainへの安全な導入案（mainへはまだマージしません。運営者が公開を指示したときだけ）
+推奨は**次回の通常公開（develop→main）に同梱**するか、急ぐ場合は**専用の小さなPR**にすることです。
+
+1. 専用PRに入れるのは `.github/workflows/d1-bulk-add.yml`、`scripts/d1-bulk/`、`release-data/bulk-manifest.json`、`docs/`、`tests/d1-bulk.test.mjs` のみ（サイトのコード・DB・SQLは含めない）。サイト表示は変わりませんが、mainのマージはWorkers Buildsの本番ビルドが走るため、通常の公開と同じ承認で行う。
+2. mainに入った時点では何も実行されません（自動トリガーなし）。`approved_for_apply: false` のままなので、追加データはapplyできません。
+3. 実行時は **Use workflow from: main**（推奨）を選びます。コードとSQLが同じmainにあるものだけが実行対象になり、developの未レビュー変更で本番トークンが使われません。この場合、追加SQL（`migrations/0042…`）がmainにある必要があり、**#114の公開（または同じ内容のマージ）後**になります。
+4. Environment `production-d1` の「Deployment branches」は **main のみ**を推奨（今回の手順ではdevelopからのapplyは非推奨）。`develop` を許可すると、developに書き込める人がレビュー前のコードで本番トークンを使える余地が生じます。dry-runを先に試したい場合のみ一時的にdevelopを許可し、終わったら外してください。
+5. ワークフロー内のゲートは、applyを `develop` / `main` のrefに限定しています。さらにmainのみに絞る場合は `scripts/d1-bulk/remote.mjs` の正規表現を変更する小さなPRを別に出します（今回は変更していません）。
+
+注意: GitHubのスマホアプリではワークフローの手動実行ボタンが使えない場合があります。その場合はSafariでGitHubのWebサイトを開き、必要なら「デスクトップ用Webサイトを表示」にしてください。
 
 ## 初回だけ必要な設定
 
@@ -37,18 +54,25 @@ Cloudflare管理画面で口コミを50件ずつコピペする作業をなく�
 ## 毎回の手順（iPhone）
 
 1. GitHub → リポジトリ → **Actions** → 「D1一括追加（手動実行のみ）」 → **Run workflow**
-2. ブランチは `develop`。`entry` を選び、まず **mode = dry-run**（書き込まない）で実行。
+2. 「Use workflow from」は `main`（上記の手順で導入後）。`entry` を選び、まず **mode = dry-run**（書き込まない）で実行。
 3. 承認画面（Review deployments）で **production-d1 を承認**。バックアップと件数確認だけ行われます。
 4. ログで「接続先OK」「追加の見込み」を確認。問題なければもう一度 Run workflow:
    **mode = apply**、`confirm` に `ADD inu-taikenki` と入力 → 再度承認。
 5. 緑のチェックなら事後照合まで合格です。サイトで該当ページを確認。
 
-## 失敗したとき
+## 復旧手順と非公開データの扱い
 
-- **途中で止まった/一部だけ入った**: SQLは再実行しても重複しません（商品は`INSERT OR IGNORE`、口コミは同一商品・同一要約がなければ追加）。dry-run → apply をやり直すと不足分だけ補われます（ローカルで検証済み）。
-- **事後照合が不合格**: 実行を止め、ログの `time-travel info` の bookmark を控えて、運営者が判断して復元します。
-  `npx wrangler d1 time-travel restore inu-taikenki --bookmark=<bookmark>`（直近30日）。復元は他の書き込みも巻き戻すため、内容を確認してから。
-- **認証エラー**: トークン期限切れ/権限不足。Secretsを更新して dry-run からやり直し。
+**原則: DBの中身（口コミ等）を含むファイルは、GitHub（コード、Artifact、Issue、ログ）に置かない。** リポジトリが公開でも非公開でも同じ扱いです。バックアップの正本はCloudflare D1の **Time Travel**（過去の任意時点に戻せる仕組み。保持日数はプランで異なり、Freeは7日・有料は30日。Cloudflareの現行仕様を確認してください）です。
+
+1. 実行前: ジョブが復元地点（bookmark）をジョブのSummaryに記録します（bookmark自体は秘密情報ではありません）。
+2. 念のため手元にも残したい場合は、運営者が**自分のPCから** `npx wrangler d1 export inu-taikenki --remote --output <非公開の場所>` を実行し、非公開のクラウド/暗号化ストレージに保管します（ワークフローには含めません）。
+3. **途中で止まった/一部だけ入った**: SQLは再実行しても重複しません。dry-run → apply をやり直すと不足分だけ補われます（ローカルで検証済み）。
+4. **事後照合が不合格**: そのまま止めて内容を確認します。復元が必要なら、Summaryのbookmarkを使い、運営者が判断して
+   `npx wrangler d1 time-travel restore inu-taikenki --bookmark=<bookmark>` を実行します。
+   - 復元は**その後の他の書き込みもすべて巻き戻します**。実行後に別の更新（口コミ追加等）があった場合は、先に内容を確認してください。
+   - 復元しても、復元直前の状態に戻すためのbookmarkがCloudflareから表示されます。それも控えてください。
+5. 追加が想定どおりで「新規追加分だけ取り消したい」場合は、新規商品（manifest記載のID）に紐づく行のみを対象にした別のレビュー済みSQLを作り、運営者の承認後に実行します（自動化しません）。
+6. **認証エラー**: トークン期限切れ/権限不足。Secretsを更新して dry-run からやり直し。
 
 ## PR #114（犬用ハーネス32商品・689件）の確認結果
 
@@ -56,4 +80,5 @@ Cloudflare管理画面で口コミを50件ずつコピペする作業をなく�
 - ローカル検証: 689件追加、2回目・3回目の再実行で変化なし、既存口コミ・他カテゴリ不変、中途状態からの再実行で想定件数に収束。
 - **未解決（そのため `approved_for_apply: false`）**: developの `release-data/README.md`（2026-10-16/17追加ルール）は、追加分に `review_sources` 登録、10%以上の再確認結果、AI要約の明記、犬/猫確認を求めています。#114のSQLは `review_sources` を使わず、これらの記録も見当たりません。確認と運営者の承認後、PRで `true` にします。
 - #114はdevelopの #118/#119 より前のブランチです。取り込み時はdevelopを取り込み直し、sha256を更新してください。
-- `migrations/0042` は #114 のマージで入ります（このPRには含めない）。それまで `plan` ジョブはファイル不在で止まります。
+- **`migrations/0042` はこのPR #120 に含まれていません。そのため現状では dry-run も実行できません**（`plan` ジョブがファイル不在で止まります）。#114 のマージ（運営者の判断・無断マージ禁止）またはSQLの取り込み後に初めて実行可能になります。
+- 新規口コミの出典確認ルール（`release-data/README.md`）は維持します。`approved_for_apply` は `false` のままです。
