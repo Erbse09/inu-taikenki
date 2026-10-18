@@ -1,4 +1,12 @@
 import worker from "./entry";
+import { applyLiveCounts, needsLiveCounts, type LiveCounts } from "./live-counts";
+import {
+  PROFILE_CATEGORIES,
+  loadCategoryProfiles,
+  loadSourceBreakdown,
+  renderProfilesHtml,
+  renderSourceBreakdownHtml,
+} from "./product-profiles";
 
 type WorkerEnv = Parameters<typeof worker.fetch>[1];
 
@@ -28,20 +36,16 @@ const FAVICON_LINKS = `<link rel="icon" type="image/png" sizes="96x96" href="/fa
 <link rel="apple-touch-icon" href="/apple-touch-icon.svg">
 <link rel="manifest" href="/site.webmanifest">`;
 
+// Pages not listed here keep the <title> written in their HTML file.
+// /auto-feeder, /pet-dryer, /dog-nail-grinder and the four brush pages were removed on 2026-10-01 so that the
+// query-matching titles that were live before 2026-09-14 (「〇〇とは？」「選び方」「違い」) are served again.
 const SEO_TITLES: Record<string, string> = {
   "/": "犬用品の公開体験750件を犬種・条件別に比較｜犬体験記",
   "/index": "犬用品の公開体験750件を犬種・条件別に比較｜犬体験記",
-  "/brush-comb": "毛玉・仕上げから選ぶ犬用コーム｜公開レビューの実体験を横断比較",
-  "/brush-slicker": "毛玉・もつれから選ぶ犬用スリッカーブラシ｜複数サイトの実体験を横断比較",
-  "/brush-undercoat": "換毛期・抜け毛から選ぶ犬用アンダーコートブラシ｜複数サイトの実体験を横断比較",
-  "/brush-pin": "犬種・毛質から選ぶ犬用ピンブラシ｜複数サイトの実体験を横断比較",
   "/dog-shampoo": "低刺激・保湿・仕上がりから選ぶ犬用シャンプー｜複数サイトの実体験を横断比較",
   "/dog-conditioner": "毛質・仕上がりから選ぶ犬用コンディショナー｜複数サイトの実体験を横断比較",
   "/dog-nail-clipper": "ギロチン・ニッパーの違いから選ぶ犬用爪切り｜複数サイトの実体験を横断比較",
-  "/dog-nail-grinder": "音・振動・太い爪から選ぶ犬用電動爪やすり｜複数サイトの実体験を横断比較",
   "/dog-clipper": "全身・足裏・怖がり犬から選ぶ犬用バリカン｜複数サイトの実体験を横断比較",
-  "/auto-feeder": "留守番・停電対策・カメラから選ぶ犬用自動給餌器｜複数サイトの実体験を横断比較",
-  "/pet-dryer": "音・乾燥時間から選ぶ犬用ペットドライヤー｜複数サイトの実体験を横断比較",
   "/dog-toothbrush": "小さい口・歯磨き嫌いから選ぶ犬用歯ブラシ｜公開レビューの実体験を横断比較",
   "/dog-toothpaste": "味・香り・歯磨き嫌いから選ぶ犬用歯磨きジェル・歯磨き粉｜公開レビューを横断比較",
   "/dog-dental-chew": "噛む時間・サイズ・カロリーから選ぶ犬用デンタルガム｜公開レビューを横断比較",
@@ -51,7 +55,8 @@ const SEO_TITLES: Record<string, string> = {
 
 const SEO_DESCRIPTIONS: Record<string, string> = {
   "/pet-dryer": "Amazon・楽天など複数サイトの公開口コミ・体験を横断整理。犬種・サイズ・毛質ごとに、風量・音への反応・乾燥時間・ハンズフリーの使いやすさを比較し、うちの子に近い実体験から選べます。",
-  "/brush-slicker": "Amazon・楽天など複数サイトの公開口コミ・体験を横断整理。犬種・毛質ごとに、毛玉・もつれへの使いやすさ、ピンの硬さ、仕上がりを比較し、うちの子に近い実体験から選べます。",
+  "/brush-slicker": "犬用スリッカーブラシとは？細い金属ピンで毛玉・もつれをほぐすブラシです。ソフト・ハードの硬さ、ピンの長さ、コームやピンブラシとの違いを整理し、トイプードル・ポメラニアン・柴犬など犬種が分かる公開口コミから比較できます。",
+  "/brush-pin": "犬用ピンブラシとは？長めの金属ピンで長毛を広く整える、毎日のお手入れ向きのブラシです。スリッカーとの違い、ピンの長さの選び方を整理し、ゴールデン・ポメラニアン・トイプードルなど犬種が分かる公開体験から比較できます。",
   "/brush-undercoat": "楽天レビュー・Xなど複数の公開情報から犬用アンダーコートブラシの体験を横断整理。柴犬・コーギー・レトリバーなどダブルコート犬を中心に、換毛期の抜け毛、下毛の取れ方、嫌がり方、スリッカーとの違いを比較し、うちの子に近い実体験から選べます。",
   "/brush-comb": "楽天レビューなどの公開情報から犬用コームの体験を横断整理。トイプードル・マルチーズなど犬種や毛質ごとに、毛玉・もつれ、スリッカー後の仕上げ、根元確認、顔・足まわりでの使いやすさを比較し、うちの子に近い実体験から選べます。",
   "/dog-shampoo": "楽天・Yahoo!ショッピングなど複数サイトの犬用シャンプーの公開口コミ・体験を横断整理。短毛・長毛など毛質ごとに、低刺激・保湿・香り・泡立ち・すすぎやすさ・仕上がりを比較し、うちの子に近い実体験から選べます。",
@@ -86,34 +91,59 @@ const DISCOVERY_GUIDES: RelatedGuideLink[] = [
   { href: "/breed-toy-poodle", label: "トイプードルの公開体験", note: "犬種欄に明記された体験だけをカテゴリ横断で表示" },
 ];
 
+const TOY_POODLE_GUIDE: RelatedGuideLink = {
+  href: "/breed-toy-poodle",
+  label: "トイプードルの公開体験",
+  note: "犬種欄にトイプードルと明記された体験だけをカテゴリ横断で表示",
+};
+
+const BRUSHING_DISLIKE_GUIDE: RelatedGuideLink = {
+  href: "/dog-brushing-dislike",
+  label: "ブラッシングを嫌がるとき",
+  note: "逃げる・噛む・痛がるときの確認ポイント",
+};
+
+// Guide pages link to each other (never to themselves) so each one is reachable from more than the homepage.
+function discoveryGuidesExcept(href: string): RelatedGuideLink[] {
+  return DISCOVERY_GUIDES.filter((link) => link.href !== href);
+}
+
+const OTHER_GUIDES_TITLE = "ほかの困りごと・犬種から探す";
+
 const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   "/": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
   "/index": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
   "/review-search": { title: "条件検索とあわせて見る", links: DISCOVERY_GUIDES },
-  "/dog-size": {
-    title: "犬種からも探す",
-    links: [
-      { href: "/breed-toy-poodle", label: "トイプードルの公開体験", note: "犬種欄にトイプードルと明記された体験だけを見る" },
-    ],
-  },
+  "/review-insights": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
+  "/dog-size": { title: "困りごと・犬種からも探す", links: DISCOVERY_GUIDES },
+  "/dog-brushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-brushing-dislike") },
+  "/dog-nail-care-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-nail-care-dislike") },
+  "/dog-toothbrushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-toothbrushing-dislike") },
+  "/dog-home-shampoo-guide": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-home-shampoo-guide") },
+  "/breed-toy-poodle": { title: "困りごとからも探す", links: discoveryGuidesExcept("/breed-toy-poodle") },
   "/brush-guide": {
     title: "ブラッシング・お手入れで困ったら",
     links: [
       { href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "嫌がり方から原因とブラシ選びを整理" },
       { href: "/dog-home-shampoo-guide", label: "おうちシャンプーの手順", note: "洗う前のブラッシングから乾燥まで確認" },
+      TOY_POODLE_GUIDE,
     ],
   },
   "/brush-slicker": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
   },
   "/brush-pin": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
   },
   "/brush-comb": {
     title: "ブラッシングで困ったら",
-    links: [{ href: "/dog-brushing-dislike", label: "ブラッシングを嫌がるとき", note: "逃げる・噛む・痛がるときの確認ポイント" }],
+    links: [BRUSHING_DISLIKE_GUIDE, TOY_POODLE_GUIDE],
+  },
+  "/dog-clipper": {
+    title: "犬種からも探す",
+    links: [TOY_POODLE_GUIDE],
   },
   "/brush-undercoat": {
     title: "ブラッシングで困ったら",
@@ -141,7 +171,10 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   },
   "/dog-shampoo": {
     title: "おうちシャンプーの流れも確認",
-    links: [{ href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" }],
+    links: [
+      { href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" },
+      TOY_POODLE_GUIDE,
+    ],
   },
   "/dog-conditioner": {
     title: "おうちシャンプーの流れも確認",
@@ -151,11 +184,6 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
     title: "おうちシャンプーの流れも確認",
     links: [{ href: "/dog-home-shampoo-guide", label: "犬のおうちシャンプー手順", note: "ブラッシングから洗浄、コンディショナー、乾燥まで" }],
   },
-};
-
-type LiveCounts = {
-  total_reviews: number;
-  total_categories: number;
 };
 
 async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
@@ -185,48 +213,8 @@ async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
   }
 }
 
-function needsLiveCounts(html: string) {
-  return (
-    html.includes("700件") ||
-    html.includes("750件") ||
-    html.includes("700 EXPERIENCES") ||
-    html.includes("750 EXPERIENCES") ||
-    html.includes("14カテゴリ") ||
-    html.includes("15カテゴリ") ||
-    html.includes("14 CATEGORIES") ||
-    html.includes("15 CATEGORIES")
-  );
-}
-
-function applyLiveCounts(html: string, counts: LiveCounts | null) {
-  if (!counts) return html;
-
-  const reviewCount = String(counts.total_reviews);
-  const categoryCount = String(counts.total_categories);
-
-  return html
-    .replaceAll("700件", `${reviewCount}件`)
-    .replaceAll("750件", `${reviewCount}件`)
-    .replaceAll("700 EXPERIENCES", `${reviewCount} EXPERIENCES`)
-    .replaceAll("750 EXPERIENCES", `${reviewCount} EXPERIENCES`)
-    .replaceAll("700 DOG PRODUCT EXPERIENCES", `${reviewCount} DOG PRODUCT EXPERIENCES`)
-    .replaceAll("750 DOG PRODUCT EXPERIENCES", `${reviewCount} DOG PRODUCT EXPERIENCES`)
-    .replaceAll("14カテゴリ", `${categoryCount}カテゴリ`)
-    .replaceAll("15カテゴリ", `${categoryCount}カテゴリ`)
-    .replaceAll("14 CATEGORIES", `${categoryCount} CATEGORIES`)
-    .replaceAll("15 CATEGORIES", `${categoryCount} CATEGORIES`)
-    .replaceAll('<b>700</b><span>整理した公開体験</span>', `<b>${reviewCount}</b><span>整理した公開体験</span>`)
-    .replaceAll('<b>750</b><span>整理した公開体験</span>', `<b>${reviewCount}</b><span>整理した公開体験</span>`)
-    .replaceAll('<b>700</b><span>公開体験</span>', `<b>${reviewCount}</b><span>公開体験</span>`)
-    .replaceAll('<b>750</b><span>公開体験</span>', `<b>${reviewCount}</b><span>公開体験</span>`)
-    .replaceAll('<b>14</b><span>犬用品カテゴリ</span>', `<b>${categoryCount}</b><span>犬用品カテゴリ</span>`)
-    .replaceAll('<b>15</b><span>犬用品カテゴリ</span>', `<b>${categoryCount}</b><span>犬用品カテゴリ</span>`)
-    .replaceAll('<b>14</b><span>カテゴリ</span>', `<b>${categoryCount}</b><span>カテゴリ</span>`)
-    .replaceAll('<b>15</b><span>カテゴリ</span>', `<b>${categoryCount}</b><span>カテゴリ</span>`);
-}
-
-
 type ReviewFallbackRow = {
+  source_check?: { status: string; label: string; short: string; url: string | null } | null;
   product_name?: string | null;
   dog_breed?: string | null;
   dog_size?: string | null;
@@ -290,19 +278,23 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
 }
 
 function renderReviewSource(row: ReviewFallbackRow) {
-  const url = row.source_url || "";
+  const url = row.source_check?.url || row.source_url || "";
   if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return "";
-  const label = row.source_type === "existing_article_summary" && url.startsWith("/") ? "元にしたサイト内記事を見る →" : "確認元を見る ↗";
+  const label = row.source_type === "existing_article_summary" && url.startsWith("/") ? "元にしたサイト内記事を見る →" : row.source_check?.url ? "確認できた投稿のあるページを見る ↗" : "確認元（レビュー一覧）を見る ↗";
   const attrs = /^https?:\/\//i.test(url) ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
   return '<div class="source"><a href="' + escapeHtml(url) + '"' + attrs + '>' + label + '</a></div>';
 }
 
+const ARTICLE_KIND_LABEL = "サイト内記事の再整理";
+
 function renderReviewFallbackCard(row: ReviewFallbackRow) {
   const breed = row.dog_breed?.trim() || "犬種情報なし";
+  const kind = row.source_type === "existing_article_summary" ? `<div class="kind">${ARTICLE_KIND_LABEL}（他サイトの体験ではありません）</div>` : "";
   return `<article class="card" data-static-review-card>
 <div class="product">${escapeHtml(row.product_name || "犬用品")}</div>
 <div class="dog">${escapeHtml(breed)}</div>
-<div class="summary">${escapeHtml(row.summary || "")}</div>
+${kind}<div class="summary">${escapeHtml(row.summary || "")}</div>
+${row.source_check ? `<div class="check check-${escapeHtml(row.source_check.status)}">${escapeHtml(row.source_check.label)}</div>` : ""}
 ${renderReviewSource(row)}
 </article>`;
 }
@@ -426,7 +418,7 @@ async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params
 
 function renderGroupReviewSamples(group: ReviewGroupFallback) {
   return (group.reviews || []).slice(0, 2).map((review) =>
-    '<div class="excerpt">' + escapeHtml(review.summary || "") + "</div>"
+    '<div class="excerpt">' + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>"
   ).join("");
 }
 
@@ -459,7 +451,7 @@ async function integrateBreedFallback(request: Request, html: string, env: Worke
   if (!payload) return html;
   const cards = (payload.groups || []).slice(0,6).map((group) => {
     const category = group.category || "";
-    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + escapeHtml(review.summary || "") + "</div>").join("");
+    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>").join("");
     return '<article class="category" data-static-breed-card><div class="category-head"><h3>' + escapeHtml(group.product_name || "犬用品") + '</h3><span class="category-count">' + (Number(group.count) || 0) + '件</span></div><span class="category-count">' + escapeHtml(CATEGORY_LABELS[category] || category) + "</span>" + samples + '<a class="article-link" href="/review-search?category=' + encodeURIComponent(category) + "&breed=" + encodeURIComponent("トイプードル") + '">この条件の体験を見る →</a></article>';
   }).join("");
   html = html.replace('<b id="reviewCount">…</b>', '<b id="reviewCount" data-static-breed-count>' + (Number(payload.count) || 0) + "</b>");
@@ -547,6 +539,42 @@ function integrateInternalLinks(request: Request, html: string) {
   return html.replace("</body>", `${section}\n</body>`);
 }
 
+// FAQPage structured data built only from the FAQ that is visible on the page (no extra Q&A).
+const FAQ_SCHEMA_PAGES = new Set(["/brush-pin", "/brush-slicker", "/brush-undercoat", "/brush-comb"]);
+
+function plainText(fragment: string) {
+  return fragment
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&nbsp;", " ")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'")
+    .replaceAll("&amp;", "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function integrateFaqSchema(request: Request, html: string) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  if (!FAQ_SCHEMA_PAGES.has(pathname) || html.includes("data-inu-faq-schema")) return html;
+  const items = [...html.matchAll(/<details class="faq-item"><summary>([\s\S]*?)<\/summary><div class="faq-answer">([\s\S]*?)<\/div><\/details>/g)]
+    .map(([, question, answer]) => ({ question: plainText(question), answer: plainText(answer) }))
+    .filter(({ question, answer }) => question && answer);
+  if (!items.length) return html;
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map(({ question, answer }) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  };
+  const json = JSON.stringify(schema).replaceAll("<", "\\u003c");
+  return html.replace("</head>", `<script type="application/ld+json" data-inu-faq-schema>${json}</script>\n</head>`);
+}
+
 function integrateFavicons(html: string) {
   const faviconPattern = /<link\b[^>]*rel=["'][^"']*(?:icon|manifest)[^"']*["'][^>]*>\s*/gi;
   html = html.replace(faviconPattern, "");
@@ -589,15 +617,100 @@ function htmlResponse(response: Response, html: string) {
   });
 }
 
+
+// Product-by-product overview rendered into the HTML, so crawlers (and visitors without JavaScript) see
+// the same substance that the interactive "商品別" list loads later. Computed from existing rows only.
+const PROFILE_CACHE_SECONDS = 600;
+
+async function cachedFragment(request: Request, key: string, build: () => Promise<string>): Promise<string> {
+  const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+  const cacheRequest = new Request(`${new URL(request.url).origin}/__fragment/v1/${key}`);
+  try {
+    const hit = await cache?.match(cacheRequest);
+    if (hit) return await hit.text();
+  } catch { /* cache is optional */ }
+  const fragment = await build();
+  try {
+    await cache?.put(cacheRequest, new Response(fragment, { headers: { "cache-control": `public, max-age=${PROFILE_CACHE_SECONDS}`, "content-type": "text/html; charset=utf-8" } }));
+  } catch { /* cache is optional */ }
+  return fragment;
+}
+
+async function integrateProductProfiles(request: Request, html: string, env: WorkerEnv) {
+  if (html.includes("data-inu-profiles")) return html;
+  // The page itself says which category its product list belongs to (page paths such as /dog-nail-grinder differ from category ids).
+  // /pet-dryer has its own product picker (#db-review-browser); the other categories use the shared data-db-review-browser block.
+  const shared = html.match(/data-db-review-browser data-category="([a-z0-9-]+)"/);
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  const category = shared?.[1] ?? (pathname === "/pet-dryer" && html.includes('id="db-review-browser"') ? "pet-dryer" : "");
+  if (!PROFILE_CATEGORIES.has(category)) return html;
+  const start = shared ? shared.index! : html.indexOf('id="db-review-browser"');
+  const end = html.indexOf("</section>", start);
+  if (start === -1 || end === -1) return html;
+  try {
+    const fragment = await cachedFragment(request, `profiles-${category}`, async () =>
+      renderProfilesHtml(CATEGORY_LABELS[category] || category, await loadCategoryProfiles(env.DB, category), category));
+    if (!fragment) return html;
+    const insertAt = end + "</section>".length;
+    return html.slice(0, insertAt) + "\n" + fragment + html.slice(insertAt);
+  } catch {
+    return html;
+  }
+}
+
+const SOURCE_BREAKDOWN_PAGES = new Set(["/about", "/editorial-policy", "/review-search"]);
+
+async function integrateSourceBreakdown(request: Request, html: string, env: WorkerEnv) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  if (!SOURCE_BREAKDOWN_PAGES.has(pathname) || html.includes("data-inu-source-breakdown") || !html.includes("</main>")) return html;
+  try {
+    const fragment = await cachedFragment(request, "source-breakdown", async () => {
+      const data = await loadSourceBreakdown(env.DB);
+      return data ? renderSourceBreakdownHtml(data) : "";
+    });
+    return fragment ? html.replace("</main>", `${fragment}\n</main>`) : html;
+  } catch {
+    return html;
+  }
+}
+
+
+// Headline totals (e.g. 1595件) include rows that re-organise this site's own articles. Say so right under the headline.
+const COUNT_NOTE_PAGES = new Set(["/", "/index", "/review-search", "/dog-size", "/review-insights"]);
+
+async function integrateCountNote(request: Request, html: string, env: WorkerEnv) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  if (!COUNT_NOTE_PAGES.has(pathname) || html.includes("data-inu-count-note") || !html.includes("</h1>")) return html;
+  try {
+    const fragment = await cachedFragment(request, "count-note", async () => {
+      const data = await loadSourceBreakdown(env.DB);
+      if (!data || !data.article) return "";
+      return `<p data-inu-count-note style="font-size:13px;line-height:1.7;margin:10px 0 0;opacity:.9">件数の内訳：他サイトに公開されたレビュー等の要約が${data.external}件、サイト内の記事を再整理したものが${data.article}件（合計${data.total}件）です。サイト内記事の再整理は他サイトの体験ではないため、体験の横に印を付けています。<a href="/editorial-policy" style="color:inherit;text-decoration:underline">くわしく</a></p>`;
+    });
+    return fragment ? html.replace("</h1>", `</h1>\n${fragment}`) : html;
+  } catch {
+    return html;
+  }
+}
+
+// JSON endpoints stay fetchable (the pages load them with JavaScript) but must not be indexed as pages.
+function markApiNoindex(request: Request, response: Response) {
+  if (!new URL(request.url).pathname.startsWith("/api/")) return response;
+  const headers = new Headers(response.headers);
+  headers.set("X-Robots-Tag", "noindex");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
-    const response = await worker.fetch(request, env);
+    const response = markApiNoindex(request, await worker.fetch(request, env));
     if (request.method !== "GET" || !response.ok) return response;
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.includes("text/html")) return response;
 
     let html = integrateEarCleaner(request, await response.text());
     html = integrateInternalLinks(request, html);
+    html = integrateFaqSchema(request, html);
     html = integrateFavicons(html);
     html = integrateSeoTitle(request, html);
     html = integrateSeoDescription(request, html);
@@ -608,6 +721,9 @@ export default {
     html = await integrateReviewInsightsFallback(request, html, env);
     html = await integrateDogSizeFallback(request, html, env);
     html = await integrateBreedFallback(request, html, env);
+    html = await integrateProductProfiles(request, html, env);
+    html = await integrateSourceBreakdown(request, html, env);
+    html = await integrateCountNote(request, html, env);
     return htmlResponse(response, html);
   },
 };

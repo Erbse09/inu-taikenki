@@ -230,6 +230,12 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
+    // "/index" serves the same page as "/" (and used to self-canonicalize), so fold it into the top URL.
+    if (request.method === "GET" && url.pathname === "/index") {
+      url.pathname = "/";
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (request.method === "GET" && url.pathname === "/api/health") {
       const row = await env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
       return json({ ok: row?.ok === 1, service: "inu-taikenki-worker" });

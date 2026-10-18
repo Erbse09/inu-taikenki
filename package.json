@@ -11,11 +11,11 @@
     "db:migrate:remote": "wrangler d1 migrations apply inu-taikenki --remote",
     "db:seed:local": "wrangler d1 execute inu-taikenki --local --file=./seed.sql",
     "db:seed:remote": "wrangler d1 execute inu-taikenki --remote --file=./seed.sql",
-    "test": "node --test tests/api.test.mjs tests/static.test.mjs",
+    "test": "node --import ./tests/ts-loader.mjs --test tests/api.test.mjs tests/static.test.mjs tests/seo.test.mjs tests/profiles.test.mjs tests/ledger.test.mjs tests/live-counts.test.mjs tests/d1-bulk.test.mjs",
     "test:browser": "node --test tests/browser.test.mjs",
     "preview:check": "node scripts/preview.mjs check",
     "preview:publish": "node scripts/preview.mjs publish",
-    "test:preview": "node --import ./tests/ts-loader.mjs --test tests/preview.test.mjs tests/readonly-db.test.mjs tests/static.test.mjs"
+    "test:preview": "node --import ./tests/ts-loader.mjs --test tests/preview.test.mjs tests/readonly-db.test.mjs tests/static.test.mjs tests/profiles.test.mjs tests/ledger.test.mjs tests/live-counts.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
