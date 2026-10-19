@@ -12,7 +12,7 @@
 ## ブランチ
 
 - 作業は必ず最新の `develop` を基準にする（`git fetch origin develop` → `origin/develop` から作業ブランチを作成）。
-- `main` へ直接push・mergeしない。`main` 向けPRも作らない。
+- `main` へ直接push・mergeしない。`develop` → `main` のPRは、ユーザーが本番公開を明示的に指示した場合にのみ作成・マージしてよい。
 - 変更は作業ブランチにcommit/pushし、`develop` 向けPRを作成する。`develop` へも直接pushしない。
 
 ## 禁止事項
