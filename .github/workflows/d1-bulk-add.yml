@@ -104,3 +104,20 @@ jobs:
         run: |
           node scripts/d1-bulk/remote.mjs snapshot "$ENTRY" "$RUNNER_TEMP/post.json"
           node scripts/d1-bulk/remote.mjs compare "$ENTRY" "$RUNNER_TEMP/pre.json" "$RUNNER_TEMP/post.json" apply
+      - name: 結果の要約（iPhoneで読む画面）
+        run: |
+          if [ "$MODE" = "apply" ]; then
+            node scripts/d1-bulk/remote.mjs summary "$ENTRY" "$MODE" "$RUNNER_TEMP/pre.json" "$RUNNER_TEMP/post.json"
+          else
+            node scripts/d1-bulk/remote.mjs summary "$ENTRY" "$MODE" "$RUNNER_TEMP/pre.json"
+          fi
+      - name: 失敗したときの案内
+        if: ${{ failure() }}
+        run: |
+          {
+            echo '## ⚠️ 失敗しました'
+            echo '- 上の赤い手順のログを開いて「停止:」で始まる行を確認してください。'
+            echo '- **dry-run の失敗では本番D1は変わっていません。**'
+            echo '- apply の途中で失敗した場合は、同じSQLをもう一度 apply しても重複しません（不足分だけ補われます）。'
+            echo '- 復旧が必要なときは docs/D1_BULK_ADD.md の「失敗したとき」に従い、実行前の Time Travel bookmark（ジョブ画面の「復元地点」）を控えてください。'
+          } >> "$GITHUB_STEP_SUMMARY"

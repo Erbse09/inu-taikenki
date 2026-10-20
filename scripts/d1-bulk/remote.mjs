@@ -3,10 +3,11 @@
 //   gate <entry-id> <mode>         実行可否の判定（ブランチ・承認フラグ・SQL検査）
 //   snapshot <entry-id> <out.json> 実行前/後の件数と全行の内容ハッシュ（読み取りのみ・本文は出力しない）
 //   compare <entry-id> <pre> <post> mode  実行前後の照合
+//   summary <entry-id> <mode> <pre> [post] iPhoneで読める結果の要約をジョブ画面に出す
 // 認証情報は環境変数(CLOUDFLARE_API_TOKEN等)から wrangler が読む。このスクリプトは値を表示しない。
 import {execFileSync} from 'node:child_process';
 import {readFileSync, writeFileSync} from 'node:fs';
-import {loadManifest, getEntry, sha256, lintAdditiveSql} from './lib.mjs';
+import {loadManifest, getEntry, sha256, lintAdditiveSql, checkSchema, renderSummary} from './lib.mjs';
 import {takeSnapshot, digestUpTo, compareDryRun, compareApply} from './snapshot.mjs';
 
 const manifest = loadManifest();
@@ -24,6 +25,9 @@ if (cmd === 'guard') {
   const hit = list.find(d => d.uuid === DB_ID);
   if (!hit || hit.name !== DB) fail('このCloudflareアカウントに、固定のD1(名前+ID)が見つかりません。別アカウントの認証情報の可能性があります');
   console.log(`接続先OK: ${DB} (ID末尾 ${DB_ID.slice(-6)})`);
+  const schema = checkSchema(query("SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('products','reviews','review_sources','review_attributes')"));
+  if (schema.length) fail('本番D1の表の構造が想定と違います: ' + schema.join(' / '));
+  console.log('表の構造OK: products / reviews / review_sources / review_attributes');
 } else if (cmd === 'gate') {
   const [id, mode] = a;
   const entry = getEntry(manifest, id);
@@ -33,7 +37,7 @@ if (cmd === 'guard') {
   const problems = lintAdditiveSql(sql, entry.allowed_tables);
   if (problems.length) fail('SQL検査に失敗: ' + problems.slice(0, 5).join(' / '));
   if (mode === 'apply') {
-    if (!/^refs\/heads\/(develop|main)$/.test(process.env.GITHUB_REF || '')) fail('apply は develop か main から実行してください');
+    if (process.env.GITHUB_REF !== 'refs/heads/main') fail('apply は main ブランチからだけ実行できます（Run workflow の Use workflow from を main にしてください）');
     if (entry.approved_for_apply !== true) fail('このデータは運営者の承認前です（manifestの approved_for_apply が false）: ' + (entry.not_approved_reason || ''));
     if (process.env.CONFIRM_TEXT !== 'ADD inu-taikenki') fail('確認文字が一致しません');
   }
@@ -58,4 +62,12 @@ if (cmd === 'guard') {
   }
   if (errs.length) fail(errs.join('\n'));
   console.log(`照合OK (${mode})`);
+} else if (cmd === 'summary') {
+  const [id, mode, preF, postF] = a;
+  const entry = getEntry(manifest, id);
+  const pre = JSON.parse(readFileSync(preF, 'utf8'));
+  const post = postF && mode === 'apply' ? JSON.parse(readFileSync(postF, 'utf8')) : null;
+  const text = renderSummary({entryId: id, entry, mode, pre, post});
+  console.log(text);
+  if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, text + '\n', {flag: 'a'});
 } else fail('不明なコマンド');

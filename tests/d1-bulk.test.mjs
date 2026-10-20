@@ -114,3 +114,32 @@ test('post-apply check detects review_sources and other-category tampering', asy
   await bad(d => d.exec(`INSERT INTO review_attributes(review_id,kind,value) VALUES(${firstOther},'trait','tamper')`), /review_attributes/);
   await bad(d => d.exec(`DELETE FROM review_sources WHERE rowid=(SELECT MAX(rowid) FROM review_sources)`), /review_sources/);
 });
+
+import {execFileSync} from 'node:child_process';
+import {checkSchema, renderSummary} from '../scripts/d1-bulk/lib.mjs';
+test('schema check accepts the real schema and flags missing tables/columns', () => {
+  const d = buildBaselineDb('0042');
+  const rows = d.prepare("SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('products','reviews','review_sources','review_attributes')").all();
+  assert.deepEqual(checkSchema(rows), []);
+  assert(checkSchema(rows.filter(r => r.name !== 'review_sources')).some(p => p.includes('review_sources')));
+  assert(checkSchema(rows.map(r => r.name === 'review_sources' ? {...r, sql: r.sql.replaceAll('source_review_id', 'x')} : r)).some(p => p.includes('source_review_id')));
+});
+test('summary says plainly whether anything was written', async () => {
+  const sql = readFileSync(real.file, 'utf8');
+  const d = buildBaselineDb('0042');
+  const q = async (s) => d.prepare(s).all();
+  const pre = await takeSnapshot(q, real, sql);
+  const dry = renderSummary({entryId: 'dog-harness-677', entry: real, mode: 'dry-run', pre});
+  assert(dry.includes('本番D1には何も書き込んでいません') && dry.includes('+677'));
+  d.exec(sql);
+  const post = await takeSnapshot(q, real, sql);
+  const done = renderSummary({entryId: 'dog-harness-677', entry: real, mode: 'apply', pre, post});
+  assert(done.includes('本番D1に追加しました') && done.includes('+677') && done.includes('1件も変わっていません'));
+});
+test('gate: apply only from main, only when approved; dry-run is allowed from any branch', () => {
+  const run = (mode, ref, extra = {}) => { try { return {ok: true, out: execFileSync('node', ['scripts/d1-bulk/remote.mjs', 'gate', 'dog-harness-677', mode], {env: {...process.env, GITHUB_REF: ref, CONFIRM_TEXT: 'ADD inu-taikenki', ...extra}, encoding: 'utf8', stdio: 'pipe'})}; } catch (e) { return {ok: false, err: String(e.stderr)}; } };
+  assert(run('dry-run', 'refs/heads/anything').ok);
+  const dev = run('apply', 'refs/heads/develop'); assert(!dev.ok && dev.err.includes('main'));
+  const main = run('apply', 'refs/heads/main'); assert(!main.ok && main.err.includes('承認前'), 'approved_for_apply is false in the repo');
+  const bad = run('apply', 'refs/heads/main', {CONFIRM_TEXT: 'yes'}); assert(!bad.ok);
+});
