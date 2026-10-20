@@ -140,6 +140,9 @@ test('gate: apply only from main, only when approved; dry-run is allowed from an
   const run = (mode, ref, extra = {}) => { try { return {ok: true, out: execFileSync('node', ['scripts/d1-bulk/remote.mjs', 'gate', 'dog-harness-677', mode], {env: {...process.env, GITHUB_REF: ref, CONFIRM_TEXT: 'ADD inu-taikenki', ...extra}, encoding: 'utf8', stdio: 'pipe'})}; } catch (e) { return {ok: false, err: String(e.stderr)}; } };
   assert(run('dry-run', 'refs/heads/anything').ok);
   const dev = run('apply', 'refs/heads/develop'); assert(!dev.ok && dev.err.includes('main'));
-  const main = run('apply', 'refs/heads/main'); assert(!main.ok && main.err.includes('承認前'), 'approved_for_apply is false in the repo');
+  const approved = manifest.entries['dog-harness-677'].approved_for_apply === true;
+  const main = run('apply', 'refs/heads/main');
+  if (approved) assert(main.ok, 'approved + main + confirm text passes the gate');
+  else assert(!main.ok && main.err.includes('承認前'), 'approved_for_apply is false: apply must stop');
   const bad = run('apply', 'refs/heads/main', {CONFIRM_TEXT: 'yes'}); assert(!bad.ok);
 });
