@@ -23,7 +23,7 @@ test('workflow is manual-only, read-only token, gated by environment, DB pinned'
   assert.match(workflow, /permissions:\n  contents: read/);
   assert.match(workflow, /environment: production-d1/);
   for (const line of workflow.split('\n')) if (/run:|node |npx /.test(line)) assert.doesNotMatch(line, /\$\{\{ *inputs/, line);
-  assert.doesNotMatch(workflow, /upload-artifact|d1 export|\.sql\.gz/);
+  assert.doesNotMatch(workflow, /upload-artifact|d1 export|\.sql\.gz|D1_REHEARSAL_LOCAL|--local/);
   assert.match(workflow, /time-travel info inu-taikenki/);
   assert.doesNotMatch(workflow, /migrations apply|db:seed|db:migrate|wrangler deploy|npm run deploy/);
   const wrangler = readFileSync('wrangler.jsonc', 'utf8');
