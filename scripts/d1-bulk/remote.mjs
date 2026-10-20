@@ -13,7 +13,21 @@ import {takeSnapshot, digestUpTo, compareDryRun, compareApply} from './snapshot.
 const manifest = loadManifest();
 const {database_name: DB, database_id: DB_ID} = manifest.target;
 const wrangler = (args) => execFileSync('npx', ['wrangler', ...args], {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024});
-const query = (sql) => JSON.parse(wrangler(["d1", "execute", DB, "--remote", "--json", "--command", sql]))[0].results;
+// D1_REHEARSAL_LOCAL=1 は手元のリハーサル専用（ローカルD1を使う）。ワークフローでは設定しない（テストで禁止）。
+const LOCAL = process.env.D1_REHEARSAL_LOCAL === '1';
+const target = LOCAL ? ['--local', ...(process.env.D1_PERSIST_TO ? ['--persist-to', process.env.D1_PERSIST_TO] : [])] : ['--remote'];
+const runSql = (sql) => JSON.parse(wrangler(["d1", "execute", DB, ...target, "--json", "--command", sql]));
+const query = (sql) => runSql(sql)[0].results;
+// 複数のSELECTを1回のwrangler起動でまとめて実行する（起動が遅いので回数を減らす）。結果は文ごとの行配列。
+query.batch = (sqls) => {
+  const out = [];
+  for (let i = 0; i < sqls.length; i += 40) {
+    const part = runSql(sqls.slice(i, i + 40).join(';\n'));
+    if (part.length !== Math.min(40, sqls.length - i)) throw new Error('まとめ問い合わせの結果の数が合いません');
+    out.push(...part.map(r => r.results));
+  }
+  return out;
+};
 const fail = (m) => { console.error('停止: ' + m); process.exit(1); };
 const [cmd, ...a] = process.argv.slice(2);
 
@@ -21,10 +35,13 @@ if (cmd === 'guard') {
   const cfg = JSON.parse(readFileSync('wrangler.jsonc', 'utf8').replace(/^\s*\/\/.*$/gm, ''));
   const bindings = cfg.d1_databases || [];
   if (bindings.length !== 1 || bindings[0].database_name !== DB || bindings[0].database_id !== DB_ID) fail('wrangler.jsonc のD1設定が固定値と一致しません');
-  const list = JSON.parse(wrangler(['d1', 'list', '--json']));
-  const hit = list.find(d => d.uuid === DB_ID);
-  if (!hit || hit.name !== DB) fail('このCloudflareアカウントに、固定のD1(名前+ID)が見つかりません。別アカウントの認証情報の可能性があります');
-  console.log(`接続先OK: ${DB} (ID末尾 ${DB_ID.slice(-6)})`);
+  if (LOCAL) console.log('接続先: ローカルD1（リハーサル。Cloudflareには接続しません）');
+  else {
+    const list = JSON.parse(wrangler(['d1', 'list', '--json']));
+    const hit = list.find(d => d.uuid === DB_ID);
+    if (!hit || hit.name !== DB) fail('このCloudflareアカウントに、固定のD1(名前+ID)が見つかりません。別アカウントの認証情報の可能性があります');
+    console.log(`接続先OK: ${DB} (ID末尾 ${DB_ID.slice(-6)})`);
+  }
   const schema = checkSchema(query("SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('products','reviews','review_sources','review_attributes')"));
   if (schema.length) fail('本番D1の表の構造が想定と違います: ' + schema.join(' / '));
   console.log('表の構造OK: products / reviews / review_sources / review_attributes');
@@ -45,7 +62,7 @@ if (cmd === 'guard') {
 } else if (cmd === 'snapshot') {
   const [id, out] = a;
   const entry = getEntry(manifest, id);
-  const snap = await takeSnapshot(async (q) => query(q), entry, readFileSync(entry.file, 'utf8'));
+  const snap = await takeSnapshot(query, entry, readFileSync(entry.file, 'utf8'));
   writeFileSync(out, JSON.stringify(snap, null, 2));
   console.log(JSON.stringify({tables: Object.fromEntries(Object.entries(snap.tables).map(([t, v]) => [t, v.count])), cat_products: snap.cat_products, cat_reviews: snap.cat_reviews, id_conflicts: snap.id_conflicts}));
 } else if (cmd === 'compare') {
@@ -58,7 +75,7 @@ if (cmd === 'guard') {
     console.log(`実行すると: 商品 +${entry.expected_products - pre.cat_products}件 / 口コミ +${entry.expected_reviews - pre.cat_reviews}件 の見込み`);
   } else {
     const post = JSON.parse(readFileSync(postF, 'utf8'));
-    errs = compareApply(entry, pre, post, await digestUpTo(async (q) => query(q), pre));
+    errs = compareApply(entry, pre, post, await digestUpTo(query, pre));
   }
   if (errs.length) fail(errs.join('\n'));
   console.log(`照合OK (${mode})`);
