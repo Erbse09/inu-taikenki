@@ -1,0 +1,123 @@
+name: D1一括追加（手動実行のみ）
+
+# 自動実行は設定しない。トリガーは workflow_dispatch（GitHub画面の「Run workflow」）だけ。
+on:
+  workflow_dispatch:
+    inputs:
+      entry:
+        description: '追加するデータ名（release-data/bulk-manifest.json のキー）'
+        required: true
+        default: 'dog-harness-677'
+        type: choice
+        options:
+          - dog-harness-677
+      mode:
+        description: 'dry-run=確認だけ(書き込まない) / apply=本番D1へ追加'
+        required: true
+        default: 'dry-run'
+        type: choice
+        options:
+          - dry-run
+          - apply
+      confirm:
+        description: 'apply のときだけ「ADD inu-taikenki」と入力（dry-runは空欄）'
+        required: false
+        type: string
+
+permissions:
+  contents: read   # 読み取りのみ。コードの変更・PR作成・デプロイはできない
+
+concurrency:
+  group: d1-bulk-add
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: ローカル検証（認証情報なし）
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: 入力と安全条件の確認
+        env:
+          ENTRY: ${{ inputs.entry }}
+          MODE: ${{ inputs.mode }}
+          CONFIRM_TEXT: ${{ inputs.confirm }}
+        run: node scripts/d1-bulk/remote.mjs gate "$ENTRY" "$MODE"
+      - name: 使い捨てDBでSQL適用・再実行・既存保全を検証
+        env:
+          ENTRY: ${{ inputs.entry }}
+        run: node --no-warnings scripts/d1-bulk/verify-local.mjs "$ENTRY"
+
+  remote:
+    name: 本番D1（要・運営者承認）
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Settings > Environments の production-d1 に「Required reviewers」と秘密情報を設定する。
+    environment: production-d1
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ENTRY: ${{ inputs.entry }}
+      MODE: ${{ inputs.mode }}
+      CONFIRM_TEXT: ${{ inputs.confirm }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: 再度ゲート確認
+        run: node scripts/d1-bulk/remote.mjs gate "$ENTRY" "$MODE"
+      - name: 接続先が固定のD1(inu-taikenki)か確認
+        run: node scripts/d1-bulk/remote.mjs guard
+      - name: 実行前の件数と全行の内容ハッシュ（読み取りのみ）
+        run: node scripts/d1-bulk/remote.mjs snapshot "$ENTRY" "$RUNNER_TEMP/pre.json"
+      - name: 復元地点(Time Travel bookmark)を記録
+        # DBの中身(エクスポート)はRunnerに保存しない・アップロードしない。復元はCloudflare側のTime Travelを使う。
+        run: |
+          {
+            echo '### 実行前の復元地点（Time Travel）'
+            echo '```'
+            npx wrangler d1 time-travel info inu-taikenki
+            echo '```'
+            echo '復元コマンドは docs/D1_BULK_ADD.md の「失敗したとき」を参照。'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: 追加の見込み確認
+        run: node scripts/d1-bulk/remote.mjs compare "$ENTRY" "$RUNNER_TEMP/pre.json" "$RUNNER_TEMP/pre.json" dry-run
+      - name: 本番D1へ追加（apply のときだけ）
+        if: ${{ inputs.mode == 'apply' }}
+        run: |
+          FILE=$(node -e "console.log(require('./release-data/bulk-manifest.json').entries[process.env.ENTRY].file)")
+          npx wrangler d1 execute inu-taikenki --remote --yes --file="$FILE"
+      - name: 実行後の照合（apply のときだけ）
+        if: ${{ inputs.mode == 'apply' }}
+        run: |
+          node scripts/d1-bulk/remote.mjs snapshot "$ENTRY" "$RUNNER_TEMP/post.json"
+          node scripts/d1-bulk/remote.mjs compare "$ENTRY" "$RUNNER_TEMP/pre.json" "$RUNNER_TEMP/post.json" apply
+      - name: 結果の要約（iPhoneで読む画面）
+        run: |
+          if [ "$MODE" = "apply" ]; then
+            node scripts/d1-bulk/remote.mjs summary "$ENTRY" "$MODE" "$RUNNER_TEMP/pre.json" "$RUNNER_TEMP/post.json"
+          else
+            node scripts/d1-bulk/remote.mjs summary "$ENTRY" "$MODE" "$RUNNER_TEMP/pre.json"
+          fi
+      - name: 失敗したときの案内
+        if: ${{ failure() }}
+        run: |
+          {
+            echo '## ⚠️ 失敗しました'
+            echo '- 上の赤い手順のログを開いて「停止:」で始まる行を確認してください。'
+            echo '- **dry-run の失敗では本番D1は変わっていません。**'
+            echo '- apply の途中で失敗した場合は、同じSQLをもう一度 apply しても重複しません（不足分だけ補われます）。'
+            echo '- 復旧が必要なときは docs/D1_BULK_ADD.md の「失敗したとき」に従い、実行前の Time Travel bookmark（ジョブ画面の「復元地点」）を控えてください。'
+          } >> "$GITHUB_STEP_SUMMARY"

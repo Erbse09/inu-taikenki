@@ -1,0 +1,28 @@
+{
+  "target": {
+    "database_name": "inu-taikenki",
+    "database_id": "a7339570-f395-48fd-8757-b5259a505560"
+  },
+  "entries": {
+    "dog-harness-677": {
+      "file": "migrations/0042_dog_harness.sql",
+      "sha256": "4c7de176fc17125cbfd5039da724e984e53f1633cf06468b13d44461f278dd2c",
+      "category": "dog-harness",
+      "allowed_tables": [
+        "products",
+        "reviews",
+        "review_sources"
+      ],
+      "expected_products": 32,
+      "expected_reviews": 677,
+      "source_pr": 114,
+      "approved_for_apply": false,
+      "not_approved_reason": "出典監査(2026-10-18)で689件中677件の対応投稿を確認し、確認できた677件だけをSQLに残した。運営者による確認・承認(approved_for_apply)と、AI要約・順位の独自性に関する最終判断が未了。",
+      "expected_review_sources": 677,
+      "audit": "audit/review-source-20261018-harness/",
+      "derived_tables": [
+        "review_attributes"
+      ]
+    }
+  }
+}
