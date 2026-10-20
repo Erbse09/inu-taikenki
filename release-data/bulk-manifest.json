@@ -16,13 +16,13 @@
       "expected_products": 32,
       "expected_reviews": 677,
       "source_pr": 114,
-      "approved_for_apply": false,
-      "not_approved_reason": "出典監査(2026-10-18)で689件中677件の対応投稿を確認し、確認できた677件だけをSQLに残した。運営者による確認・承認(approved_for_apply)と、AI要約・順位の独自性に関する最終判断が未了。",
+      "approved_for_apply": true,
       "expected_review_sources": 677,
       "audit": "audit/review-source-20261018-harness/",
       "derived_tables": [
         "review_attributes"
-      ]
+      ],
+      "approved_note": "運営者が dry-run の結果(口コミ+677・商品+32・出典+677)を確認し、この承認用PRをマージした時点で有効になる。"
     }
   }
 }
