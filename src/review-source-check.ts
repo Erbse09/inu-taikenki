@@ -25,6 +25,13 @@ export function sourceCheck(id: number | string | null | undefined): SourceCheck
   return { status, label: TEXT[status].label, short: TEXT[status].short, url, checked: LEDGER_DATE };
 }
 
+// A row registered in D1 `review_sources` was added together with an audit record (a specific public post was found and matched).
+// The registered URL is the review-list page that contained the post; lists change over time, so it is a page, not a permalink.
+export function sourceCheckFromRegistry(url: string | null | undefined): SourceCheck | null {
+  if (!url || !/^https:\/\//.test(url)) return null;
+  return { status: "V", label: TEXT.V.label, short: TEXT.V.short, url, checked: "review_sources" };
+}
+
 export function ledgerTotals() {
   const totals: Record<CheckStatus, number> = { V: 0, P: 0, N: 0, U: 0, C: 0 };
   for (const [status] of Object.values(LEDGER)) totals[status]++;

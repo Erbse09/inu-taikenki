@@ -95,3 +95,41 @@ export function reviewValueCount(sql) {
   // new_reviews CTE の VALUES 行数（種別で始まる行）
   return (sql.match(/^\s*\('[^']+',/gm) || []).length;
 }
+
+// 本番D1に必要な表と列があるか（読み取りで得た sqlite_master の行を渡す）。問題点の配列を返す（空なら合格）。
+export const REQUIRED_SCHEMA = {
+  products: ['id', 'name', 'category', 'affiliate_url', 'active'],
+  reviews: ['id', 'product_id', 'dog_breed', 'dog_size', 'coat_type', 'needs', 'summary', 'source_type', 'source_url'],
+  review_sources: ['review_id', 'source_type', 'source_url', 'source_platform', 'source_review_id'],
+  review_attributes: ['review_id', 'kind', 'value'],
+};
+export function checkSchema(rows) {
+  const problems = [];
+  const byName = Object.fromEntries(rows.map(r => [r.name, String(r.sql || '')]));
+  for (const [table, cols] of Object.entries(REQUIRED_SCHEMA)) {
+    if (!(table in byName)) { problems.push(`テーブル ${table} がありません`); continue; }
+    for (const c of cols) if (!new RegExp(`\\b${c}\\b`).test(byName[table])) problems.push(`${table} に列 ${c} がありません`);
+  }
+  return problems;
+}
+
+// iPhoneで読める結果の要約（GitHub のジョブ画面に出す）。pre/post は snapshot の結果。
+export function renderSummary({entryId, entry, mode, pre, post, ok = true}) {
+  const t = (s, k) => s?.tables?.[k]?.count ?? '—';
+  const lines = [];
+  lines.push(`## D1一括追加 ${mode === 'apply' ? '（本番に追加）' : '（dry-run：確認だけ・書き込みなし）'}`);
+  lines.push(`- 対象データ: \`${entryId}\`（${entry.category}）／接続先: D1 \`inu-taikenki\``);
+  lines.push('');
+  lines.push('| 項目 | 実行前 | ' + (post ? '実行後 | 増加 |' : '追加される見込み |'));
+  lines.push(post ? '|---|--:|--:|--:|' : '|---|--:|--:|');
+  const rowsDef = [['口コミ合計', 'reviews', entry.expected_reviews - pre.cat_reviews], ['商品合計', 'products', entry.expected_products - pre.cat_products]];
+  if (entry.expected_review_sources !== undefined) rowsDef.push(['出典(review_sources)', 'review_sources', entry.expected_review_sources - pre.cat_sources]);
+  for (const [label, key, expectedDelta] of rowsDef) {
+    if (post) lines.push(`| ${label} | ${t(pre, key)} | ${t(post, key)} | +${post.tables[key].count - pre.tables[key].count} |`);
+    else lines.push(`| ${label} | ${t(pre, key)} | +${expectedDelta} |`);
+  }
+  lines.push('');
+  lines.push(`- 既存データの内容ハッシュ照合: ${post ? (ok ? '一致（1件も変わっていません）' : '**不一致 → 要確認**') : '実行前の記録を保存しました'}`);
+  lines.push(mode === 'apply' ? '- 本番D1に追加しました。' : '- **本番D1には何も書き込んでいません。**');
+  return lines.join('\n');
+}

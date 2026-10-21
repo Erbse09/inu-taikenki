@@ -23,7 +23,7 @@ test('workflow is manual-only, read-only token, gated by environment, DB pinned'
   assert.match(workflow, /permissions:\n  contents: read/);
   assert.match(workflow, /environment: production-d1/);
   for (const line of workflow.split('\n')) if (/run:|node |npx /.test(line)) assert.doesNotMatch(line, /\$\{\{ *inputs/, line);
-  assert.doesNotMatch(workflow, /upload-artifact|d1 export|\.sql\.gz/);
+  assert.doesNotMatch(workflow, /upload-artifact|d1 export|\.sql\.gz|D1_REHEARSAL_LOCAL|--local/);
   assert.match(workflow, /time-travel info inu-taikenki/);
   assert.doesNotMatch(workflow, /migrations apply|db:seed|db:migrate|wrangler deploy|npm run deploy/);
   const wrangler = readFileSync('wrangler.jsonc', 'utf8');
@@ -47,8 +47,8 @@ WHERE NOT EXISTS (SELECT 1 FROM reviews r WHERE r.product_id=n.product_id AND r.
   const failed = verify(entry, sql).filter(r => !r.ok);
   assert.deepEqual(failed, []);
 });
-test('real migration (when present) passes local verification', { skip: !existsSync(manifest.entries['dog-harness-689'].file) }, () => {
-  const e = manifest.entries['dog-harness-689'];
+test('real migration (when present) passes local verification', { skip: !existsSync(manifest.entries['dog-harness-677'].file) }, () => {
+  const e = manifest.entries['dog-harness-677'];
   assert.deepEqual(verify(e, readFileSync(e.file, 'utf8')).filter(r => !r.ok), []);
 });
 
@@ -82,4 +82,67 @@ test('content snapshot detects same-length edits, deletes and unrelated-table ch
   assert((await runCase('DELETE FROM reviews WHERE id = (SELECT MIN(id) FROM reviews)')).length > 0);
   const e4 = await runCase("INSERT INTO review_sources(review_id, source_type, source_url, source_platform, source_review_id) SELECT id, 't', 'https://x', 'p', 'r1' FROM reviews LIMIT 1");
   assert(e4.some(m => m.includes('review_sources')), e4.join());
+});
+
+// 本番の事後照合(snapshot/compare)を、実際のSQLを使ってローカルで通す。
+const real = manifest.entries['dog-harness-677'];
+async function realRun(mutate) {
+  const sql = readFileSync(real.file, 'utf8');
+  const d = buildBaselineDb('0042');
+  const q = async (s) => d.prepare(s).all();
+  const pre = await takeSnapshot(q, real, sql);
+  d.exec(sql);
+  if (mutate) mutate(d);
+  const post = await takeSnapshot(q, real, sql);
+  return {errs: compareApply(real, pre, post, await digestUpTo(q, pre)), pre, post};
+}
+test('post-apply check passes for the real 0042 (review_attributes grows only for the new category)', async () => {
+  const {errs, pre, post} = await realRun();
+  assert.deepEqual(errs, []);
+  assert.equal(post.tables.review_sources.count - pre.tables.review_sources.count, 677);
+  assert.equal(post.cat_sources, 677);
+  assert.deepEqual(post.outside, pre.outside);
+  assert(post.tables.review_attributes.count > pre.tables.review_attributes.count, 'trigger-derived rows exist and are allowed');
+});
+test('post-apply check detects review_sources and other-category tampering', async () => {
+  const bad = async (mutate, re) => { const {errs} = await realRun(mutate); assert(errs.some(e => re.test(e)), re + ' :: ' + errs.join(' | ')); };
+  const firstOther = "(SELECT MIN(r.id) FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.category<>'dog-harness')";
+  await bad(d => d.exec(`INSERT INTO review_sources(review_id,source_type,source_url,source_platform,source_review_id) VALUES(${firstOther.replace('MIN','MIN')},'t','https://x','p','tamper-1')`), /review_sources/);
+  await bad(d => d.exec(`DELETE FROM review_sources WHERE source_review_id=(SELECT source_review_id FROM review_sources LIMIT 1)`), /review_sources/);
+  await bad(d => d.exec(`UPDATE review_sources SET source_url='https://other.example/' WHERE rowid=(SELECT MAX(rowid) FROM review_sources)`), /review_sources|増加/);
+  await bad(d => d.exec(`UPDATE reviews SET summary=summary||'!' WHERE id=${firstOther}`), /reviews/);
+  await bad(d => d.exec(`INSERT INTO review_attributes(review_id,kind,value) VALUES(${firstOther},'trait','tamper')`), /review_attributes/);
+  await bad(d => d.exec(`DELETE FROM review_sources WHERE rowid=(SELECT MAX(rowid) FROM review_sources)`), /review_sources/);
+});
+
+import {execFileSync} from 'node:child_process';
+import {checkSchema, renderSummary} from '../scripts/d1-bulk/lib.mjs';
+test('schema check accepts the real schema and flags missing tables/columns', () => {
+  const d = buildBaselineDb('0042');
+  const rows = d.prepare("SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('products','reviews','review_sources','review_attributes')").all();
+  assert.deepEqual(checkSchema(rows), []);
+  assert(checkSchema(rows.filter(r => r.name !== 'review_sources')).some(p => p.includes('review_sources')));
+  assert(checkSchema(rows.map(r => r.name === 'review_sources' ? {...r, sql: r.sql.replaceAll('source_review_id', 'x')} : r)).some(p => p.includes('source_review_id')));
+});
+test('summary says plainly whether anything was written', async () => {
+  const sql = readFileSync(real.file, 'utf8');
+  const d = buildBaselineDb('0042');
+  const q = async (s) => d.prepare(s).all();
+  const pre = await takeSnapshot(q, real, sql);
+  const dry = renderSummary({entryId: 'dog-harness-677', entry: real, mode: 'dry-run', pre});
+  assert(dry.includes('本番D1には何も書き込んでいません') && dry.includes('+677'));
+  d.exec(sql);
+  const post = await takeSnapshot(q, real, sql);
+  const done = renderSummary({entryId: 'dog-harness-677', entry: real, mode: 'apply', pre, post});
+  assert(done.includes('本番D1に追加しました') && done.includes('+677') && done.includes('1件も変わっていません'));
+});
+test('gate: apply only from main, only when approved; dry-run is allowed from any branch', () => {
+  const run = (mode, ref, extra = {}) => { try { return {ok: true, out: execFileSync('node', ['scripts/d1-bulk/remote.mjs', 'gate', 'dog-harness-677', mode], {env: {...process.env, GITHUB_REF: ref, CONFIRM_TEXT: 'ADD inu-taikenki', ...extra}, encoding: 'utf8', stdio: 'pipe'})}; } catch (e) { return {ok: false, err: String(e.stderr)}; } };
+  assert(run('dry-run', 'refs/heads/anything').ok);
+  const dev = run('apply', 'refs/heads/develop'); assert(!dev.ok && dev.err.includes('main'));
+  const approved = manifest.entries['dog-harness-677'].approved_for_apply === true;
+  const main = run('apply', 'refs/heads/main');
+  if (approved) assert(main.ok, 'approved + main + confirm text passes the gate');
+  else assert(!main.ok && main.err.includes('承認前'), 'approved_for_apply is false: apply must stop');
+  const bad = run('apply', 'refs/heads/main', {CONFIRM_TEXT: 'yes'}); assert(!bad.ok);
 });

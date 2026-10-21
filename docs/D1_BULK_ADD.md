@@ -1,84 +1,130 @@
 # D1一括追加（iPhoneからGitHubで手動実行）
 
 Cloudflare管理画面で口コミを50件ずつコピペする作業をなくすための仕組みです。
-**このPRを取り込んだだけでは何も実行されません。** 本番D1への追加は、運営者が下の手順で明示的に実行したときだけ行われます。
+**ワークフローをmainに入れただけでは何も実行されません。** 本番D1への追加は、運営者が下の手順で明示的に実行したときだけ行われます。
 
-## 安全の仕組み
+## 1. 安全のしくみ（何が防いでくれるか）
 
 | 項目 | 内容 |
 |---|---|
-| 手動のみ | `workflow_dispatch` だけ。schedule/push/PRでは動かない |
-| 対象DB固定 | 既存D1 `inu-taikenki`（ID末尾 `…5560`）。名前+IDが一致しないと停止。新規D1は作らない |
-| 追加専用SQL | DELETE/UPDATE/DROP/REPLACE/CREATE等を含むSQL、重複防止のない口コミINSERTは停止 |
-| 内容固定 | `release-data/bulk-manifest.json` のsha256とSQLが違うと停止 |
-| 三重の確認 | ①manifestの `approved_for_apply: true`（PRレビュー）②GitHub Environment `production-d1` の承認 ③確認文字 `ADD inu-taikenki` |
-| 認証情報 | GitHub Secretsのみ。コード・ログ・チャットに出さない |
-| 事前 | 接続先確認 → 全テーブルの件数と**全行の内容ハッシュ**を記録 → Time Travel復元地点をログに記録 |
-| 事後 | 実行前に存在した全行（全テーブル）を同じ範囲で再計算したハッシュと比較。1文字の書き換え・削除も検知。想定外のテーブル変更・件数も停止 |
-| 非公開データ | DBのエクスポートはRunnerに保存せず、Artifactやリポジトリにもアップロードしない。ハッシュ値だけを扱う（本文は出力しない） |
+| 手動のみ | `workflow_dispatch` だけ。schedule / push / PR では動きません |
+| 実行場所はmainだけ | apply は `main` ブランチからしか動きません。Environment も main 限定にします |
+| 対象DB固定 | 既存D1 `inu-taikenki`（ID末尾 `…5560`）。名前+IDが一致しなければ停止。新しいD1は作りません |
+| 表の構造も確認 | `products` / `reviews` / `review_sources` / `review_attributes` と必要な列があるか確認してから進みます |
+| 追加専用SQL | DELETE / UPDATE / DROP / REPLACE / CREATE 等を含むSQL、重複防止のない口コミINSERTは停止 |
+| 内容固定 | `release-data/bulk-manifest.json` の sha256 とSQLが違うと停止 |
+| 承認が3つ | ①mainの `approved_for_apply` が `true`（承認用PRのマージ）②GitHub Environment `production-d1` での承認ボタン ③確認文字 `ADD inu-taikenki` |
+| 認証情報 | GitHub Secrets のみ。コード・ログ・チャットに出ません |
+| 事前の記録 | 全テーブルの件数と**全行の内容ハッシュ**、Time Travel の復元地点（bookmark） |
+| 事後の照合 | 実行前の全行が1文字も変わっていないこと／対象カテゴリ以外が1件も増減していないこと／`review_sources` の増加がちょうど677件／追加した口コミ・出典の中身がSQLどおり、をすべて確認 |
+| DB内容の取り扱い | DBのエクスポートは作りません。GitHub（コード・Artifact・ログ）にDB内容は出ません。出るのは件数とハッシュ値だけです |
 
-## ⚠️ iPhoneの Run workflow ボタンが出る条件（mainへの導入が必要）
+## 2. 全体の流れ（誰が何をするか）
 
-GitHub Actionsの手動実行（`workflow_dispatch`）は、**ワークフローのファイルがデフォルトブランチ（main）にないと、Actions画面の左一覧に出ず「Run workflow」も押せません**。
-したがって「developにマージすればiPhoneから実行できる」は誤りでした。developだけでは、画面から手動実行できません。
+| 段階 | 内容 | 運営者の操作 |
+|---|---|---|
+| 0 | AIが準備（ツール・SQL・記録・テスト・手順書）。**完了済み** | なし |
+| 1 | 安全導入PR（ツールとSQLだけ。サイトの表示は変わらない）をmainへマージ | PRの「Merge」をタップ（1回） |
+| 初回設定 | Cloudflareのトークン、GitHubの Environment（§3） | 約15分、初回だけ |
+| 2 | dry-run（確認だけ。書き込みなし） | Run workflow ＋ 承認ボタン |
+| 3 | 承認用PR（`approved_for_apply` を `true` にするだけ）をmainへマージ | 「Merge」をタップ（1回） |
+| 4 | apply（本番D1へ追加） | Run workflow（確認文字つき）＋ 承認ボタン |
+| 5 | サイトの公開（#114 を含む develop → main）。公開の指示は別途 | 指示のみ（AIがPRを作成）→ Merge |
 
-### mainへの安全な導入案（mainへはまだマージしません。運営者が公開を指示したときだけ）
-推奨は**次回の通常公開（develop→main）に同梱**するか、急ぐ場合は**専用の小さなPR**にすることです。
+**順番は 4（D1）→ 5（サイト）です。** 逆にすると、口コミが空のハーネスページが一時的に公開されます。
+トップの総件数などはD1の数をその場で表示しているため、4の直後から増えます（1,595件→2,272件、カテゴリ15→16）。
+その間、古いサイトにはハーネスのページがありません。**4と5は続けて（同じ日に、数分〜数十分以内で）行ってください。**
 
-1. 専用PRに入れるのは `.github/workflows/d1-bulk-add.yml`、`scripts/d1-bulk/`、`release-data/bulk-manifest.json`、`docs/`、`tests/d1-bulk.test.mjs` のみ（サイトのコード・DB・SQLは含めない）。サイト表示は変わりませんが、mainのマージはWorkers Buildsの本番ビルドが走るため、通常の公開と同じ承認で行う。
-2. mainに入った時点では何も実行されません（自動トリガーなし）。`approved_for_apply: false` のままなので、追加データはapplyできません。
-3. 実行時は **Use workflow from: main**（推奨）を選びます。コードとSQLが同じmainにあるものだけが実行対象になり、developの未レビュー変更で本番トークンが使われません。この場合、追加SQL（`migrations/0042…`）がmainにある必要があり、**#114の公開（または同じ内容のマージ）後**になります。
-4. Environment `production-d1` の「Deployment branches」は **main のみ**を推奨（今回の手順ではdevelopからのapplyは非推奨）。`develop` を許可すると、developに書き込める人がレビュー前のコードで本番トークンを使える余地が生じます。dry-runを先に試したい場合のみ一時的にdevelopを許可し、終わったら外してください。
-5. ワークフロー内のゲートは、applyを `develop` / `main` のrefに限定しています。さらにmainのみに絞る場合は `scripts/d1-bulk/remote.mjs` の正規表現を変更する小さなPRを別に出します（今回は変更していません）。
+## 3. 初回だけの設定（運営者）
 
-注意: GitHubのスマホアプリではワークフローの手動実行ボタンが使えない場合があります。その場合はSafariでGitHubのWebサイトを開き、必要なら「デスクトップ用Webサイトを表示」にしてください。
+### 3-1. Cloudflare（Safari で dash.cloudflare.com）
+1. ログインし、左上のメニューから **アカウントID** を控える（「Workers & Pages」の概要ページ右側、または URL の `dash.cloudflare.com/` の次の32桁）。
+2. 右上の人型アイコン → **プロフィール** → **API トークン** → **トークンを作成** → 「カスタムトークン」→ **開始する**。
+3. トークン名: `inu-taikenki-d1-bulk`。権限: **アカウント / D1 / 編集**（これだけ）。
+4. アカウントリソース: **含める / （このアカウント1つ）**。
+5. TTL（有効期限）: 開始と終了を設定。**終了日は今日から7日後**にする。
+6. 「概要に進む」→「トークンを作成」。表示された長い文字列を「コピー」ボタンで**コピーするだけ**にして、次の 3-2 の入力欄に貼り付ける（スクリーンショット・メモ・チャットには残さない。一度しか表示されません）。
 
-## 初回だけ必要な設定
+### 3-2. GitHub（Safari で github.com/Erbse09/inu-taikenki）
+1. **Settings** → 左メニュー **Environments** → **New environment** → 名前 `production-d1` → Configure environment。
+2. **Required reviewers** にチェック → 自分のアカウントを追加 → **Prevent self-review はオフ**（オンだと自分で承認できず進めません）→ Save protection rules。
+3. **Deployment branches and tags** → 「Selected branches and tags」→ **Add deployment branch or tag rule** → `main` → Add rule。
+4. **Environment secrets** → **Add environment secret**
+   - 名前 `CLOUDFLARE_API_TOKEN` ／ 値: 3-1 でコピーしたトークン
+   - 名前 `CLOUDFLARE_ACCOUNT_ID` ／ 値: 3-1 のアカウントID
+5. **Settings → Actions → General** で「Allow all actions」（または「Allow Erbse09 actions…」）が有効で、Workflow permissions が「Read repository contents」であることを確認（初期値のままで可）。
 
-1. **Cloudflare APIトークン作成**（dash.cloudflare.com → 右上アイコン → マイプロフィール → APIトークン → トークンを作成 → カスタム）
-   - 権限は **アカウント / D1 / 編集** のみ。リソースは対象アカウント1つだけ。有効期限は短め（例: 1か月）。
-   - トークンは一度しか表示されません。**チャットや画面共有に貼らない**。
-   - アカウントIDはCloudflareの Workers & Pages 概要ページ右側にあります。
-2. **GitHub Environment を作る**: リポジトリ → Settings → Environments → New environment → 名前 `production-d1`
-   - 「Required reviewers」に自分を追加（承認ボタンになります）。
-   - 「Deployment branches」を `develop` と `main` に限定。
-   - Environment secrets に `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を登録。
-3. 使い終わったらCloudflareでトークンを削除してください。
+iPhone のスマホ表示で項目が見つからないときは、Safari の「aA」→「デスクトップ用Webサイトを表示」にしてください。GitHubアプリには「Run workflow」が出ない場合があるので、**Safari を使います**。
 
-### 設定の影響・必要な権限
+### この設定の影響・必要な権限
 - ワークフローの権限は `contents: read`（読み取りのみ）。コード変更・PR作成・デプロイはできません。
-- 既存のWorkers Builds（main自動デプロイ）には触れません。Actionsの消費は実行時間（数分）のみ。
-- Cloudflareトークンは **D1の編集権限** を持ち、同じアカウントの他のD1にも理論上届きます。そのためコード側でDB名+IDを固定し照合しています。トークンは最小範囲・短期限にしてください。
-- 実行できる人はリポジトリへの書き込み権限者ですが、本番に触るジョブは承認者の承認が必須です。
+- 既存のWorkers Builds（mainの自動デプロイ）には触れません。Actionsの消費は実行時間（数分）のみ。
+- Cloudflareトークンは **D1の編集権限** を持ち、同じアカウントの他のD1にも理論上は届きます。そのためコード側でDB名+IDを固定して照合しています。トークンは最小範囲・短期限にし、**終わったら Cloudflare で削除（ロール）** してください。
+- 実行できる人はリポジトリへの書き込み権限者ですが、本番に触るジョブは Environment の承認が必須です。
 
-## 毎回の手順（iPhone）
+## 4. dry-run（確認だけ。書き込みなし）
 
-1. GitHub → リポジトリ → **Actions** → 「D1一括追加（手動実行のみ）」 → **Run workflow**
-2. 「Use workflow from」は `main`（上記の手順で導入後）。`entry` を選び、まず **mode = dry-run**（書き込まない）で実行。
-3. 承認画面（Review deployments）で **production-d1 を承認**。バックアップと件数確認だけ行われます。
-4. ログで「接続先OK」「追加の見込み」を確認。問題なければもう一度 Run workflow:
-   **mode = apply**、`confirm` に `ADD inu-taikenki` と入力 → 再度承認。
-5. 緑のチェックなら事後照合まで合格です。サイトで該当ページを確認。
+1. Safari で `github.com/Erbse09/inu-taikenki/actions` を開く。
+2. 「All workflows」→ **D1一括追加（手動実行のみ）** を選ぶ。
+3. 右の **Run workflow** をタップ。
+   - Use workflow from: **main**
+   - entry: `dog-harness-677`
+   - mode: **dry-run**
+   - confirm: **空のまま**
+   - 緑の **Run workflow**。
+4. 少し待つと実行が一覧に出る。タップして開く。
+5. `remote` の所に黄色い「Waiting」と **Review deployments** が出る → タップ → `production-d1` にチェック → **Approve and deploy**。
+6. 完了後、実行の画面を下へスクロールして **Summary**（要約）を読む。
 
-## 復旧手順と非公開データの扱い
+**合格の目安（Summary）**
+- 「本番D1には何も書き込んでいません」と書かれている。
+- 口コミ・商品・出典の「追加される見込み」が **+677 / +32 / +677**。
+- 実行前の件数が、今の本番（口コミ1,595・商品97）と同じか、近い値。
+- ログに「接続先OK」「表の構造OK」「照合OK (dry-run)」がある。
 
-**原則: DBの中身（口コミ等）を含むファイルは、GitHub（コード、Artifact、Issue、ログ）に置かない。** リポジトリが公開でも非公開でも同じ扱いです。バックアップの正本はCloudflare D1の **Time Travel**（過去の任意時点に戻せる仕組み。保持日数はプランで異なり、Freeは7日・有料は30日。Cloudflareの現行仕様を確認してください）です。
+どれかが違う、または赤い×が付いたら**そこで止めて**、スクリーンショットをAIに見せてください（トークンが写っていない画面だけ）。
 
-1. 実行前: ジョブが復元地点（bookmark）をジョブのSummaryに記録します（bookmark自体は秘密情報ではありません）。
-2. 念のため手元にも残したい場合は、運営者が**自分のPCから** `npx wrangler d1 export inu-taikenki --remote --output <非公開の場所>` を実行し、非公開のクラウド/暗号化ストレージに保管します（ワークフローには含めません）。
-3. **途中で止まった/一部だけ入った**: SQLは再実行しても重複しません。dry-run → apply をやり直すと不足分だけ補われます（ローカルで検証済み）。
-4. **事後照合が不合格**: そのまま止めて内容を確認します。復元が必要なら、Summaryのbookmarkを使い、運営者が判断して
-   `npx wrangler d1 time-travel restore inu-taikenki --bookmark=<bookmark>` を実行します。
-   - 復元は**その後の他の書き込みもすべて巻き戻します**。実行後に別の更新（口コミ追加等）があった場合は、先に内容を確認してください。
-   - 復元しても、復元直前の状態に戻すためのbookmarkがCloudflareから表示されます。それも控えてください。
-5. 追加が想定どおりで「新規追加分だけ取り消したい」場合は、新規商品（manifest記載のID）に紐づく行のみを対象にした別のレビュー済みSQLを作り、運営者の承認後に実行します（自動化しません）。
-6. **認証エラー**: トークン期限切れ/権限不足。Secretsを更新して dry-run からやり直し。
+## 5. apply（本番D1へ追加）
 
-## PR #114（犬用ハーネス32商品・689件）の確認結果
+dry-run が合格してから進めます。
 
-- developと合成して競合なし。`migrations/0042` は追加のみ（INSERT OR IGNORE / NOT EXISTS）。口コミは50件ずつ、最大1文約18KB（D1上限100KB内）。
-- ローカル検証: 689件追加、2回目・3回目の再実行で変化なし、既存口コミ・他カテゴリ不変、中途状態からの再実行で想定件数に収束。
-- **未解決（そのため `approved_for_apply: false`）**: developの `release-data/README.md`（2026-10-16/17追加ルール）は、追加分に `review_sources` 登録、10%以上の再確認結果、AI要約の明記、犬/猫確認を求めています。#114のSQLは `review_sources` を使わず、これらの記録も見当たりません。確認と運営者の承認後、PRで `true` にします。
-- #114はdevelopの #118/#119 より前のブランチです。取り込み時はdevelopを取り込み直し、sha256を更新してください。
-- **`migrations/0042` はこのPR #120 に含まれていません。そのため現状では dry-run も実行できません**（`plan` ジョブがファイル不在で止まります）。#114 のマージ（運営者の判断・無断マージ禁止）またはSQLの取り込み後に初めて実行可能になります。
-- 新規口コミの出典確認ルール（`release-data/README.md`）は維持します。`approved_for_apply` は `false` のままです。
+1. **承認用PRをmainにマージ**（`approved_for_apply` を `true` にするだけの小さなPR。AIが準備済み。Files changed に1行だけの変更が出ます）。
+2. 前の 4 と同じ手順で **Run workflow**。今度は:
+   - Use workflow from: **main**
+   - entry: `dog-harness-677`
+   - mode: **apply**
+   - confirm: **`ADD inu-taikenki`**（半角・大文字小文字そのまま）
+3. 同じく **Review deployments → Approve and deploy**。
+4. 数分で完了。Summary に次が出れば成功:
+   - 「本番D1に追加しました」
+   - 口コミ・商品・出典の増加が **+677 / +32 / +677**
+   - 「既存データの内容ハッシュ照合: 一致（1件も変わっていません）」
+5. すぐに §2 の段階5（サイト公開）に進みます。
+
+## 6. 実行後の確認（サイト公開後）
+
+- トップ・口コミ検索の総件数が増えている（例: 2,272件・16カテゴリ）。
+- `/dog-harness` が開き、「商品別に体験談を見る」で口コミが出る。各カードに「出典確認済み」と「確認できた投稿のあるページを見る」が出る。
+- 既存カテゴリ（例: `/dog-clipper`、`/brush-pin`）の件数・表示が変わっていない。
+- 終わったら Cloudflare のトークンを**削除**する。
+
+## 7. 失敗したとき
+
+- **dry-run の失敗**: 本番D1は変わっていません。ログの「停止:」の行を確認してAIに伝える。
+- **途中で止まった／一部だけ入った**: SQLは再実行しても重複しません（商品は `INSERT OR IGNORE`、口コミは同一商品・同一要約があれば追加しない、出典は `(platform, source_review_id)` が一意）。もう一度 apply（承認用PRは `true` のまま）で不足分だけ補われます。
+- **事後照合が不合格（既存データが変わった等）**: そのまま止め、Summary と、ジョブの「復元地点（Time Travel）」の bookmark を控える。復元は運営者が判断して、
+  `npx wrangler d1 time-travel restore inu-taikenki --bookmark=<bookmark>`（直近の期間。保持日数はプランで異なる）。復元は**その後の他の書き込みも巻き戻す**ので、内容を確認してから。復元の直前の bookmark も表示されるので控える。
+- **認証エラー**: トークンの期限切れ／権限不足。Cloudflare でトークンを作り直し、GitHub の Secret を更新して dry-run からやり直す。
+- **新規分だけ取り消したい**: 新しい商品IDに紐づく行だけを対象にした別のレビュー済みSQLを作り、承認後に実行します（自動化していません）。
+
+## 8. 非公開データの扱い
+
+DBの中身（口コミ等）を含むファイルは、GitHub（コード・Artifact・Issue・ログ）に置きません。バックアップの正本は Cloudflare D1 の **Time Travel** です。手元にも残したい場合は、運営者が自分のPCから `npx wrangler d1 export inu-taikenki --remote --output <非公開の場所>` を実行し、非公開のクラウド／暗号化ストレージに保管してください（ワークフローには含めません）。
+
+## 9. 今回のデータ（ハーネス677件）の状態
+
+- 出典監査: `audit/review-source-20261018-harness/`。689件中、対応する公開投稿を確認できた677件だけをSQLに残し、確認できなかった12件（動画4件・見つからず8件）は追加しない。判定はAI（Claude）によるもの。
+- 無作為80件（11.8%）を確認先から取得し直して再照合し、80/80件一致。自動判定(A)106件のうち30件を全文で読み直し、30/30件一致。
+- 677件の投稿識別情報を `review_sources` に登録（同じSQLに含む。追加のみ）。
+- ローカル検証（メモリSQLite）: 677件追加／2・3回目の再実行で変化なし／既存口コミ・他カテゴリ・他テーブル不変／中途状態から再実行して収束。
+- 残る課題: 要約が定型（平均61文字・99.9%が「体験。」終わり）、第一者情報なし。AdSense対策として別途検討が必要です。

@@ -188,3 +188,86 @@ test('site description of how summaries were made is truthful: AI-assisted, not 
   }
   assert(!/運営者が要約/.test(readFileSync('src/product-profiles.ts','utf8')));
 });
+
+const {PROFILE_CATEGORIES,loadSourceBreakdown,renderSourceBreakdownHtml}=await import('../src/product-profiles.ts');
+test('dog-harness is a profile category; the 15 existing categories are unchanged',()=>{
+  const existing=['pet-dryer','auto-feeder','dog-clipper','brush-slicker','brush-pin','brush-undercoat','brush-comb','nail-grinder','nail-clipper','dog-shampoo','dog-conditioner','dog-toothbrush','dog-toothpaste','dog-dental-chew','dog-ear-cleaner'];
+  assert.deepEqual([...PROFILE_CATEGORIES].filter(c=>c!=='dog-harness').sort(),[...existing].sort());
+  assert(PROFILE_CATEGORIES.has('dog-harness'));
+});
+
+function harnessDb(){
+  const d=legacyDatabase();migrate(d);
+  d.prepare("INSERT INTO products(id,name,category,active)VALUES('h-1','テストハーネスA','dog-harness',1)").run();
+  d.prepare("INSERT INTO products(id,name,category,active)VALUES('h-2','テストハーネスB','dog-harness',1)").run();
+  const ins=d.prepare("INSERT INTO reviews(id,product_id,dog_breed,dog_size,needs,summary,source_type,source_url)VALUES(?,?,?,?,?,?,'public_buyer_review_summary','https://review.rakuten.co.jp/item/1/1_1/1.1/')");
+  // ids beyond the static ledger, which describes production row ids
+  ins.run(950001,'h-1','柴犬','medium','pull','柴犬10kgで引っ張りが減り、着脱も簡単だったという体験その一。');
+  ins.run(950002,'h-1','トイプードル','small','escape','トイプードル3kgで後ずさりしても抜けなかったが少し大きかったという体験その二。');
+  ins.run(950003,'h-2','ゴールデン','large','pull','ゴールデン30kgでベルトが長く余ったが引っ張りは減ったという体験その三。');
+  d.prepare('INSERT INTO review_sources VALUES(?,?,?,?,?)').run(950001,'public_buyer_review_summary','https://review.rakuten.co.jp/item/1/1_1/2.1/','rakuten','t-1');
+  d.prepare('INSERT INTO review_sources VALUES(?,?,?,?,?)').run(950003,'public_buyer_review_summary','https://review.rakuten.co.jp/item/1/1_2/1.1/','rakuten','t-3');
+  return d;
+}
+test('/dog-harness gets the server-rendered product overview, with D1-registered source checks and no false "verified"',async()=>{
+  const d=harnessDb();
+  const res=await worker.fetch(new Request('https://inu-taikenki.com/dog-harness',{redirect:'manual'}),{DB:binding(d,[]),ASSETS});
+  assert.equal(res.status,200);
+  const html=await res.text();
+  assert.equal((html.match(/data-inu-profiles(?=[ >])/g)||[]).length,1);
+  assert(html.includes('data-inu-profile="h-1"')&&html.includes('data-inu-profile="h-2"'));
+  assert(html.includes('<strong>テストハーネスA</strong>｜体験2件</summary>'));
+  assert(html.indexOf('data-db-review-browser')<html.indexOf('data-inu-profiles'));
+  const card=id=>html.slice(html.indexOf(`data-inu-profile="${id}"`),html.indexOf('</details>',html.indexOf(`data-inu-profile="${id}"`)));
+  const a=card('h-1');
+  assert(a.includes('確認済み1／未実施1件'),'one registered row is verified, the unregistered one stays "not checked"');
+  assert(card('h-2').includes('確認済み1件'));
+  assert(!/部分一致|見つからず|確認不能|猫の投稿/.test(a),'registry rows never claim other statuses');
+});
+test('adding dog-harness data does not change any existing category page',async()=>{
+  const d=harnessDb();
+  for(const page of ['/dog-clipper','/brush-pin','/pet-dryer','/dog-ear-cleaner']){
+    const a=await (await get('https://inu-taikenki.com'+page)).text();
+    const b=await (await worker.fetch(new Request('https://inu-taikenki.com'+page,{redirect:'manual'}),{DB:binding(d,[]),ASSETS})).text();
+    assert.equal(b,a,page+' must be byte-identical');
+  }
+});
+test('dog-harness profile queries are SELECT-only and pass the read-only guard',async()=>{
+  const d=harnessDb();const log=[];
+  await worker.fetch(new Request('https://inu-taikenki.com/dog-harness',{redirect:'manual'}),{DB:binding(d,log),ASSETS});
+  assert(log.length>0);
+  for(const q of log)assertReadQuery(q.sql);
+});
+test('source breakdown reports how many rows were added with a registered post',async()=>{
+  const d=harnessDb();
+  const data=await loadSourceBreakdown(binding(d,[]));
+  assert.equal(data.registered,2);
+  assert(renderSourceBreakdownHtml(data).includes('2件は、確認できた投稿の識別情報を登録'));
+  const none=await loadSourceBreakdown(binding(db,[]));
+  assert.equal(none.registered,0);
+  assert(!renderSourceBreakdownHtml(none).includes('識別情報を登録'));
+});
+test('internal links to /dog-harness exist where categories are listed; existing links stay',async()=>{
+  const read=f=>readFileSync(resolve('public',f),'utf8');
+  assert(read('index.html').includes('href="dog-harness"'));
+  for(const f of ['review-search.html','review-insights.html','dog-size.html','breed-toy-poodle.html'])assert(read(f).includes("dog-harness"),f);
+  assert(read('review-search.html').includes('<a href="/dog-harness">犬用ハーネス</a>'));
+  for(const f of ['review-search.html','review-insights.html','dog-size.html'])for(const keep of ['dog-ear-cleaner','dog-toothbrush','pet-dryer'])assert(read(f).includes(keep),f+' lost '+keep);
+  const home=await (await get('https://inu-taikenki.com/')).text();
+  assert.equal((home.match(/href="dog-harness"/g)||[]).length,1);
+  assert(home.includes('href="dog-ear-cleaner"'),'the Worker-injected ear-cleaner card is kept');
+});
+
+test('quoted lines carry the registry check tag; unregistered rows say "not checked"',()=>{
+  const rows=[];
+  for(let i=0;i<14;i++)rows.push({id:960000+i,product_id:'q-1',dog_breed:'柴犬',dog_size:i%2?'small':'large',coat_type:null,needs:'pull',summary:`柴犬の体験として十分な長さのある要約文その${i}です。`,source_type:'public_buyer_review_summary',source_url:'https://review.rakuten.co.jp/item/1/1_1/1.1/',registered_source_url:i<7?'https://review.rakuten.co.jp/item/1/1_1/2.1/':null});
+  const [p]=buildProfiles([{id:'q-1',name:'Q'}],rows);
+  assert.equal(p.checks.V,7);assert.equal(p.checks.none,7);
+  const lines=[...p.examples,...p.reservations];
+  assert(lines.length>0);
+  for(const l of lines)assert(/^［(出典確認済み|出典の確認は未実施)］/.test(l),l);
+  assert(lines.some(l=>l.startsWith('［出典確認済み］')),'verified rows are preferred for quoting');
+  // legacy shape (no registered_source_url) behaves exactly as before: not checked
+  const [legacy]=buildProfiles([{id:'q-1',name:'Q'}],rows.map(({registered_source_url,...r})=>r));
+  assert.equal(legacy.checks.V,0);assert.equal(legacy.checks.none,14);
+});
