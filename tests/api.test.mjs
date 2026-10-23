@@ -119,3 +119,18 @@ test('breed coverage excludes rows explicitly marked 犬種不明',async()=>{
   const actualKnown=local.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND nullif(trim(r.dog_breed),'') IS NOT NULL AND instr(r.dog_breed,'犬種不明')=0").get().n;
   assert.equal(stats.coverage.breed,actualKnown);
 });
+test('rows registered in review_sources show a verified check with the registered page; unregistered new rows stay unchecked',async()=>{
+  const d=legacyDatabase();migrate(d);
+  d.prepare("INSERT INTO products(id,name,category)VALUES('reg-test','REG','dog-harness')").run();
+  // ids beyond the static ledger (which describes production row ids)
+  const ins=d.prepare("INSERT INTO reviews(id,product_id,summary,source_type,source_url)VALUES(?,'reg-test',?,'public_buyer_review_summary','https://example.test/list')");
+  const a=900001,b=900002;ins.run(a,'registered row');ins.run(b,'unregistered row');
+  d.prepare('INSERT INTO review_sources VALUES(?,?,?,?,?)').run(a,'public_buyer_review_summary','https://example.test/list/3','rakuten','reg-1');
+  const j=await request('/api/reviews?category=dog-harness&limit=10',d);
+  const byId=Object.fromEntries(j.reviews.map(r=>[r.id,r]));
+  assert.equal(byId[a].source_check.status,'V');assert.equal(byId[a].source_check.url,'https://example.test/list/3');
+  assert.equal(byId[b].source_check,null,'a new row without a registered post is "not checked"');
+  assert(!('registered_source_url' in byId[a]),'internal column is not exposed');
+  const g=await request('/api/reviews/groups?category=dog-harness&limit=10',d);
+  assert.equal(g.groups[0].reviews.find(r=>r.id===a).source_check.status,'V');
+});

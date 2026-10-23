@@ -88,6 +88,8 @@ iPhone のスマホ表示で項目が見つからないときは、Safari の「
 
 dry-run が合格してから進めます。
 
+**実行前の片づけ（重要）**：このワークフローは同時に1つしか進みません（`concurrency: d1-bulk-add`）。承認ボタンを押していない古い実行が黄色い「Waiting」のまま残っていると、次の実行（apply）はその後ろで「Pending」のまま待たされます。Actions の一覧に「Waiting」の実行があれば、その実行を開いて **Cancel workflow** をタップしてから、apply を実行してください（dry-run の残りなら本番D1には何も起きません）。
+
 1. **承認用PRをmainにマージ**（`approved_for_apply` を `true` にするだけの小さなPR。AIが準備済み。Files changed に1行だけの変更が出ます）。
 2. 前の 4 と同じ手順で **Run workflow**。今度は:
    - Use workflow from: **main**
@@ -106,6 +108,7 @@ dry-run が合格してから進めます。
 - トップ・口コミ検索の総件数が増えている（例: 2,272件・16カテゴリ）。
 - `/dog-harness` が開き、「商品別に体験談を見る」で口コミが出る。各カードに「出典確認済み」と「確認できた投稿のあるページを見る」が出る。
 - 既存カテゴリ（例: `/dog-clipper`、`/brush-pin`）の件数・表示が変わっていない。
+- （AIが読み取りで確認）追加した口コミのidがすべて **1646以上** で、`/api/reviews?category=dog-harness` の出典表示が「出典確認済み」になっている。固定の出典台帳（`src/review-source-ledger.ts`、id 1645まで）と重ならないための確認です。
 - 終わったら Cloudflare のトークンを**削除**する。
 
 ## 7. 失敗したとき

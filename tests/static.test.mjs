@@ -29,7 +29,7 @@ test('runtime review totals are sourced from D1 instead of a fixed 750 rewrite',
   assert(entry.includes('readLiveCounts'));
   assert(entry.includes('COUNT(*)'));
   assert(entry.includes('COUNT(DISTINCT category)'));
-  assert(entry.includes('applyLiveCounts'));
+  assert(entry.includes('applyLiveCounts')&&readFileSync('src/live-counts.ts','utf8').includes('data-fixed-count'));
   assert(!entry.includes('.replaceAll("700件", "750件")'));
 });
 
@@ -42,7 +42,7 @@ test('AdSense-facing discovery pages keep useful server-rendered fallbacks',()=>
   const about=readFileSync('public/about.html','utf8');
   assert(entry.includes('integrateReviewSearchFallback'));
   assert(entry.includes('integrateReviewInsightsFallback'));
-  assert(entry.includes('750 DOG PRODUCT EXPERIENCES'));
+  assert(readFileSync('src/live-counts.ts','utf8').includes('750 DOG PRODUCT EXPERIENCES'));
   assert(search.includes('各50件以上'));
   assert(!search.includes('読み込みに失敗しました'));
   assert(!search.includes('データを取得できませんでした'));
@@ -132,4 +132,19 @@ test('fixed "50件" only appears as an explicit article-analysis count',()=>{
       assert(isExplicit(text,m.index),`${file}: ambiguous fixed count "${text.slice(Math.max(0,m.index-30),m.index+10).replace(/\s+/g,' ')}"`);
     }
   }
+});
+test('dog-harness page states honestly what its content is and keeps sources readable',()=>{
+  const html=readFileSync('public/dog-harness.html','utf8');
+  const entry=readFileSync('src/final-entry.ts','utf8');
+  const desc=entry.match(/"\/dog-harness": "(楽天市場[^"]+)"/)?.[1]||'';
+  assert(desc.includes('生成AI')&&desc.includes('運営者が使った体験ではありません'),'meta description must say it is an AI summary of public reviews');
+  assert(!/実体験/.test(desc+html),'avoid presenting review summaries as first-hand experience');
+  const cases=[...html.matchAll(/<div class="case">.*<\/div>/g)].map(m=>m[0]);
+  assert.equal(cases.length,11);
+  for(const c of cases)assert(/<p class="src">出典：<a href="https:\/\/(review\.rakuten\.co\.jp|shopping\.yahoo\.co\.jp)\//.test(c),'each case needs its source link');
+  const links=[...html.slice(html.indexOf('<h2>主な確認元</h2>')).matchAll(/<li><a href="([^"]+)">/g)].map(m=>m[1]);
+  assert(links.length>0&&new Set(links).size===links.length,'source links must be unique');
+  assert(/<details class="src-details">/.test(html),'long source list is collapsed');
+  const css=html.match(/\.source-list\{font-size:(\d+)px/);
+  assert(css&&Number(css[1])>=12,'source list must be readable on phones');
 });

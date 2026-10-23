@@ -1,4 +1,12 @@
 import worker from "./entry";
+import { applyLiveCounts, needsLiveCounts, type LiveCounts } from "./live-counts";
+import {
+  PROFILE_CATEGORIES,
+  loadCategoryProfiles,
+  loadSourceBreakdown,
+  renderProfilesHtml,
+  renderSourceBreakdownHtml,
+} from "./product-profiles";
 
 type WorkerEnv = Parameters<typeof worker.fetch>[1];
 
@@ -46,6 +54,7 @@ const SEO_TITLES: Record<string, string> = {
   "/dog-toothpaste": "味・香り・歯磨き嫌いから選ぶ犬用歯磨きジェル・歯磨き粉｜公開レビューを横断比較",
   "/dog-dental-chew": "噛む時間・サイズ・カロリーから選ぶ犬用デンタルガム｜公開レビューを横断比較",
   "/dog-ear-cleaner": "垂れ耳・低刺激・耳掃除嫌いから選ぶ犬用イヤークリーナー｜公開レビューを横断比較",
+  "/dog-harness": "引っ張り・すっぽ抜け・気管への負担から選ぶ犬用ハーネス｜公開レビューを横断比較",
 };
 
 const SEO_DESCRIPTIONS: Record<string, string> = {
@@ -63,6 +72,7 @@ const SEO_DESCRIPTIONS: Record<string, string> = {
   "/dog-toothpaste": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用歯磨きジェル・歯磨き粉6商品の体験を整理。味・香り、ジェルとペーストの違い、歯磨き嫌い、子犬、シニアなどを比較し、うちの子に近い実体験から選べます。",
   "/dog-dental-chew": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用デンタルガム6商品の体験を整理。噛む時間、サイズ、子犬・シニア、口臭ケア、カロリー、丸飲みしやすさなどを比較し、うちの子に近い実体験から選べます。",
   "/dog-ear-cleaner": "楽天市場の公開購入者レビューとメーカー・販売元情報をもとに、犬用イヤークリーナー6商品の体験を整理。垂れ耳、刺激の少なさ、香り、におい・汚れ、耳掃除嫌い、容量などを比較し、うちの子に近い実体験から選べます。",
+  "/dog-harness": "楽天市場・Yahoo!ショッピングの公開購入者レビューを生成AIで要約し、犬用ハーネス32商品を整理。運営者が使った体験ではありません。引っ張り癖、後ずさりでのすっぽ抜け、気管・咳への配慮、脇の擦れ、装着のしやすさ、サイズの合わせ方を、犬種や体重が分かる公開レビューから比較できます。",
 };
 
 type RelatedGuideLink = {
@@ -151,11 +161,6 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   },
 };
 
-type LiveCounts = {
-  total_reviews: number;
-  total_categories: number;
-};
-
 async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
   try {
     const row = await env.DB.prepare(`
@@ -183,48 +188,8 @@ async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
   }
 }
 
-function needsLiveCounts(html: string) {
-  return (
-    html.includes("700件") ||
-    html.includes("750件") ||
-    html.includes("700 EXPERIENCES") ||
-    html.includes("750 EXPERIENCES") ||
-    html.includes("14カテゴリ") ||
-    html.includes("15カテゴリ") ||
-    html.includes("14 CATEGORIES") ||
-    html.includes("15 CATEGORIES")
-  );
-}
-
-function applyLiveCounts(html: string, counts: LiveCounts | null) {
-  if (!counts) return html;
-
-  const reviewCount = String(counts.total_reviews);
-  const categoryCount = String(counts.total_categories);
-
-  return html
-    .replaceAll("700件", `${reviewCount}件`)
-    .replaceAll("750件", `${reviewCount}件`)
-    .replaceAll("700 EXPERIENCES", `${reviewCount} EXPERIENCES`)
-    .replaceAll("750 EXPERIENCES", `${reviewCount} EXPERIENCES`)
-    .replaceAll("700 DOG PRODUCT EXPERIENCES", `${reviewCount} DOG PRODUCT EXPERIENCES`)
-    .replaceAll("750 DOG PRODUCT EXPERIENCES", `${reviewCount} DOG PRODUCT EXPERIENCES`)
-    .replaceAll("14カテゴリ", `${categoryCount}カテゴリ`)
-    .replaceAll("15カテゴリ", `${categoryCount}カテゴリ`)
-    .replaceAll("14 CATEGORIES", `${categoryCount} CATEGORIES`)
-    .replaceAll("15 CATEGORIES", `${categoryCount} CATEGORIES`)
-    .replaceAll('<b>700</b><span>整理した公開体験</span>', `<b>${reviewCount}</b><span>整理した公開体験</span>`)
-    .replaceAll('<b>750</b><span>整理した公開体験</span>', `<b>${reviewCount}</b><span>整理した公開体験</span>`)
-    .replaceAll('<b>700</b><span>公開体験</span>', `<b>${reviewCount}</b><span>公開体験</span>`)
-    .replaceAll('<b>750</b><span>公開体験</span>', `<b>${reviewCount}</b><span>公開体験</span>`)
-    .replaceAll('<b>14</b><span>犬用品カテゴリ</span>', `<b>${categoryCount}</b><span>犬用品カテゴリ</span>`)
-    .replaceAll('<b>15</b><span>犬用品カテゴリ</span>', `<b>${categoryCount}</b><span>犬用品カテゴリ</span>`)
-    .replaceAll('<b>14</b><span>カテゴリ</span>', `<b>${categoryCount}</b><span>カテゴリ</span>`)
-    .replaceAll('<b>15</b><span>カテゴリ</span>', `<b>${categoryCount}</b><span>カテゴリ</span>`);
-}
-
-
 type ReviewFallbackRow = {
+  source_check?: { status: string; label: string; short: string; url: string | null } | null;
   product_name?: string | null;
   dog_breed?: string | null;
   dog_size?: string | null;
@@ -288,19 +253,23 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
 }
 
 function renderReviewSource(row: ReviewFallbackRow) {
-  const url = row.source_url || "";
+  const url = row.source_check?.url || row.source_url || "";
   if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return "";
-  const label = row.source_type === "existing_article_summary" && url.startsWith("/") ? "元にしたサイト内記事を見る →" : "確認元を見る ↗";
+  const label = row.source_type === "existing_article_summary" && url.startsWith("/") ? "元にしたサイト内記事を見る →" : row.source_check?.url ? "確認できた投稿のあるページを見る ↗" : "確認元（レビュー一覧）を見る ↗";
   const attrs = /^https?:\/\//i.test(url) ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
   return '<div class="source"><a href="' + escapeHtml(url) + '"' + attrs + '>' + label + '</a></div>';
 }
 
+const ARTICLE_KIND_LABEL = "サイト内記事の再整理";
+
 function renderReviewFallbackCard(row: ReviewFallbackRow) {
   const breed = row.dog_breed?.trim() || "犬種情報なし";
+  const kind = row.source_type === "existing_article_summary" ? `<div class="kind">${ARTICLE_KIND_LABEL}（他サイトの体験ではありません）</div>` : "";
   return `<article class="card" data-static-review-card>
 <div class="product">${escapeHtml(row.product_name || "犬用品")}</div>
 <div class="dog">${escapeHtml(breed)}</div>
-<div class="summary">${escapeHtml(row.summary || "")}</div>
+${kind}<div class="summary">${escapeHtml(row.summary || "")}</div>
+${row.source_check ? `<div class="check check-${escapeHtml(row.source_check.status)}">${escapeHtml(row.source_check.label)}</div>` : ""}
 ${renderReviewSource(row)}
 </article>`;
 }
@@ -407,6 +376,7 @@ const CATEGORY_LABELS: Record<string,string> = {
   "brush-slicker":"スリッカーブラシ","brush-pin":"ピンブラシ","brush-undercoat":"アンダーコート用ブラシ","brush-comb":"犬用コーム",
   "nail-grinder":"電動爪やすり","nail-clipper":"犬用爪切り","dog-shampoo":"犬用シャンプー","dog-conditioner":"犬用コンディショナー",
   "dog-toothbrush":"犬用歯ブラシ","dog-toothpaste":"歯磨きジェル・歯磨き粉","dog-dental-chew":"犬用デンタルガム","dog-ear-cleaner":"犬用イヤークリーナー",
+  "dog-harness":"犬用ハーネス",
 };
 
 async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params: URLSearchParams): Promise<ReviewGroupsFallbackPayload | null> {
@@ -423,7 +393,7 @@ async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params
 
 function renderGroupReviewSamples(group: ReviewGroupFallback) {
   return (group.reviews || []).slice(0, 2).map((review) =>
-    '<div class="excerpt">' + escapeHtml(review.summary || "") + "</div>"
+    '<div class="excerpt">' + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>"
   ).join("");
 }
 
@@ -456,7 +426,7 @@ async function integrateBreedFallback(request: Request, html: string, env: Worke
   if (!payload) return html;
   const cards = (payload.groups || []).slice(0,6).map((group) => {
     const category = group.category || "";
-    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + escapeHtml(review.summary || "") + "</div>").join("");
+    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>").join("");
     return '<article class="category" data-static-breed-card><div class="category-head"><h3>' + escapeHtml(group.product_name || "犬用品") + '</h3><span class="category-count">' + (Number(group.count) || 0) + '件</span></div><span class="category-count">' + escapeHtml(CATEGORY_LABELS[category] || category) + "</span>" + samples + '<a class="article-link" href="/review-search?category=' + encodeURIComponent(category) + "&breed=" + encodeURIComponent("トイプードル") + '">この条件の体験を見る →</a></article>';
   }).join("");
   html = html.replace('<b id="reviewCount">…</b>', '<b id="reviewCount" data-static-breed-count>' + (Number(payload.count) || 0) + "</b>");
@@ -586,9 +556,93 @@ function htmlResponse(response: Response, html: string) {
   });
 }
 
+
+// Product-by-product overview rendered into the HTML, so crawlers (and visitors without JavaScript) see
+// the same substance that the interactive "商品別" list loads later. Computed from existing rows only.
+const PROFILE_CACHE_SECONDS = 600;
+
+async function cachedFragment(request: Request, key: string, build: () => Promise<string>): Promise<string> {
+  const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
+  const cacheRequest = new Request(`${new URL(request.url).origin}/__fragment/v1/${key}`);
+  try {
+    const hit = await cache?.match(cacheRequest);
+    if (hit) return await hit.text();
+  } catch { /* cache is optional */ }
+  const fragment = await build();
+  try {
+    await cache?.put(cacheRequest, new Response(fragment, { headers: { "cache-control": `public, max-age=${PROFILE_CACHE_SECONDS}`, "content-type": "text/html; charset=utf-8" } }));
+  } catch { /* cache is optional */ }
+  return fragment;
+}
+
+async function integrateProductProfiles(request: Request, html: string, env: WorkerEnv) {
+  if (html.includes("data-inu-profiles")) return html;
+  // The page itself says which category its product list belongs to (page paths such as /dog-nail-grinder differ from category ids).
+  // /pet-dryer has its own product picker (#db-review-browser); the other categories use the shared data-db-review-browser block.
+  const shared = html.match(/data-db-review-browser data-category="([a-z0-9-]+)"/);
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  const category = shared?.[1] ?? (pathname === "/pet-dryer" && html.includes('id="db-review-browser"') ? "pet-dryer" : "");
+  if (!PROFILE_CATEGORIES.has(category)) return html;
+  const start = shared ? shared.index! : html.indexOf('id="db-review-browser"');
+  const end = html.indexOf("</section>", start);
+  if (start === -1 || end === -1) return html;
+  try {
+    const fragment = await cachedFragment(request, `profiles-${category}`, async () =>
+      renderProfilesHtml(CATEGORY_LABELS[category] || category, await loadCategoryProfiles(env.DB, category), category));
+    if (!fragment) return html;
+    const insertAt = end + "</section>".length;
+    return html.slice(0, insertAt) + "\n" + fragment + html.slice(insertAt);
+  } catch {
+    return html;
+  }
+}
+
+const SOURCE_BREAKDOWN_PAGES = new Set(["/about", "/editorial-policy", "/review-search"]);
+
+async function integrateSourceBreakdown(request: Request, html: string, env: WorkerEnv) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  if (!SOURCE_BREAKDOWN_PAGES.has(pathname) || html.includes("data-inu-source-breakdown") || !html.includes("</main>")) return html;
+  try {
+    const fragment = await cachedFragment(request, "source-breakdown", async () => {
+      const data = await loadSourceBreakdown(env.DB);
+      return data ? renderSourceBreakdownHtml(data) : "";
+    });
+    return fragment ? html.replace("</main>", `${fragment}\n</main>`) : html;
+  } catch {
+    return html;
+  }
+}
+
+
+// Headline totals (e.g. 1595件) include rows that re-organise this site's own articles. Say so right under the headline.
+const COUNT_NOTE_PAGES = new Set(["/", "/index", "/review-search", "/dog-size", "/review-insights"]);
+
+async function integrateCountNote(request: Request, html: string, env: WorkerEnv) {
+  const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
+  if (!COUNT_NOTE_PAGES.has(pathname) || html.includes("data-inu-count-note") || !html.includes("</h1>")) return html;
+  try {
+    const fragment = await cachedFragment(request, "count-note", async () => {
+      const data = await loadSourceBreakdown(env.DB);
+      if (!data || !data.article) return "";
+      return `<p data-inu-count-note style="font-size:13px;line-height:1.7;margin:10px 0 0;opacity:.9">件数の内訳：他サイトに公開されたレビュー等の要約が${data.external}件、サイト内の記事を再整理したものが${data.article}件（合計${data.total}件）です。サイト内記事の再整理は他サイトの体験ではないため、体験の横に印を付けています。<a href="/editorial-policy" style="color:inherit;text-decoration:underline">くわしく</a></p>`;
+    });
+    return fragment ? html.replace("</h1>", `</h1>\n${fragment}`) : html;
+  } catch {
+    return html;
+  }
+}
+
+// JSON endpoints stay fetchable (the pages load them with JavaScript) but must not be indexed as pages.
+function markApiNoindex(request: Request, response: Response) {
+  if (!new URL(request.url).pathname.startsWith("/api/")) return response;
+  const headers = new Headers(response.headers);
+  headers.set("X-Robots-Tag", "noindex");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
-    const response = await worker.fetch(request, env);
+    const response = markApiNoindex(request, await worker.fetch(request, env));
     if (request.method !== "GET" || !response.ok) return response;
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.includes("text/html")) return response;
@@ -605,6 +659,9 @@ export default {
     html = await integrateReviewInsightsFallback(request, html, env);
     html = await integrateDogSizeFallback(request, html, env);
     html = await integrateBreedFallback(request, html, env);
+    html = await integrateProductProfiles(request, html, env);
+    html = await integrateSourceBreakdown(request, html, env);
+    html = await integrateCountNote(request, html, env);
     return htmlResponse(response, html);
   },
 };
