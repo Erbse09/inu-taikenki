@@ -433,7 +433,7 @@ async function integrateDogSizeFallback(request: Request, html: string, env: Wor
   const sizeLabels: Record<string,string> = {small:"小型犬",medium:"中型犬",large:"大型犬"};
   const sizeImages: Record<string,string> = {small:"/small-dogw.PNG",medium:"/medium-dogw.PNG",large:"/large-dog.PNG"};
   const label = sizeLabels[size];
-  const summary = '<div id="summary" class="summary" data-static-size-summary><img id="summaryDog" src="' + sizeImages[size] + '" alt="' + label + '"><div class="summary-text"><b>' + label + "で体験が見つかった商品 " + (Number(payload.product_count) || 0) + '件</b><span>全15カテゴリ横断・該当体験 ' + (Number(payload.count) || 0) + "件</span></div></div>";
+  const summary = '<div id="summary" class="summary" data-static-size-summary><img id="summaryDog" src="' + sizeImages[size] + '" alt="' + label + '"><div class="summary-text"><b>' + label + "で体験が見つかった商品 " + (Number(payload.product_count) || 0) + '件</b><span>全カテゴリ横断・該当体験 ' + (Number(payload.count) || 0) + "件</span></div></div>";
   const cards = (payload.groups || []).slice(0,4).map((group) => {
     const category = group.category || "";
     const breedText = [...new Set((group.reviews || []).map((r) => r.dog_breed).filter(Boolean))].slice(0,4).join("・") || label;
