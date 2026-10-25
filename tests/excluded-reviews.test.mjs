@@ -60,7 +60,7 @@ test('every public API view leaves the cat-owner rows out while the rows stay in
 test('row 524 in the legacy data is excluded from its own product count and from the headline',async()=>{
   const db=seeded();
   const row=db.prepare('SELECT product_id FROM reviews WHERE id=524').get();
-  if(!row)return;
+  assert(row,'fixture row 524 must exist; the test is meaningless without it');
   const total=db.prepare('SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1').get().n;
   const stats=await (await reviewApi(new Request('https://inu.test/api/reviews/stats'),binding(db))).json();
   assert.equal(stats.count,total-db.prepare(`SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.id IN (${AUDITED_CAT_IDS.join(',')})`).get().n);
@@ -96,7 +96,8 @@ test('neutralizeStaleCounts keeps history, widgets and ordinary text intact',()=
   const html='<b>750</b><span>公開体験</span><b>15</b><span>カテゴリ</span> 750 EXPERIENCES / 15 CATEGORIES 最初の約750件 <span data-fixed-count>当時の750件</span> 全15分 <b>15</b><span>分</span>';
   const out=neutralizeStaleCounts(html);
   assert(out.includes('最初の約750件')&&out.includes('<span data-fixed-count>当時の750件</span>'));
-  assert(out.includes('<b>—</b><span>公開体験</span>')||/<b>—<\/b><span>公開体験<\/span>/.test(out)||true);
+  assert(out.includes('<b>—</b><span>公開体験</span>'),'the stale headline number becomes a dash');
+  assert(out.includes('<b>—</b><span>カテゴリ</span>'),'the stale category number becomes a dash');
   assert(!/<b>750<\/b>/.test(out)&&!out.includes('15 CATEGORIES')&&!out.includes('750 EXPERIENCES'));
   assert(out.includes('<b>15</b><span>分</span>'),'unrelated 15 is untouched');
   assert.equal(applyLiveCounts('<b>750</b><span>公開体験</span>',null),'<b>750</b><span>公開体験</span>','applyLiveCounts(null) contract is unchanged');
