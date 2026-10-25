@@ -58,5 +58,6 @@ test('/about and /editorial-policy keep "最初の約750件" through the real Wo
     assert(!/最初の約(?:1595|1,595)件/.test(html),page+': historical count was overwritten');
   }
   const about=await (await worker.fetch(new Request('https://inu-taikenki.com/about'),{DB,ASSETS})).text();
-  assert(about.includes('合計1595件'),'current total on /about still follows the database');
+  // ten of the 1,595 rows (ids 524, 1194, …) are audited cat-owner rows and are not counted publicly
+  assert(about.includes('合計1585件'),'current total on /about still follows the database, minus the excluded audit rows');
 });

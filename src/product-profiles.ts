@@ -6,6 +6,7 @@ interface Statement {
   all<T>(): Promise<{ results?: T[] }>;
 }
 import { ledgerTotals, sourceCheck, sourceCheckFromRegistry } from "./review-source-check";
+import { notExcludedSql } from "./excluded-reviews";
 interface DB { prepare(sql: string): Statement; }
 
 type ProductRow = { id: string; name: string };
@@ -317,7 +318,7 @@ export async function loadCategoryProfiles(db: DB, category: string): Promise<Pr
     "SELECT p.id, p.name FROM products p WHERE p.active = 1 AND p.category = ? ORDER BY p.name, p.id",
   ).bind(category).all<ProductRow>()).results ?? [];
   const reviews = (await db.prepare(
-    "SELECT r.id, r.product_id, r.dog_breed, r.dog_size, r.coat_type, r.needs, r.summary, r.source_type, r.source_url, (SELECT s.source_url FROM review_sources s WHERE s.review_id = r.id ORDER BY s.rowid LIMIT 1) AS registered_source_url FROM reviews r JOIN products p ON p.id = r.product_id WHERE p.active = 1 AND p.category = ? ORDER BY r.id LIMIT 1000",
+    `SELECT r.id, r.product_id, r.dog_breed, r.dog_size, r.coat_type, r.needs, r.summary, r.source_type, r.source_url, (SELECT s.source_url FROM review_sources s WHERE s.review_id = r.id ORDER BY s.rowid LIMIT 1) AS registered_source_url FROM reviews r JOIN products p ON p.id = r.product_id WHERE p.active = 1 AND ${notExcludedSql("r")} AND p.category = ? ORDER BY r.id LIMIT 1000`,
   ).bind(category).all<ReviewRow>()).results ?? [];
   return buildProfiles(products, reviews);
 }
@@ -326,7 +327,7 @@ export type SourceBreakdown = { external: number; article: number; total: number
 
 export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | null> {
   const rows = (await db.prepare(
-    "SELECT r.source_type, r.source_url FROM reviews r JOIN products p ON p.id = r.product_id WHERE p.active = 1 LIMIT 100000",
+    `SELECT r.source_type, r.source_url FROM reviews r JOIN products p ON p.id = r.product_id WHERE p.active = 1 AND ${notExcludedSql("r")} LIMIT 100000`,
   ).all<Pick<ReviewRow, "source_type" | "source_url">>()).results ?? [];
   if (!rows.length) return null;
   const counter = new Map<string, number>();
@@ -337,7 +338,7 @@ export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | nul
   const article = counter.get("サイト内記事の再整理") ?? 0;
   // Rows added together with an audit record (a specific public post found) carry it in review_sources.
   const registered = (await db.prepare(
-    "SELECT COUNT(*) AS n FROM review_sources s JOIN reviews r ON r.id = s.review_id JOIN products p ON p.id = r.product_id WHERE p.active = 1",
+    `SELECT COUNT(*) AS n FROM review_sources s JOIN reviews r ON r.id = s.review_id JOIN products p ON p.id = r.product_id WHERE p.active = 1 AND ${notExcludedSql("r")}`,
   ).all<{ n: number }>()).results?.[0]?.n ?? 0;
   return { external: rows.length - article, article, total: rows.length, byKind: top(counter, 8), registered: Number(registered) || 0 };
 }
@@ -345,7 +346,7 @@ export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | nul
 function renderLedgerNote(registered = 0): string {
   const t = ledgerTotals();
   const day = t.date.replace(/^(\d+)-(\d+)-(\d+)$/, (_m, y, mo, d) => `${y}年${Number(mo)}月${Number(d)}日`);
-  return `<p data-inu-source-ledger style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px"><strong>出典の確認状況（${esc(day)}時点）：</strong>他サイトの要約${t.all}件の確認を試みました。取得できた確認先ページの本文がある要約は、生成AI（Claude）が候補となる投稿と1件ずつ読み比べています（本文を取得できなかったものは確認不能、キーワードがまったく重ならなかったものは読み比べずに「見つけられず」としています）。一度きりの確認で、自動更新はされません。結果は、確認先の一覧で対応する投稿を確認できたもの${t.V}件、内容が一部一致するもの${t.P}件、対応する投稿を見つけられなかったもの${t.N}件、確認先ページを取得できず確認できなかったもの${t.U}件、対応すると思われる投稿が猫の飼い主によるものだったもの${t.C}件です。「見つけられなかった」「確認できなかった」は、作り話だと判明したという意味ではありません（確認先の一覧を全件取得できない、掲載が更新される、といった理由でも起こります）。一方で、確認できていない要約を実体験として保証するものでもありません。ラベルのない体験は確認を実施していません。${registered > 0 ? `このほか、出典の監査を経て追加した体験のうち${registered}件は、確認できた投稿の識別情報を登録しており、各体験に「出典確認済み」と、確認できた投稿のあるページへのリンクを表示しています（人の目ではなくAIによる確認です）。` : ""}</p>`;
+  return `<p data-inu-source-ledger style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px"><strong>出典の確認状況（${esc(day)}時点）：</strong>他サイトの要約${t.all}件の確認を試みました。取得できた確認先ページの本文がある要約は、生成AI（Claude）が候補となる投稿と1件ずつ読み比べています（本文を取得できなかったものは確認不能、キーワードがまったく重ならなかったものは読み比べずに「見つけられず」としています）。一度きりの確認で、自動更新はされません。結果は、確認先の一覧で対応する投稿を確認できたもの${t.V}件、内容が一部一致するもの${t.P}件、対応する投稿を見つけられなかったもの${t.N}件、確認先ページを取得できず確認できなかったもの${t.U}件、対応すると思われる投稿が猫の飼い主によるものだったもの${t.C}件です（この${t.C}件は犬の体験として扱えないため、上の件数・検索・集計には含めていません。監査の記録としては保持しています）。「見つけられなかった」「確認できなかった」は、作り話だと判明したという意味ではありません（確認先の一覧を全件取得できない、掲載が更新される、といった理由でも起こります）。一方で、確認できていない要約を実体験として保証するものでもありません。ラベルのない体験は確認を実施していません。${registered > 0 ? `このほか、出典の監査を経て追加した体験のうち${registered}件は、確認できた投稿の識別情報を登録しており、各体験に「出典確認済み」と、確認できた投稿のあるページへのリンクを表示しています（人の目ではなくAIによる確認です）。` : ""}</p>`;
 }
 
 export function renderSourceBreakdownHtml(data: SourceBreakdown): string {
