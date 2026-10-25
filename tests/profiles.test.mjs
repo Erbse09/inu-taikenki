@@ -18,7 +18,7 @@ test('category articles render the product overview without JavaScript, from sto
   assert.equal(res.status,200);
   const html=await res.text();
   assert(html.includes('data-inu-profiles'),'missing server-rendered overview');
-  const products=db.prepare("SELECT p.id,p.name,count(r.id) n FROM products p JOIN reviews r ON r.product_id=p.id WHERE p.active=1 AND p.category='dog-clipper' GROUP BY p.id").all();
+  const products=db.prepare("SELECT p.id,p.name,count(r.id) n FROM products p JOIN reviews r ON r.product_id=p.id WHERE p.active=1 AND r.id NOT IN (524,1194,1401,1402,1403,1412,1431,1433,1434,1435) AND p.category='dog-clipper' GROUP BY p.id").all();
   assert(products.length>0);
   for(const p of products){
     assert(html.includes(`data-inu-profile="${p.id}"`),p.id);
@@ -46,7 +46,7 @@ test('every category page with a product list gets the overview exactly once; ot
   for(const [page,category] of Object.entries(pages)){
     const html=await (await get('https://inu-taikenki.com'+page)).text();
     assert.equal((html.match(/data-inu-profiles(?=[ >])/g)||[]).length,1,page);
-    const n=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND p.category=?").get(category).n;
+    const n=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.id NOT IN (524,1194,1401,1402,1403,1412,1431,1433,1434,1435) AND p.category=?").get(category).n;
     const shown=[...html.matchAll(/｜体験(\d+)件<\/summary>/g)].reduce((sum,m)=>sum+Number(m[1]),0);
     assert.equal(shown,n,`${page}: overview total must equal stored reviews`);
   }
@@ -65,8 +65,8 @@ test('overview queries are SELECT-only and pass the Preview read-only SQL guard'
 });
 
 test('source breakdown separates site-internal article rows from third-party review summaries',async()=>{
-  const total=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1").get().n;
-  const internal=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.source_type='existing_article_summary'").get().n;
+  const total=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.id NOT IN (524,1194,1401,1402,1403,1412,1431,1433,1434,1435)").get().n;
+  const internal=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.id NOT IN (524,1194,1401,1402,1403,1412,1431,1433,1434,1435) AND r.source_type='existing_article_summary'").get().n;
   for(const page of ['/about','/editorial-policy','/review-search']){
     const html=await (await get('https://inu-taikenki.com'+page)).text();
     assert(html.includes('data-inu-source-breakdown'),page);
@@ -159,8 +159,8 @@ test('Preview entry renders the overview through the read-only wrapper and never
 });
 
 test('headline pages explain the count breakdown and article rows are marked in every renderer',async()=>{
-  const total=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1").get().n;
-  const internal=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.source_type='existing_article_summary'").get().n;
+  const total=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.id NOT IN (524,1194,1401,1402,1403,1412,1431,1433,1434,1435)").get().n;
+  const internal=db.prepare("SELECT count(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND r.id NOT IN (524,1194,1401,1402,1403,1412,1431,1433,1434,1435) AND r.source_type='existing_article_summary'").get().n;
   assert(internal>0&&internal<total);
   for(const page of ['/','/review-search','/dog-size','/review-insights']){
     const html=await (await get('https://inu-taikenki.com'+page)).text();

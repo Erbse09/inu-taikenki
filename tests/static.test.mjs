@@ -148,3 +148,11 @@ test('dog-harness page states honestly what its content is and keeps sources rea
   const css=html.match(/\.source-list\{font-size:(\d+)px/);
   assert(css&&Number(css[1])>=12,'source list must be readable on phones');
 });
+test('pre-reapply audit: no stale category totals or unfulfilled promises in public text',()=>{
+  const entry=readFileSync('src/final-entry.ts','utf8');
+  assert(!entry.includes('全15カテゴリ横断'),'dog-size fallback must not hard-code an old category total');
+  assert(!readFileSync('public/dog-size.html','utf8').includes('全15カテゴリ横断'));
+  for(const file of readdirSync('public').filter(f=>f.endsWith('.html'))){
+    assert(!readFileSync('public/'+file,'utf8').includes('公開予定'),file+': do not promise unpublished material');
+  }
+});
