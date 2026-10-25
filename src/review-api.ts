@@ -6,6 +6,7 @@ interface Statement {
 }
 interface DB { prepare(sql: string): Statement; }
 import { sourceCheck, sourceCheckFromRegistry } from './review-source-check';
+import { notExcludedSql } from './excluded-reviews';
 type Value = string | number | null;
 type Row = Record<string, any>;
 const aliases: Record<string,string> = {怖がり:'scared',子犬:'puppy',シニア:'senior',時短:'speed',抜け毛:'shedding',毛玉:'mat',もつれ:'tangle',多頭:'multi',静音:'quiet',皮膚:'skin',カメラ:'camera',旅行:'travel',いたずら:'mischief',ハンズフリー:'handsfree'};
@@ -19,7 +20,8 @@ function integer(p: URLSearchParams, key: string, fallback: number, max: number,
   return n;
 }
 function filters(p: URLSearchParams) {
-  const clauses=['p.active = 1']; const values: Value[]=[];
+  // Rows judged to come from cat owners (audit status C) are never public dog experiences; every query below shares this clause.
+  const clauses=['p.active = 1',notExcludedSql('r')]; const values: Value[]=[];
   const add=(sql:string,value:Value)=>{clauses.push(sql);values.push(value);};
   for(const [key,column] of [['category','p.category'],['product','p.id']]) {
     const value=p.get(key); if(!value)continue;
@@ -86,7 +88,7 @@ export async function reviewApi(request: Request, db: DB): Promise<Response | nu
       const cat=params.get('category');
       const pred=cat?'p.active=1 AND p.category=?':'p.active=1', bindings=cat?[cat]:[];
       const counts=await db.prepare(`SELECT COUNT(*) AS total FROM products p WHERE ${pred}`).bind(...bindings).first<Row>();
-      const products=await rows(db,`SELECT p.id,p.name,p.category,p.asin,p.affiliate_url,(SELECT COUNT(*) FROM reviews r WHERE r.product_id=p.id) AS review_count FROM products p WHERE ${pred} ORDER BY p.category,review_count DESC,p.name,p.id LIMIT ? OFFSET ?`,[...bindings,limit,offset]);
+      const products=await rows(db,`SELECT p.id,p.name,p.category,p.asin,p.affiliate_url,(SELECT COUNT(*) FROM reviews r WHERE r.product_id=p.id AND ${notExcludedSql('r')}) AS review_count FROM products p WHERE ${pred} ORDER BY p.category,review_count DESC,p.name,p.id LIMIT ? OFFSET ?`,[...bindings,limit,offset]);
       return json({category:cat,products,total:counts!.total,limit,offset,has_more:offset+products.length<counts!.total,next_offset:offset+products.length<counts!.total?offset+products.length:null});
     }
     const total=await totals(db,where,values);
