@@ -59,3 +59,24 @@ export function applyLiveCounts(html: string, counts: LiveCounts | null) {
 
   return replaced.replace(new RegExp(`${MASK_OPEN}(\\d+)${MASK_CLOSE}`, "g"), (_, i) => fixed[Number(i)]);
 }
+
+// When the database cannot be read, the static sources still say "750件" / "15カテゴリ" from an earlier day.
+// Showing those as today's totals would be wrong, so they are replaced by wording that claims no number.
+// Historical phrases ("最初の約750件" and data-fixed-count spans) are protected exactly as in applyLiveCounts.
+export function neutralizeStaleCounts(html: string) {
+  const fixed: string[] = [];
+  const masked = html.replace(FIXED_COUNT_PATTERN, (match) => {
+    fixed.push(match);
+    return `${MASK_OPEN}${fixed.length - 1}${MASK_CLOSE}`;
+  });
+
+  const replaced = masked
+    .replace(/<b>(?:700|750)<\/b><span>/g, "<b>—</b><span>")
+    .replace(/<b>(?:14|15)<\/b><span>(犬用品)?カテゴリ<\/span>/g, "<b>—</b><span>$1カテゴリ</span>")
+    .replace(/(?:700|750) (DOG PRODUCT )?EXPERIENCES/g, "$1EXPERIENCES")
+    .replace(/(?:14|15) CATEGORIES/g, "CATEGORIES")
+    .replace(/(?:700|750)件/g, "多数")
+    .replace(/(?:14|15)カテゴリ/g, "複数カテゴリ");
+
+  return replaced.replace(new RegExp(`${MASK_OPEN}(\\d+)${MASK_CLOSE}`, "g"), (_, i) => fixed[Number(i)]);
+}

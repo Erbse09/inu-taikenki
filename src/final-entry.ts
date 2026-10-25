@@ -1,5 +1,6 @@
 import worker from "./entry";
-import { applyLiveCounts, needsLiveCounts, type LiveCounts } from "./live-counts";
+import { applyLiveCounts, needsLiveCounts, neutralizeStaleCounts, type LiveCounts } from "./live-counts";
+import { notExcludedSql } from "./excluded-reviews";
 import {
   PROFILE_CATEGORIES,
   loadCategoryProfiles,
@@ -193,7 +194,7 @@ async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
         (SELECT COUNT(*)
          FROM reviews r
          JOIN products p ON p.id = r.product_id
-         WHERE p.active = 1) AS total_reviews,
+         WHERE p.active = 1 AND ${notExcludedSql("r")}) AS total_reviews,
         (SELECT COUNT(DISTINCT category)
          FROM products
          WHERE active = 1) AS total_categories
@@ -715,7 +716,8 @@ export default {
     html = integrateSeoTitle(request, html);
     html = integrateSeoDescription(request, html);
     if (needsLiveCounts(html)) {
-      html = applyLiveCounts(html, await readLiveCounts(env));
+      const liveCounts = await readLiveCounts(env);
+      html = liveCounts ? applyLiveCounts(html, liveCounts) : neutralizeStaleCounts(html);
     }
     html = await integrateReviewSearchFallback(request, html, env);
     html = await integrateReviewInsightsFallback(request, html, env);
