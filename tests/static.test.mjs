@@ -156,3 +156,46 @@ test('pre-reapply audit: no stale category totals or unfulfilled promises in pub
     assert(!readFileSync('public/'+file,'utf8').includes('公開予定'),file+': do not promise unpublished material');
   }
 });
+
+test('spec-based buying guides: canonical, one h1, official sources, PR disclosure, three Amazon search links in the existing pattern, no experience claims',()=>{
+  const guides={'dog-crate-size-guide':['richell-shop.jp/c/pet/156270','irisohyama.co.jp','env.go.jp'],'dog-indoor-gate-fit-guide':['shop.petselect.co.jp/view/item/000000000016','richell-shop.jp/c/pet/058481','000000000011'],'dog-pet-sheet-cost-guide':['irisohyama.co.jp','d-unicharm.jp/item/200691.html','jp.unicharmpet.com']};
+  const sitemap=readFileSync('public/sitemap.xml','utf8');
+  const wrangler=readFileSync('wrangler.jsonc','utf8');
+  const home=readFileSync('public/index.html','utf8');
+  for(const [slug,sources] of Object.entries(guides)){
+    const html=readFileSync(`public/${slug}.html`,'utf8');
+    assert.equal((html.match(/<h1[\s>]/g)||[]).length,1,slug+' h1');
+    assert(html.includes(`<link rel="canonical" href="https://inu-taikenki.com/${slug}">`),slug+' canonical');
+    assert(html.includes(`<meta property="og:url" content="https://inu-taikenki.com/${slug}">`),slug+' og:url');
+    assert(html.includes('BreadcrumbList')&&html.includes('class="crumbs"'),slug+' breadcrumb');
+    assert(html.includes('公式仕様に基づく購入ガイド'),slug+' states it is not an experience review');
+    for(const s of sources)assert(html.includes(s),`${slug} missing official source ${s}`);
+    // Same Amazon search-link pattern as dog-harness: tag, sponsored rel, honest label. Never a guessed /dp/ASIN link.
+    const ctas=[...html.matchAll(/<a class="amazon-search-cta"[^>]*>[^<]*<\/a>/g)].map(m=>m[0]);
+    assert.equal(ctas.length,3,slug+' needs exactly 3 Amazon links');
+    for(const a of ctas){
+      assert(/href="https:\/\/www\.amazon\.co\.jp\/s\?k=[^"]+&amp;tag=100things-22"/.test(a),slug+' search url/tag '+a);
+      assert(a.includes('rel="sponsored noopener"')&&a.includes('target="_blank"'),slug+' rel/target');
+      assert(a.endsWith('>Amazonでこの商品名を探す</a>'),slug+' label');
+    }
+    assert.equal((html.match(/amazon\.co\.jp/g)||[]).length,3,slug+' no other Amazon links');
+    assert(!/amazon\.co\.jp\/(?:dp|gp)\//.test(html),slug+' no guessed ASIN links');
+    assert(html.includes('data-pr-disclosure')&&html.includes('プロモーション（Amazonアソシエイト等のアフィリエイト広告）を含みます'),slug+' PR disclosure');
+    assert(!/<a [^>]*(?:richell|irisohyama|petselect|d-unicharm|unicharmpet|env\.go\.jp)[^>]*sponsored/.test(html),slug+' official links must not be marked as ads');
+    assert(!/Review"|AggregateRating|"Product"|ratingValue/.test(html),slug+' must not add review/product structured data');
+    assert(!/data-db-review-browser|おすすめ1位|絶対(?:安全|漏れ)/.test(html),slug);
+    assert(sitemap.includes(`<loc>https://inu-taikenki.com/${slug}</loc>`),slug+' sitemap');
+    assert(wrangler.includes(`"/${slug}"`)&&wrangler.includes(`"/${slug}.html"`),slug+' worker routing');
+    assert(home.includes(`href="${slug}"`),slug+' homepage link');
+    for(const m of html.matchAll(/<div class="tablewrap"[\s\S]*?<\/table>/g))assert(m[0].includes('<thead>')&&m[0].includes('scope="col"'),slug+' table headers');
+  }
+});
+
+test('buying-guide calculations in the manuscripts hold',()=>{
+  const crate=readFileSync('public/dog-crate-size-guide.html','utf8');
+  assert(crate.includes('Sで6.8kg、Mで7.5kg、ATC-530で8.0kg'));
+  assert.equal(5+1.8,6.8);assert.equal(5+2.5,7.5);assert.equal(5+3.0,8.0);
+  const sheet=readFileSync('public/dog-pet-sheet-cost-guide.html','utf8');
+  for(const [price,count,perDay,month] of [[1000,200,6,900],[1500,100,2,900],[1500,100,3,1350]])assert.equal(price/count*perDay*30,month);
+  for(const needle of ['900円','1,350円','CPS-88とCSPS-88は型番が違います','112枚×4'])assert(sheet.includes(needle),needle);
+});

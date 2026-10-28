@@ -111,12 +111,23 @@ function discoveryGuidesExcept(href: string): RelatedGuideLink[] {
 
 const OTHER_GUIDES_TITLE = "ほかの困りごと・犬種から探す";
 
+// Spec-based buying guides (official manufacturer specs, no experience reviews). Linked to each other and from the closest existing pages.
+const CRATE_GUIDE: RelatedGuideLink = { href: "/dog-crate-size-guide", label: "小型犬用ハードクレートの選び方", note: "内寸・入口・持ち運ぶ重さを公式仕様で比較" };
+const GATE_GUIDE: RelatedGuideLink = { href: "/dog-indoor-gate-fit-guide", label: "犬用室内ゲートの選び方", note: "設置幅・足元・すき間を公式仕様で比較" };
+const PET_SHEET_GUIDE: RelatedGuideLink = { href: "/dog-pet-sheet-cost-guide", label: "犬用ペットシーツの選び方", note: "交換枚数と送料込み単価から30日費用を計算" };
+const BUYING_GUIDES_TITLE = "あわせて読みたい購入ガイド";
+
 const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   "/": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
   "/index": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
   "/review-search": { title: "条件検索とあわせて見る", links: DISCOVERY_GUIDES },
   "/review-insights": { title: "困りごと・犬種から探す", links: DISCOVERY_GUIDES },
-  "/dog-size": { title: "困りごと・犬種からも探す", links: DISCOVERY_GUIDES },
+  "/dog-size": { title: "困りごと・犬種からも探す", links: [...DISCOVERY_GUIDES, CRATE_GUIDE] },
+  "/dog-crate-size-guide": { title: BUYING_GUIDES_TITLE, links: [GATE_GUIDE, PET_SHEET_GUIDE] },
+  "/dog-indoor-gate-fit-guide": { title: BUYING_GUIDES_TITLE, links: [CRATE_GUIDE, PET_SHEET_GUIDE] },
+  "/dog-pet-sheet-cost-guide": { title: BUYING_GUIDES_TITLE, links: [CRATE_GUIDE, GATE_GUIDE] },
+  "/dog-harness": { title: "犬用品の選び方（購入ガイド）", links: [GATE_GUIDE] },
+  "/auto-feeder": { title: "犬用品の選び方（購入ガイド）", links: [PET_SHEET_GUIDE] },
   "/dog-brushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-brushing-dislike") },
   "/dog-nail-care-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-nail-care-dislike") },
   "/dog-toothbrushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-toothbrushing-dislike") },
