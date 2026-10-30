@@ -3,6 +3,7 @@
   const PAGE_SIZE = 8;
   const AMAZON_TAG = '100things-22';
 
+  const kindText=(r,part)=>{const v=r['source_kind_'+part];if(v!==undefined)return v;return r.source_type==='existing_article_summary'?({label:'サイト内記事の再整理（他サイトの体験ではありません）',short:'サイト内記事の再整理',link_label:'元にしたサイト内記事を見る →'})[part]:'';};
   const esc = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -156,7 +157,7 @@
         const check = review.source_check || null;
         const sourceUrl = (check && check.url) || review.source_url || '';
         const sourceOk = /^https?:\/\//i.test(sourceUrl) || sourceUrl.startsWith('/');
-        const sourceLabel = review.source_type === 'existing_article_summary' && sourceUrl.startsWith('/') ? '元にしたサイト内記事を見る →' : (check && check.url ? '確認できた投稿のあるページを見る ↗' : '確認元（レビュー一覧）を見る ↗');
+        const sourceLabel = kindText(review, 'link_label') ? kindText(review, 'link_label') : (check && check.url ? '確認できた投稿のあるページを見る ↗' : '確認元（レビュー一覧）を見る ↗');
         const checkHtml = check ? '<div class="db-review-check db-review-check-' + esc(check.status) + '">' + esc(check.label) + '</div>' : '';
         const sourceHtml = sourceOk
           ? '<div class="db-review-source"><a href="' + esc(sourceUrl) + '"' + (/^https?:\/\//i.test(sourceUrl) ? ' target="_blank" rel="noopener noreferrer nofollow"' : '') + '>' + sourceLabel + '</a></div>'
@@ -166,7 +167,7 @@
             <div class="db-review-product">${esc(currentData.product.name)}</div>
             <div class="db-review-dog">${esc(review.dog_breed || '犬種情報なし')}</div>
             ${tagsHtml}
-            ${review.source_type === 'existing_article_summary' ? '<div class="db-review-kind">サイト内記事の再整理（他サイトの体験ではありません）</div>' : ''}
+            ${kindText(review, 'label') ? '<div class="db-review-kind">' + esc(kindText(review, 'label')) + '</div>' : ''}
             <div class="db-review-summary">${esc(review.summary)}</div>
             ${checkHtml}
             ${sourceHtml}

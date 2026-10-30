@@ -7,6 +7,7 @@ interface Statement {
 interface DB { prepare(sql: string): Statement; }
 import { sourceCheck, sourceCheckFromRegistry } from './review-source-check';
 import { notExcludedSql } from './excluded-reviews';
+import { sourceKindOf } from './source-kinds';
 type Value = string | number | null;
 type Row = Record<string, any>;
 const aliases: Record<string,string> = {怖がり:'scared',子犬:'puppy',シニア:'senior',時短:'speed',抜け毛:'shedding',毛玉:'mat',もつれ:'tangle',多頭:'multi',静音:'quiet',皮膚:'skin',カメラ:'camera',旅行:'travel',いたずら:'mischief',ハンズフリー:'handsfree'};
@@ -59,7 +60,8 @@ const fields='r.id,r.product_id,p.name AS product_name,p.category,r.dog_breed,r.
 async function rows(db:DB,sql:string,values:Value[]=[]) {return (await db.prepare(sql).bind(...values).all<Row>()).results||[];}
 // Static audit result per row first; rows added later with an audit record carry it in D1 `review_sources`.
 // Rows that were never checked get null, never "verified".
-const withCheck=(list:Row[]):Row[]=>list.map(({registered_source_url,...r})=>({...r,source_check:sourceCheck(r.id)??sourceCheckFromRegistry(registered_source_url as string|null)}));
+// source_kind is derived from the stored source_type/source_url (nothing is stored). Clients show source_kind_label for article rows only.
+const withCheck=(list:Row[]):Row[]=>list.map(({registered_source_url,...r})=>{const k=sourceKindOf(r);return {...r,source_kind:k.kind,source_kind_label:k.label,source_kind_short:k.short,source_kind_link_label:k.linkLabel,source_check:sourceCheck(r.id)??sourceCheckFromRegistry(registered_source_url as string|null)};});
 async function totals(db:DB,where:string,values:Value[]) {
   return await db.prepare(`SELECT COUNT(*) AS count,COUNT(DISTINCT p.id) AS product_count,COUNT(DISTINCT p.category) AS category_count ${from} WHERE ${where}`).bind(...values).first<Row>() || {count:0,product_count:0,category_count:0};
 }

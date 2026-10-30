@@ -6,6 +6,7 @@ interface Statement {
   all<T>(): Promise<{ results?: T[] }>;
 }
 import { ledgerTotals, sourceCheck, sourceCheckFromRegistry } from "./review-source-check";
+import { isArticleKind, isExternalArticleKind, sourceKindOf } from "./source-kinds";
 import { notExcludedSql } from "./excluded-reviews";
 interface DB { prepare(sql: string): Statement; }
 
@@ -57,7 +58,11 @@ const tokens = (value: string | null | undefined) =>
   String(value ?? "").trim().toLowerCase().split(/\s+/).filter((t) => t && t !== "null");
 
 export function sourceKind(row: Pick<ReviewRow, "source_type" | "source_url">): string {
-  if (row.source_type === "existing_article_summary") return "サイト内記事の再整理";
+  if (row.source_type === "existing_article_summary") {
+    // Rows that re-organise this site's own articles, and rows that summarise outside articles (blog / brand sites), are counted apart.
+    const info = sourceKindOf(row);
+    return info.kind === "site_article" ? "サイト内記事の再整理" : "外部記事の要約（購入者レビューではありません）";
+  }
   const url = row.source_url || "";
   if (/rakuten\.co\.jp/i.test(url)) return "楽天市場";
   if (/yahoo\.co\.jp/i.test(url)) return "Yahoo!ショッピング";
@@ -88,6 +93,8 @@ export type ProductProfile = {
   allCoats: Record<string, number>;
   allNeeds: Record<string, number>;
   articleRows: number;
+  /** Part of articleRows whose source is an outside article (personal blog, brand site), not this site's own article. */
+  externalArticleRows: number;
   checks: { V: number; P: number; N: number; U: number; C: number; none: number };
   breeds: string[];
   sources: Array<[string, number]>;
@@ -123,12 +130,15 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     const breeds = new Map<string, number>();
     const sources = new Map<string, number>();
     let articleRows = 0;
+    let externalArticleRows = 0;
     const checks = { V: 0, P: 0, N: 0, U: 0, C: 0, none: 0 };
     for (const row of rows) {
-      if (row.source_type === "existing_article_summary") articleRows++;
+      const rowKind = sourceKindOf(row);
+      if (isArticleKind(rowKind.kind)) articleRows++;
+      if (isExternalArticleKind(rowKind.kind)) externalArticleRows++;
       const status = checkOf(row)?.status;
       if (status) checks[status]++;
-      else if (row.source_type !== "existing_article_summary") checks.none++;
+      else if (!isArticleKind(rowKind.kind)) checks.none++;
       const sizeTokens = tokens(row.dog_size).filter((t) => t in sizes);
       if (!sizeTokens.length) sizeUnknown++;
       for (const t of new Set(sizeTokens)) sizes[t]++;
@@ -144,7 +154,7 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     // Third-party summaries first; the site's own re-organised article rows only when nothing else is available.
     // Rows whose matching source post was written by a cat owner are never quoted as dog experiences.
     const quotable = rows.filter((r) => r.summary && r.summary.length >= 20 && !shownByInteractiveList.has(r) && checkOf(r)?.status !== "C");
-    const thirdParty = quotable.filter((r) => r.source_type !== "existing_article_summary");
+    const thirdParty = quotable.filter((r) => !isArticleKind(sourceKindOf(r).kind));
     const usable = thirdParty.length >= 2 ? thirdParty : quotable;
     const pick = (candidates: ReviewRow[], limit: number) => {
       // Prefer rows that name a breed, and spread the picks across different dog sizes when possible.
@@ -172,7 +182,8 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
     const line = (row: ReviewRow) => {
       const breed = breedKey(row.dog_breed);
       const check = checkOf(row);
-      const tag = row.source_type === "existing_article_summary" ? "［サイト内記事の再整理］" : check ? `［${check.short}］` : "［出典の確認は未実施］";
+      const articleInfo = sourceKindOf(row);
+      const tag = isArticleKind(articleInfo.kind) ? `［${articleInfo.short}］` : check ? `［${check.short}］` : "［出典の確認は未実施］";
       return tag + (breed ? breed + "｜" : "") + row.summary;
     };
     profiles.push({
@@ -186,6 +197,7 @@ export function buildProfiles(products: ProductRow[], reviews: ReviewRow[]): Pro
       allCoats: Object.fromEntries(coats),
       allNeeds: Object.fromEntries(needs),
       articleRows,
+      externalArticleRows,
       checks,
       breeds: top(breeds, 3).map(([name]) => name),
       sources: top(sources, 4),
@@ -268,6 +280,8 @@ export function renderProfilesHtml(categoryLabel: string, profiles: ProductProfi
   const total = profiles.reduce((sum, p) => sum + p.count, 0);
   const withSize = profiles.reduce((sum, p) => sum + p.count - p.sizeUnknown, 0);
   const articleTotal = profiles.reduce((sum, p) => sum + p.articleRows, 0);
+  const externalArticleTotal = profiles.reduce((sum, p) => sum + p.externalArticleRows, 0);
+  const siteArticleTotal = articleTotal - externalArticleTotal;
   const rows = profiles.map((p) =>
     `<tr><th scope="row">${esc(p.name)}</th><td>${p.count}件</td><td>${esc(sizeCell(p))}</td><td>${esc(p.needs.map(([l]) => l).slice(0, 3).join("・") || "記載なし")}</td><td>${esc(p.breeds.join("・") || "記載なし")}</td><td>${esc(checkCell(p))}</td></tr>`).join("");
   const conditions = category ? buildConditionRows(category, profiles) : [];
@@ -297,7 +311,10 @@ ${p.examples.length ? `<div class="ip-label">この商品の体験から（要�
 ${p.reservations.length ? `<div class="ip-label">評価が分かれた・気になる点にも触れた体験（要約）</div><ul>${list(p.reservations)}</ul>` : ""}
 </details>`;
   }).join("\n");
-  const articleNote = articleTotal ? `このカテゴリの${total}件のうち${articleTotal}件は「サイト内記事の再整理」で、他サイトの体験ではありません。` : "";
+  const articleNote = [
+    siteArticleTotal ? `このカテゴリの${total}件のうち${siteArticleTotal}件は「サイト内記事の再整理」で、他サイトの体験ではありません。` : "",
+    externalArticleTotal ? `${siteArticleTotal ? "また、" : `このカテゴリの${total}件のうち`}${externalArticleTotal}件は外部の記事（個人ブログ・ブランドや販売元のサイト）の要約で、飼い主の購入レビューではありません。` : "",
+  ].join("");
   return `${STYLE}
 <section data-inu-profiles aria-label="${esc(categoryLabel)}の商品別データ">
 <div class="ip-eyebrow">PRODUCT DATA</div>
@@ -323,7 +340,7 @@ export async function loadCategoryProfiles(db: DB, category: string): Promise<Pr
   return buildProfiles(products, reviews);
 }
 
-export type SourceBreakdown = { external: number; article: number; total: number; byKind: Array<[string, number]>; registered?: number };
+export type SourceBreakdown = { external: number; article: number; externalArticle?: number; total: number; byKind: Array<[string, number]>; registered?: number };
 
 export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | null> {
   const rows = (await db.prepare(
@@ -336,11 +353,12 @@ export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | nul
     counter.set(kind, (counter.get(kind) ?? 0) + 1);
   }
   const article = counter.get("サイト内記事の再整理") ?? 0;
+  const externalArticle = rows.filter((row) => isExternalArticleKind(sourceKindOf(row).kind)).length;
   // Rows added together with an audit record (a specific public post found) carry it in review_sources.
   const registered = (await db.prepare(
     `SELECT COUNT(*) AS n FROM review_sources s JOIN reviews r ON r.id = s.review_id JOIN products p ON p.id = r.product_id WHERE p.active = 1 AND ${notExcludedSql("r")}`,
   ).all<{ n: number }>()).results?.[0]?.n ?? 0;
-  return { external: rows.length - article, article, total: rows.length, byKind: top(counter, 8), registered: Number(registered) || 0 };
+  return { external: rows.length - article - externalArticle, article, externalArticle, total: rows.length, byKind: top(counter, 8), registered: Number(registered) || 0 };
 }
 
 function renderLedgerNote(registered = 0): string {
@@ -353,7 +371,7 @@ export function renderSourceBreakdownHtml(data: SourceBreakdown): string {
   const kinds = data.byKind.map(([label, n]) => `<li>${esc(label)}：${n}件</li>`).join("");
   return `<section data-inu-source-breakdown style="margin:30px 0;background:#fff;border:1px solid #eadfd5;border-radius:18px;padding:18px 16px">
 <h2 style="font-size:20px;margin:0 0 8px">現在のデータの内訳</h2>
-<p style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px">当サイトに整理している体験は合計<strong>${data.total}件</strong>です。そのうち、他サイトに公開されたレビュー等を要約したものが<strong>${data.external}件</strong>、当サイト内の既存記事を再整理したものが<strong>${data.article}件</strong>です。後者は新しい第三者の体験ではないため、別に数えています。</p>
+<p style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px">当サイトに整理している体験は合計<strong>${data.total}件</strong>です。そのうち、他サイトに公開されたレビュー等を要約したものが<strong>${data.external}件</strong>、${data.externalArticle ? `外部の記事（個人ブログ・ブランドや販売元のサイト）を要約したものが<strong>${data.externalArticle}件</strong>、` : ""}当サイト内の既存記事を再整理したものが<strong>${data.article}件</strong>です。${data.externalArticle ? "外部の記事は飼い主の購入レビューではなく、サイト内記事の再整理は他サイトの体験ではないため、いずれも購入者レビューとは別に数えています。" : "後者は新しい第三者の体験ではないため、別に数えています。"}</p>
 <ul style="font-size:14px;line-height:1.8;color:#766c65;margin:0 0 8px;padding-left:20px">${kinds}</ul>
 ${renderLedgerNote(data.registered ?? 0)}
 <p style="font-size:14px;line-height:1.8;color:#766c65;margin:0">この件数は閲覧時点の登録数から自動で表示しています。件数が多いことは、商品の品質や人気を示すものではありません。</p>
