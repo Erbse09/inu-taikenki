@@ -1,6 +1,7 @@
 import worker from "./entry";
 import { applyLiveCounts, needsLiveCounts, neutralizeStaleCounts, type LiveCounts } from "./live-counts";
 import { notExcludedSql } from "./excluded-reviews";
+import { isArticleKind, sourceKindOf } from "./source-kinds";
 import {
   PROFILE_CATEGORIES,
   loadCategoryProfiles,
@@ -292,16 +293,16 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promi
 function renderReviewSource(row: ReviewFallbackRow) {
   const url = row.source_check?.url || row.source_url || "";
   if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return "";
-  const label = row.source_type === "existing_article_summary" && url.startsWith("/") ? "元にしたサイト内記事を見る →" : row.source_check?.url ? "確認できた投稿のあるページを見る ↗" : "確認元（レビュー一覧）を見る ↗";
+  const articleInfo = sourceKindOf(row);
+  const label = isArticleKind(articleInfo.kind) ? articleInfo.linkLabel : row.source_check?.url ? "確認できた投稿のあるページを見る ↗" : "確認元（レビュー一覧）を見る ↗";
   const attrs = /^https?:\/\//i.test(url) ? ' target="_blank" rel="noopener noreferrer nofollow"' : "";
   return '<div class="source"><a href="' + escapeHtml(url) + '"' + attrs + '>' + label + '</a></div>';
 }
 
-const ARTICLE_KIND_LABEL = "サイト内記事の再整理";
-
 function renderReviewFallbackCard(row: ReviewFallbackRow) {
   const breed = row.dog_breed?.trim() || "犬種情報なし";
-  const kind = row.source_type === "existing_article_summary" ? `<div class="kind">${ARTICLE_KIND_LABEL}（他サイトの体験ではありません）</div>` : "";
+  const articleInfo = sourceKindOf(row);
+  const kind = isArticleKind(articleInfo.kind) ? `<div class="kind">${escapeHtml(articleInfo.label)}</div>` : "";
   return `<article class="card" data-static-review-card>
 <div class="product">${escapeHtml(row.product_name || "犬用品")}</div>
 <div class="dog">${escapeHtml(breed)}</div>
@@ -428,9 +429,14 @@ async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params
   } catch { return null; }
 }
 
+function articleShortTag(row: { source_type?: string | null; source_url?: string | null }) {
+  const info = sourceKindOf(row);
+  return isArticleKind(info.kind) ? "［" + escapeHtml(info.short) + "］" : "";
+}
+
 function renderGroupReviewSamples(group: ReviewGroupFallback) {
   return (group.reviews || []).slice(0, 2).map((review) =>
-    '<div class="excerpt">' + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>"
+    '<div class="excerpt">' + articleShortTag(review) + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>"
   ).join("");
 }
 
@@ -463,7 +469,7 @@ async function integrateBreedFallback(request: Request, html: string, env: Worke
   if (!payload) return html;
   const cards = (payload.groups || []).slice(0,6).map((group) => {
     const category = group.category || "";
-    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + (review.source_type === "existing_article_summary" ? "［" + ARTICLE_KIND_LABEL + "］" : "") + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>").join("");
+    const samples = (group.reviews || []).slice(0,2).map((review) => '<div class="experience">' + escapeHtml(review.dog_breed || "犬種情報なし") + "｜" + articleShortTag(review) + escapeHtml(review.summary || "") + (review.source_check ? "［" + escapeHtml(review.source_check.short) + "］" : "") + "</div>").join("");
     return '<article class="category" data-static-breed-card><div class="category-head"><h3>' + escapeHtml(group.product_name || "犬用品") + '</h3><span class="category-count">' + (Number(group.count) || 0) + '件</span></div><span class="category-count">' + escapeHtml(CATEGORY_LABELS[category] || category) + "</span>" + samples + '<a class="article-link" href="/review-search?category=' + encodeURIComponent(category) + "&breed=" + encodeURIComponent("トイプードル") + '">この条件の体験を見る →</a></article>';
   }).join("");
   html = html.replace('<b id="reviewCount">…</b>', '<b id="reviewCount" data-static-breed-count>' + (Number(payload.count) || 0) + "</b>");
@@ -630,13 +636,14 @@ function htmlResponse(response: Response, html: string) {
 }
 
 
+// The fragment cache path carries a version: bump it whenever fragment wording changes (v2: external-article labels), so stale text is never served after a deploy.
 // Product-by-product overview rendered into the HTML, so crawlers (and visitors without JavaScript) see
 // the same substance that the interactive "商品別" list loads later. Computed from existing rows only.
 const PROFILE_CACHE_SECONDS = 600;
 
 async function cachedFragment(request: Request, key: string, build: () => Promise<string>): Promise<string> {
   const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
-  const cacheRequest = new Request(`${new URL(request.url).origin}/__fragment/v1/${key}`);
+  const cacheRequest = new Request(`${new URL(request.url).origin}/__fragment/v2/${key}`);
   try {
     const hit = await cache?.match(cacheRequest);
     if (hit) return await hit.text();
@@ -696,8 +703,10 @@ async function integrateCountNote(request: Request, html: string, env: WorkerEnv
   try {
     const fragment = await cachedFragment(request, "count-note", async () => {
       const data = await loadSourceBreakdown(env.DB);
-      if (!data || !data.article) return "";
-      return `<p data-inu-count-note style="font-size:13px;line-height:1.7;margin:10px 0 0;opacity:.9">件数の内訳：他サイトに公開されたレビュー等の要約が${data.external}件、サイト内の記事を再整理したものが${data.article}件（合計${data.total}件）です。サイト内記事の再整理は他サイトの体験ではないため、体験の横に印を付けています。<a href="/editorial-policy" style="color:inherit;text-decoration:underline">くわしく</a></p>`;
+      if (!data || (!data.article && !data.externalArticle)) return "";
+      const externalPart = data.externalArticle ? `外部の記事（個人ブログ・ブランドや販売元のサイト）の要約が${data.externalArticle}件、` : "";
+      const externalNote = data.externalArticle ? "外部の記事は飼い主の購入レビューではなく、" : "";
+      return `<p data-inu-count-note style="font-size:13px;line-height:1.7;margin:10px 0 0;opacity:.9">件数の内訳：他サイトに公開されたレビュー等の要約が${data.external}件、${externalPart}サイト内の記事を再整理したものが${data.article}件（合計${data.total}件）です。${externalNote}サイト内記事の再整理は他サイトの体験ではないため、体験の横に印を付けています。<a href="/editorial-policy" style="color:inherit;text-decoration:underline">くわしく</a></p>`;
     });
     return fragment ? html.replace("</h1>", `</h1>\n${fragment}`) : html;
   } catch {

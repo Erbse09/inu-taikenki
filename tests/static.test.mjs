@@ -96,9 +96,10 @@ test('final AdSense audit fixes stay present',()=>{
   assert(insights.includes("skin:'皮膚配慮'"));
   assert(insights.includes('犬種そのものの判明率ではありません'));
   assert(insights.includes('犬種欄に記載あり*'));
-  assert(browser.includes("sourceUrl.startsWith('/') ? '元にしたサイト内記事を見る →'"));
-  assert(search.includes("sourceUrl.startsWith('/')?'元にしたサイト内記事を見る →'"));
-  assert(entry.includes('row.source_type === "existing_article_summary" && url.startsWith("/")'));
+  // Article rows get their link text from the shared source-kind rule (site article vs outside article), not from a URL prefix check.
+  assert(browser.includes("kindText(review, 'link_label')"));
+  assert(search.includes("kindText(r,'link_label')"));
+  assert(entry.includes('isArticleKind(articleInfo.kind) ? articleInfo.linkLabel'));
 
   for(const file of readdirSync('public').filter(x=>x.endsWith('.html'))){
     const html=readFileSync('public/'+file,'utf8');

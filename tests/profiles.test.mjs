@@ -172,8 +172,10 @@ test('headline pages explain the count breakdown and article rows are marked in 
   // Server-rendered search cards and every client-side renderer carry the same marker.
   const ssr=await (await get('https://inu-taikenki.com/review-search?category=pet-dryer')).text();
   assert(ssr.includes('<div class="kind">サイト内記事の再整理（他サイトの体験ではありません）</div>'));
-  for(const file of ['db-review-browser.js','pet-dryer.html','review-search.html'])assert(readFileSync('public/'+file,'utf8').includes('サイト内記事の再整理（他サイトの体験ではありません）'),file);
-  for(const file of ['dog-size.html','breed-toy-poodle.html'])assert(readFileSync('public/'+file,'utf8').includes('［サイト内記事の再整理］'),file);
+  // Every client renderer takes the label from the API's source_kind_* fields (same rule as the server), with the old site-article text only as a fallback.
+  for(const file of ['db-review-browser.js','pet-dryer.html','review-search.html'])assert(/kindText\((review|r), ?'label'\)/.test(readFileSync('public/'+file,'utf8')),file);
+  for(const file of ['dog-size.html','breed-toy-poodle.html'])assert(readFileSync('public/'+file,'utf8').includes("kindText(r,'short')"),file);
+  for(const file of ['db-review-browser.js','pet-dryer.html','review-search.html','dog-size.html','breed-toy-poodle.html'])assert(readFileSync('public/'+file,'utf8').includes('サイト内記事の再整理'),file+' keeps the site-article fallback text');
 });
 
 test('site description of how summaries were made is truthful: AI-assisted, not individually verified',()=>{
