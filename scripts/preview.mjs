@@ -33,7 +33,7 @@ function run() {
   const require = createRequire(import.meta.url);
   const pkgPath = require.resolve('wrangler/package.json');
   const pkg = JSON.parse(readFileSync(pkgPath));
-  assert.equal(pkg.version, '4.135.0', 'Use the pinned, tested Wrangler');
+  assert.equal(pkg.version, '4.153.0', 'Use the pinned, tested Wrangler');
   const bin = resolve(pkgPath,'..',typeof pkg.bin === 'string' ? pkg.bin : pkg.bin.wrangler);
   execFileSync(process.execPath,[bin,'preview','--name','develop','--config','wrangler.preview.json','--ignore-base-config'],{stdio:'inherit'});
 }
