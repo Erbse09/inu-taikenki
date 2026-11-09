@@ -28,7 +28,7 @@ Preview設定は既存本番D1 `inu-taikenki`、ID `a7339570-f395-48fd-8757-b525
 
 - Preview command は `npm run preview:publish`（内部で `wrangler preview --name develop --config wrangler.preview.json --ignore-base-config`）。標準の `npx wrangler preview` に戻さない。
 - 設定は `wrangler.preview.json`（APP_ENV=preview、DB=既存inu-taikenki、ASSETS=public）。Base設定から余分なサービス・秘密情報を継承させない。Previewに本番secretは不要。
-- ビルド環境はNode 24以上、Wranglerはpackage-lock.jsonに固定した4.135.0。
+- ビルド環境はNode 24以上、Wranglerはpackage-lock.jsonに固定した4.153.0（2026-11 依存脆弱性対応で4.135.0から更新）。
 - `develop` が更新されると同じ固定URLのPreviewが更新される。
 - 本番設定にはmain限定ビルドガードがある。旧versions uploadやdeployをmain以外で実行するとアップロード前に停止する。これは誤操作防止であり、環境変数の偽装や意図的なガード削除まで防ぐ権限境界ではない。
 - Cloudflare Accessなどのログイン保護はPreviewに設定していない。noindexはアクセス制御ではないため、Previewには公開してよい情報だけを置く。
