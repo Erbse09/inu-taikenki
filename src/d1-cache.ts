@@ -5,13 +5,20 @@
 // same aggregates were rebuilt again and again (2026-11-10: 4.54M rows from about 1,100 SQL statements).
 //
 // How an entry stays correct:
-// 1. Every entry carries the "data version" it was built from. The data version is a 144-row fingerprint
-//    (newest review id, newest review_sources / review_attributes rowid, and a checksum over products).
-//    Any added review, source record, attribute or product change gives a new fingerprint.
-//    The fingerprint is re-read from D1 at most every VERSION_CHECK_MS per data center (and per isolate).
-// 2. An entry is never used for more than HARD_MAX_MS (24 h) even if the fingerprint did not change, so edits the
-//    fingerprint cannot see (an UPDATE of an existing summary/source_url, which release-data/README.md does not
-//    allow anyway: existing rows are never updated) are picked up within that bound, or at once by any deploy (3.).
+// 1. Every entry carries the "data version" it was built from. The data version is read with 144 rows:
+//    - the newest reviews.id and the newest review_sources / review_attributes rowid (3 rows), which grow whenever a
+//      review or a source record is added (reviews.id is AUTOINCREMENT; a new rowid is always above the current maximum);
+//    - every column of every product row (141 rows), hashed with SHA-256 after sorting by id. Any change to any
+//      product value (name, category, asin, affiliate_url, active, ...), however small and even when lengths or
+//      totals stay the same, gives a different version. Reading the whole small table costs the same rows as an aggregate.
+//    The data version is re-read from D1 at most every VERSION_CHECK_MS per data center (and per isolate).
+// 2. Changes the data version is NOT guaranteed to see: an UPDATE or DELETE of existing reviews / review_sources rows
+//    that leaves the newest ids unchanged (summary, dog_breed, dog_size, coat_type, needs, source_type, source_url,
+//    product_id; release-data/README.md does not allow this: existing rows are never updated). An update of dog_size /
+//    coat_type / needs usually moves the newest review_attributes rowid (the 0018 trigger re-inserts the attributes),
+//    but not when the edited review already owned the highest rowids, so it is not relied on.
+//    An entry is never used for more than HARD_MAX_MS (24 h), so such changes appear within 24 h at the latest,
+//    or at once after any deploy (3.).
 // 3. Keys include the deployed Worker version (CF_VERSION_METADATA), so a deploy never serves output that
 //    an older code version rendered. Without that binding (tests, Preview) entries live only VERSION_CHECK_MS,
 //    which is the same freshness as the former 10-minute fragment cache.
@@ -32,8 +39,30 @@ export const STALE_IF_ERROR_MS = 24 * 60 * 60 * 1000;
 const MEMORY_MAX_ENTRIES = 400;
 const MEMORY_MAX_CHARS = 16 * 1024 * 1024;
 
-// One scan of products (141 rows in Nov 2026) plus three index-end lookups: 144 rows read in total.
-export const DATA_VERSION_SQL = "SELECT (SELECT MAX(id) FROM reviews) AS r, (SELECT MAX(rowid) FROM review_sources) AS s, (SELECT MAX(rowid) FROM review_attributes) AS a, x.n, x.act, x.cat, x.nm, x.aff, x.asin FROM (SELECT COUNT(*) AS n, SUM(active) AS act, SUM(LENGTH(category) * active) AS cat, SUM(LENGTH(name)) AS nm, SUM(LENGTH(COALESCE(affiliate_url, ''))) AS aff, SUM(LENGTH(COALESCE(asin, ''))) AS asin FROM products) x";
+// Three index-end lookups (3 rows read) and one scan of products (141 rows in Nov 2026): 144 rows read in total.
+export const DATA_VERSION_SQL = "SELECT (SELECT MAX(id) FROM reviews) AS r, (SELECT MAX(rowid) FROM review_sources) AS s, (SELECT MAX(rowid) FROM review_attributes) AS a";
+// Every column, so a product column added later is covered without touching this file.
+export const PRODUCTS_VERSION_SQL = "SELECT * FROM products";
+
+// Deterministic text for a value: object keys sorted, so column order never changes the result.
+function canonical(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value ?? null);
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  const object = value as Record<string, unknown>;
+  return `{${Object.keys(object).sort().map((key) => `${JSON.stringify(key)}:${canonical(object[key])}`).join(",")}}`;
+}
+
+async function sha256Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+/** Fingerprint of the full content of the products table (order-independent: rows are sorted by id first). */
+export async function productsFingerprint(rows: Array<Record<string, unknown>>): Promise<string> {
+  const sorted = rows.map(canonical).map((text, i) => [String(rows[i].id ?? ""), text] as const)
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
+  return sha256Hex(`${sorted.length}\n${sorted.map(([, text]) => text).join("\n")}`);
+}
 
 type Entry = { v: string; t: number; d: unknown };
 type VersionEntry = { v: string; t: number };
@@ -152,8 +181,9 @@ async function loadDataVersion(ctx: CacheContext): Promise<string | null> {
   }
   try {
     const row = (await ctx.db.prepare(DATA_VERSION_SQL).all<Record<string, unknown>>()).results?.[0];
-    if (!row) return null;
-    const entry = { v: JSON.stringify(row), t: now };
+    const products = (await ctx.db.prepare(PRODUCTS_VERSION_SQL).all<Record<string, unknown>>()).results;
+    if (!row || !Array.isArray(products)) return null;
+    const entry = { v: `${canonical(row)}|${await productsFingerprint(products)}`, t: now };
     versions.set(fullKey, entry);
     await cacheWrite(ctx, "data-version", entry);
     return entry.v;

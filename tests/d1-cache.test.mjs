@@ -7,7 +7,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 const {default:worker}=await import('../src/final-entry.ts');
-const {__resetD1CacheForTests,DATA_VERSION_SQL,VERSION_CHECK_MS,HARD_MAX_MS,STALE_IF_ERROR_MS}=await import('../src/d1-cache.ts');
+const {__resetD1CacheForTests,DATA_VERSION_SQL,PRODUCTS_VERSION_SQL,productsFingerprint,VERSION_CHECK_MS,HARD_MAX_MS,STALE_IF_ERROR_MS}=await import('../src/d1-cache.ts');
 const {assertReadQuery,readOnlyDatabase}=await import('../src/readonly-db.ts');
 const {reviewApi}=await import('../src/review-api.ts');
 const {legacyDatabase,migrate}=await import('./database.mjs');
@@ -47,7 +47,7 @@ function setup(extra={}){
   return {colo};
 }
 const page=async(path,env)=>{const r=await worker.fetch(new Request('https://inu-taikenki.com'+path),env);return {status:r.status,headers:r.headers,text:await r.text()};};
-const heavy=(log)=>log.filter((sql)=>sql!==DATA_VERSION_SQL);
+const heavy=(log)=>log.filter((sql)=>sql!==DATA_VERSION_SQL&&sql!==PRODUCTS_VERSION_SQL);
 const PAGES=['/','/about','/editorial-policy','/review-search','/review-insights','/dog-size','/breed-toy-poodle','/brush-pin','/pet-dryer','/dog-harness',
   '/api/reviews/stats','/api/reviews?limit=20','/api/reviews?q=%E6%80%96%E3%81%8C%E3%82%8A','/api/reviews/groups?size=small','/api/products','/api/products/karikari-machine-v2c-plus/reviews'];
 
@@ -81,12 +81,12 @@ test('repeat views read nothing heavy from D1; the summary is computed once for 
   assert.equal(log.length,before,'served from the Cache API');
 });
 
-test('after the version-check window only the 144-row fingerprint is read when nothing changed',async()=>{
+test('after the version-check window only the data version (3 + one row per product) is read when nothing changed',async()=>{
   const {DB,log}=counting(shared);setup();
   await page('/',{DB,ASSETS,...META});
   now+=VERSION_CHECK_MS+1;log.length=0;
   await page('/',{DB,ASSETS,...META});
-  assert.deepEqual(log,[DATA_VERSION_SQL]);
+  assert.deepEqual(log,[DATA_VERSION_SQL,PRODUCTS_VERSION_SQL]);
 });
 
 test('a newly added review shows up after the version-check window, in counts and in the API',async()=>{
@@ -169,11 +169,147 @@ test('invalid API input is never stored and still answers 400',async()=>{
   assert(![...colo.store.keys()].some((k)=>k.includes('limit%3Dabc')||k.includes('limit=abc')));
 });
 
-test('the fingerprint query is SELECT-only and passes the Preview read-only guard',async()=>{
+test('the data-version queries are SELECT-only and pass the Preview read-only guard',async()=>{
   assert.doesNotThrow(()=>assertReadQuery(DATA_VERSION_SQL));
+  assert.doesNotThrow(()=>assertReadQuery(PRODUCTS_VERSION_SQL));
   const {DB}=counting(shared);
-  const row=await readOnlyDatabase(DB).prepare(DATA_VERSION_SQL).first();
-  for(const key of ['r','s','a','n','act'])assert(Number.isFinite(row[key]),key);
+  const safe=readOnlyDatabase(DB);
+  const row=await safe.prepare(DATA_VERSION_SQL).first();
+  for(const key of ['r','s','a'])assert(Number.isFinite(row[key]),key);
+  const products=(await safe.prepare(PRODUCTS_VERSION_SQL).all()).results;
+  assert.equal(products.length,shared.prepare('SELECT COUNT(*) n FROM products').get().n);
+});
+
+// ---- Product changes that keep every length, count and total the same (the former length-sum checksum missed these) ----
+// The former checksum, kept here only to prove that each case below is one it could not see.
+const OLD_LENGTH_CHECKSUM="SELECT COUNT(*) AS n, SUM(active) AS act, SUM(LENGTH(category) * active) AS cat, SUM(LENGTH(name)) AS nm, SUM(LENGTH(COALESCE(affiliate_url, ''))) AS aff, SUM(LENGTH(COALESCE(asin, ''))) AS asin FROM products";
+const oldChecksum=(db)=>JSON.stringify(db.prepare(OLD_LENGTH_CHECKSUM).get());
+const sameLength=(before,after)=>{assert.notEqual(after,before);assert.equal([...after].length,[...before].length);assert.equal(after.length,before.length);};
+const api=async(path,env)=>{const r=await page(path,env);return {status:r.status,json:r.status===200?JSON.parse(r.text):null};};
+
+async function productChangeIsSeen(change,check){
+  const db=fullDatabase();const {DB,log}=counting(db);setup();const env={DB,ASSETS,...META};
+  await check(env,'before');
+  const old=oldChecksum(db);
+  change(db);
+  assert.equal(oldChecksum(db),old,'the case must be one the former length checksum could not see');
+  // Within the window the stored value is kept (same as for review additions) ...
+  await check(env,'still-before');
+  now+=VERSION_CHECK_MS+1;log.length=0;
+  // ... and after it the new content is served, although no review was added and HARD_MAX_MS has not passed.
+  await check(env,'after');
+  assert(heavy(log).length>0,'recomputed from D1');
+}
+
+test('a product name changed to another name of the same length is shown within the version-check window',async()=>{
+  const id='pateker-p6';let before,after;
+  await productChangeIsSeen((db)=>{
+    before=db.prepare('SELECT name FROM products WHERE id=?').get(id).name;
+    after=before.slice(0,-1)+(before.at(-1)==='X'?'Y':'X');sameLength(before,after);
+    db.prepare('UPDATE products SET name=? WHERE id=?').run(after,id);
+  },async(env,phase)=>{
+    const name=phase==='after'?after:(before??shared.prepare('SELECT name FROM products WHERE id=?').get(id).name);
+    const product=(await api(`/api/products/${id}/reviews?limit=1`,env)).json.product;
+    assert.equal(product.name,name,phase);
+    assert((await api('/api/products?limit=100&category=dog-clipper&offset=0',env)).json.products.some((p)=>p.id===id&&p.name===name),phase);
+    assert((await page('/dog-clipper',env)).text.includes(`data-inu-profile="${id}"`));
+    const html=(await page('/dog-clipper',env)).text;
+    const card=html.slice(html.indexOf(`data-inu-profile="${id}"`));
+    assert(card.slice(0,400).includes(name.replaceAll('&','&amp;')),phase+': server-rendered product overview');
+  });
+});
+
+test('a product category changed to another category of the same length is shown within the version-check window',async()=>{
+  const id='pateker-p6';
+  sameLength('dog-clipper','dog-shampoo');
+  await productChangeIsSeen((db)=>{
+    assert.equal(db.prepare('SELECT category FROM products WHERE id=?').get(id).category,'dog-clipper');
+    db.prepare("UPDATE products SET category='dog-shampoo' WHERE id=?").run(id);
+  },async(env,phase)=>{
+    const moved=phase==='after';
+    assert.equal((await api(`/api/products/${id}/reviews?limit=1`,env)).json.product.category,moved?'dog-shampoo':'dog-clipper',phase);
+    const inClipper=(await api('/api/products?limit=100&category=dog-clipper&offset=0',env)).json.products.some((p)=>p.id===id);
+    const inShampoo=(await api('/api/products?limit=100&category=dog-shampoo&offset=0',env)).json.products.some((p)=>p.id===id);
+    assert.deepEqual([inClipper,inShampoo],moved?[false,true]:[true,false],phase);
+    assert.equal((await page('/dog-clipper',env)).text.includes(`data-inu-profile="${id}"`),!moved,phase+': /dog-clipper overview');
+  });
+});
+
+test('an affiliate URL and an ASIN changed to other values of the same length are shown within the version-check window',async()=>{
+  const id='pateker-p6';let url,asin;
+  await productChangeIsSeen((db)=>{
+    const row=db.prepare('SELECT asin,affiliate_url FROM products WHERE id=?').get(id);
+    asin=row.asin.slice(0,-1)+(row.asin.at(-1)==='Z'?'Y':'Z');sameLength(row.asin,asin);
+    url=row.affiliate_url.replace('tag=100things-22','tag=100things-23');sameLength(row.affiliate_url,url);
+    db.prepare('UPDATE products SET asin=?,affiliate_url=? WHERE id=?').run(asin,url,id);
+  },async(env,phase)=>{
+    const original=shared.prepare('SELECT asin,affiliate_url FROM products WHERE id=?').get(id);
+    const expected=phase==='after'?{asin,affiliate_url:url}:original;
+    const product=(await api(`/api/products/${id}/reviews?limit=1`,env)).json.product;
+    assert.deepEqual({asin:product.asin,affiliate_url:product.affiliate_url},{asin:expected.asin,affiliate_url:expected.affiliate_url},phase);
+    const listed=(await api('/api/products?limit=100&category=dog-clipper&offset=0',env)).json.products.find((p)=>p.id===id);
+    assert.equal(listed.affiliate_url,expected.affiliate_url,phase);
+  });
+});
+
+test('swapping the active state of two products (same number of active products) is shown within the version-check window',async()=>{
+  const [a,b]=['moizze-pet001','wtw-ipet2971'];
+  const db=fullDatabase();
+  db.prepare('UPDATE products SET active=0 WHERE id=?').run(b);
+  const {DB,log}=counting(db);setup();const env={DB,ASSETS,...META};
+  const state=async()=>{
+    const ids=(await api('/api/products?limit=100&category=auto-feeder&offset=0',env)).json.products.map((p)=>p.id);
+    const html=(await page('/auto-feeder',env)).text;
+    return {a:ids.includes(a),b:ids.includes(b),aPage:(await page(`/api/products/${a}/reviews?limit=1`,env)).status,bPage:(await page(`/api/products/${b}/reviews?limit=1`,env)).status,
+      aCard:html.includes(`data-inu-profile="${a}"`),bCard:html.includes(`data-inu-profile="${b}"`),count:JSON.parse((await page('/api/reviews/stats?category=auto-feeder',env)).text).count};
+  };
+  const before=await state();
+  assert.deepEqual({...before,count:0},{a:true,b:false,aPage:200,bPage:404,aCard:true,bCard:false,count:0});
+  const old=oldChecksum(db);
+  db.exec(`UPDATE products SET active=CASE id WHEN '${a}' THEN 0 WHEN '${b}' THEN 1 END WHERE id IN ('${a}','${b}')`);
+  assert.equal(oldChecksum(db),old,'same category and same active count: the former checksum was blind to the swap');
+  // Within the window stored 200 responses are kept; a 404 is never stored, so the re-activated product answers at once.
+  assert.deepEqual(await state(),{...before,bPage:200},'within the window the stored values are kept');
+  now+=VERSION_CHECK_MS+1;log.length=0;
+  const after=await state();
+  assert.deepEqual({...after,count:0},{a:false,b:true,aPage:404,bPage:200,aCard:false,bCard:true,count:0});
+  const reviews=(id)=>db.prepare('SELECT COUNT(*) n FROM reviews WHERE product_id=?').get(id).n;
+  assert.equal(after.count,before.count-reviews(a)+reviews(b),'category totals follow the swap');
+  assert(heavy(log).length>0);
+});
+
+test('the products fingerprint is deterministic, ignores row and column order, and changes with any single value',async()=>{
+  const rows=shared.prepare('SELECT * FROM products').all().map((r)=>({...r}));
+  const base=await productsFingerprint(rows);
+  assert.match(base,/^[0-9a-f]{64}$/);
+  assert.equal(await productsFingerprint(rows),base);
+  assert.equal(await productsFingerprint([...rows].reverse()),base,'row order');
+  assert.equal(await productsFingerprint(rows.map((r)=>Object.fromEntries(Object.entries(r).reverse()))),base,'column order');
+  const seen=new Set([base]);
+  for(const [i,key,value] of [[0,'name',rows[0].name+'!'],[0,'name',rows[0].name.slice(0,-1)+'#'],[1,'category',rows[1].category.replace(/.$/,'#')],[2,'active',rows[2].active?0:1],[3,'asin','B000000000'],[3,'affiliate_url','https://example.com/changed-for-test'],[4,'id',rows[4].id+'x']]){
+    const changed=rows.map((r,j)=>j===i?{...r,[key]:value}:r);
+    const print=await productsFingerprint(changed);
+    assert(!seen.has(print),`${key} change must give a new fingerprint`);seen.add(print);
+  }
+  // swapping two values between rows keeps every total the same and still changes the fingerprint
+  const swapped=rows.map((r)=>({...r}));[swapped[0].name,swapped[1].name]=[swapped[1].name,swapped[0].name];
+  assert.notEqual(await productsFingerprint(swapped),base);
+  assert.notEqual(await productsFingerprint(rows.slice(1)),base,'a removed product');
+});
+
+test('changes the data version does not cover (UPDATE of an existing review) appear within 24 hours, not 10 minutes',async()=>{
+  const db=fullDatabase();const {DB}=counting(db);setup();const env={DB,ASSETS,...META};
+  const id=db.prepare("SELECT MIN(r.id) id FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.category='dog-clipper'").get().id;
+  const url=`/api/reviews?category=dog-clipper&limit=1`;
+  const summary=async()=>(await api(url,env)).json.reviews[0].summary;
+  const original=await summary();
+  for(const [column,value] of [['summary','要約を修正（テスト3）'],['source_url','https://example.com/changed']])db.prepare(`UPDATE reviews SET ${column}=? WHERE id=?`).run(value,id);
+  now+=VERSION_CHECK_MS+1;
+  assert.equal(await summary(),original,'not detected by the data version: kept after 10 minutes');
+  now+=HARD_MAX_MS-VERSION_CHECK_MS-2;
+  assert.equal(await summary(),original,'still kept just before 24 hours');
+  now+=2;
+  assert.equal(await summary(),'要約を修正（テスト3）','recomputed at 24 hours');
 });
 
 test('facet counts keep exactly the former three-table join result for every filter',async()=>{
