@@ -164,8 +164,12 @@ test('everything PR-A reads is SELECT-only and the Worker never writes',async()=
 });
 
 test('fragment cache key is versioned so labels from before the deploy are not served',()=>{
-  const entry=readFileSync('src/final-entry.ts','utf8');
-  assert(entry.includes('/__fragment/v2/'));assert(!entry.includes('/__fragment/v1/'));
+  // The manual "/__fragment/vN/" bump was replaced by keys that carry the deployed Worker version (see d1-cache.ts).
+  const entry=readFileSync('src/final-entry.ts','utf8'),cache=readFileSync('src/d1-cache.ts','utf8');
+  assert(!entry.includes('/__fragment/v1/')&&!entry.includes('/__fragment/v2/'));
+  assert(entry.includes('versioned(ctx, `profiles:${category}`'));
+  assert(cache.includes('CF_VERSION_METADATA')&&cache.includes('namespace: safeVersion'));
+  assert.deepEqual(JSON.parse(readFileSync('wrangler.jsonc','utf8')).version_metadata,{binding:'CF_VERSION_METADATA'});
 });
 
 test('client renderers use the shared kind and keep the old text only as a fallback',()=>{
