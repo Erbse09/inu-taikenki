@@ -85,6 +85,7 @@
       "database_id": "a7339570-f395-48fd-8757-b5259a505560"
     }
   ],
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
   "routes": [
     {
       "pattern": "inu-taikenki.com",

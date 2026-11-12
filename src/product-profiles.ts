@@ -361,6 +361,51 @@ export async function loadSourceBreakdown(db: DB): Promise<SourceBreakdown | nul
   return { external: rows.length - article - externalArticle, article, externalArticle, total: rows.length, byKind: top(counter, 8), registered: Number(registered) || 0 };
 }
 
+export type SiteSummary = {
+  /** Headline totals (null when the database has no public row, exactly as readLiveCounts used to return). */
+  counts: { total_reviews: number; total_categories: number } | null;
+  breakdown: SourceBreakdown | null;
+  /** true when a sub-query failed; such a summary is shown but never cached. */
+  partial: boolean;
+};
+
+// The headline total and the source breakdown count the same rows (active products, audit-excluded rows left out),
+// so one read serves both. Before, every page view ran a separate COUNT (4,954 rows) on top of the breakdown (6,806 + 2,708 rows).
+export const LIVE_COUNTS_SQL = `SELECT (SELECT COUNT(*) FROM reviews r JOIN products p ON p.id = r.product_id WHERE p.active = 1 AND ${notExcludedSql("r")}) AS total_reviews, (SELECT COUNT(DISTINCT category) FROM products WHERE active = 1) AS total_categories`;
+const CATEGORY_COUNT_SQL = "SELECT COUNT(DISTINCT category) AS total_categories FROM products WHERE active = 1";
+
+const validCounts = (row: { total_reviews?: unknown; total_categories?: unknown } | null | undefined) => {
+  const reviews = Number(row?.total_reviews), categories = Number(row?.total_categories);
+  return Number.isFinite(reviews) && Number.isFinite(categories) && reviews >= 1 && categories >= 1
+    ? { total_reviews: reviews, total_categories: categories } : null;
+};
+
+export async function loadSiteSummary(db: DB): Promise<SiteSummary> {
+  let breakdown: SourceBreakdown | null = null;
+  let breakdownFailed = false;
+  try {
+    breakdown = await loadSourceBreakdown(db);
+  } catch {
+    breakdownFailed = true;
+  }
+  if (!breakdownFailed) {
+    if (!breakdown) return { counts: null, breakdown: null, partial: false };
+    try {
+      const row = (await db.prepare(CATEGORY_COUNT_SQL).all<{ total_categories: number }>()).results?.[0];
+      return { counts: validCounts({ total_reviews: breakdown.total, total_categories: row?.total_categories }), breakdown, partial: false };
+    } catch {
+      return { counts: null, breakdown, partial: true };
+    }
+  }
+  // The breakdown could not be read: the headline totals still come from their own COUNT, as before.
+  try {
+    const row = (await db.prepare(LIVE_COUNTS_SQL).all<{ total_reviews: number; total_categories: number }>()).results?.[0];
+    return { counts: validCounts(row), breakdown: null, partial: true };
+  } catch {
+    return { counts: null, breakdown: null, partial: true };
+  }
+}
+
 function renderLedgerNote(registered = 0): string {
   const t = ledgerTotals();
   const day = t.date.replace(/^(\d+)-(\d+)-(\d+)$/, (_m, y, mo, d) => `${y}年${Number(mo)}月${Number(d)}日`);
