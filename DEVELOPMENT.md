@@ -24,6 +24,16 @@ Preview設定は既存本番D1 `inu-taikenki`、ID `a7339570-f395-48fd-8757-b525
 - CLI、管理画面、悪意あるコード変更までDB権限で禁止する仕組みではない。保護コードの変更は必ず監査する。
 - Previewの読み取りも本番D1の利用枠・負荷を共有する。負荷試験や大量クロールはしない。
 
+## D1読み取りキャッシュ（2026-11-11追加）
+
+D1無料枠（1日500万行の読み取り）を守るため、件数・出典内訳・商品別一覧・口コミAPIの結果を `src/d1-cache.ts` でキャッシュする。
+
+- 各エントリーは「データ版」と一緒に保存する。データ版＝①最新のレビューID、review_sources/review_attributesの最新rowid（3行）＋②products表の全行・全列をid順に並べたSHA-256（141行）。読み取りは合計144行。データ版は各データセンターで最大10分ごとに確認する。
+- **10分以内に反映されるもの**：レビュー・出典記録の追加、商品のどの値の変更（名前・カテゴリ・ASIN・アフィリエイトURL・active。文字数が同じ変更や、複数商品のactiveの入れ替えも含む）、商品の追加・削除。
+- **データ版で検知を保証しないもの（最大24時間）**：既存レビュー・出典記録の、最新IDを変えないUPDATE/DELETE（summary・dog_breed・dog_size・coat_type・needs・source_type・source_url・product_id など。運用上は行わない）。dog_size・coat_type・needs の変更は0018のトリガーが属性を入れ直すため多くの場合10分以内に反映されるが、属性の最新rowidが変わらない場合があるため保証しない。これらは24時間以内、またはデプロイ直後に反映される（キーにWorkerのバージョンIDを含むため。`wrangler.jsonc` の `version_metadata`）。急いで反映したい場合は再デプロイする。
+- D1が読めないときは24時間以内のエントリーを表示し、それより古い場合は従来どおり件数を中立表現にする。Cache APIが使えないときはD1を直接読む。
+- 読み取り行数はローカルの複製D1で測る：`node --import ./tests/ts-loader.mjs scripts/d1-read-bench.mjs pages`（`day` で1日分の模擬アクセス）。本番D1には接続しない。
+
 ## Preview運用（設定済み）
 
 - Preview command は `npm run preview:publish`（内部で `wrangler preview --name develop --config wrangler.preview.json --ignore-base-config`）。標準の `npx wrangler preview` に戻さない。

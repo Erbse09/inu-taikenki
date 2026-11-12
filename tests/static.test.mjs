@@ -26,9 +26,11 @@ test('no public client downloads unpaginated full review collections',()=>{
 
 test('runtime review totals are sourced from D1 instead of a fixed 750 rewrite',()=>{
   const entry=readFileSync('src/final-entry.ts','utf8');
-  assert(entry.includes('readLiveCounts'));
-  assert(entry.includes('COUNT(*)'));
-  assert(entry.includes('COUNT(DISTINCT category)'));
+  // The totals are read once into the cached site summary (product-profiles.ts loadSiteSummary).
+  const profiles=readFileSync('src/product-profiles.ts','utf8');
+  assert(entry.includes('readLiveCounts')&&entry.includes('loadSiteSummary'));
+  assert(profiles.includes('COUNT(*)'));
+  assert(profiles.includes('COUNT(DISTINCT category)'));
   assert(entry.includes('applyLiveCounts')&&readFileSync('src/live-counts.ts','utf8').includes('data-fixed-count'));
   assert(!entry.includes('.replaceAll("700件", "750件")'));
 });

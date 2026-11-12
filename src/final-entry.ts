@@ -1,15 +1,17 @@
 import worker from "./entry";
 import { applyLiveCounts, needsLiveCounts, neutralizeStaleCounts, type LiveCounts } from "./live-counts";
-import { notExcludedSql } from "./excluded-reviews";
 import {
   PROFILE_CATEGORIES,
   loadCategoryProfiles,
-  loadSourceBreakdown,
+  loadSiteSummary,
   renderProfilesHtml,
   renderSourceBreakdownHtml,
+  type SiteSummary,
 } from "./product-profiles";
+import { createCacheContext, versioned, type CacheContext } from "./d1-cache";
 
-type WorkerEnv = Parameters<typeof worker.fetch>[1];
+// CF_VERSION_METADATA (wrangler.jsonc "version_metadata") names the deployed Worker version; cache keys use it.
+type WorkerEnv = Parameters<typeof worker.fetch>[1] & { CF_VERSION_METADATA?: { id?: string } };
 
 const EAR_HOME_CARD = `<article class="research-card">
 <div class="article-badge">犬用イヤークリーナー</div>
@@ -162,31 +164,42 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   },
 };
 
-async function readLiveCounts(env: WorkerEnv): Promise<LiveCounts | null> {
+// Headline totals, the source breakdown and the count note all come from one cached summary (see d1-cache.ts).
+// Before, readLiveCounts re-counted every review on every page view (4,954 rows each time).
+function readSiteSummary(ctx: CacheContext): Promise<SiteSummary | null> {
+  return versioned(ctx, "site-summary", () => loadSiteSummary(ctx.db), { cacheable: (summary) => !summary.partial, preferStale: (summary) => summary.partial })
+    .catch(() => null);
+}
+
+async function readLiveCounts(ctx: CacheContext): Promise<LiveCounts | null> {
+  return (await readSiteSummary(ctx))?.counts ?? null;
+}
+
+// GET responses of the read-only review API, cached per exact path + query string against the data version.
+// Visitors still receive the same body and headers (including cache-control: no-store); only D1 is spared.
+const CACHED_API_PATH = /^\/api\/(?:reviews(?:\/stats|\/groups)?|products(?:\/[^/]+\/reviews)?)\/?$/;
+type CachedApiResponse = { status: number; headers: Array<[string, string]>; body: string };
+
+async function apiFetch(ctx: CacheContext, request: Request, env: WorkerEnv): Promise<Response> {
+  const url = new URL(request.url);
+  if (request.method !== "GET" || !CACHED_API_PATH.test(url.pathname)) return worker.fetch(request, env);
+  let uncached: Response | null = null;
   try {
-    const row = await env.DB.prepare(`
-      SELECT
-        (SELECT COUNT(*)
-         FROM reviews r
-         JOIN products p ON p.id = r.product_id
-         WHERE p.active = 1 AND ${notExcludedSql("r")}) AS total_reviews,
-        (SELECT COUNT(DISTINCT category)
-         FROM products
-         WHERE active = 1) AS total_categories
-    `).first<LiveCounts>();
-
-    if (
-      !row ||
-      !Number.isFinite(row.total_reviews) ||
-      !Number.isFinite(row.total_categories) ||
-      row.total_reviews < 1 ||
-      row.total_categories < 1
-    ) return null;
-
-    return row;
-  } catch {
-    return null;
-  }
+    const stored = await versioned<CachedApiResponse | null>(ctx, `api:${url.pathname}${url.search}`, async () => {
+      const response = await worker.fetch(request, env);
+      if (response.status !== 200) {
+        uncached = response;
+        // A 503 (D1 failure) falls back to a recent stored body; anything else is passed through as it is.
+        if (response.status >= 500) throw new Error("review_api_unavailable");
+        return null;
+      }
+      const headers: Array<[string, string]> = [];
+      response.headers.forEach((value, name) => headers.push([name, value]));
+      return { status: response.status, headers, body: await response.text() };
+    }, { cacheable: (value) => value !== null });
+    if (stored) return new Response(stored.body, { status: stored.status, headers: stored.headers });
+  } catch { /* fall through to the uncached response */ }
+  return uncached ?? worker.fetch(request, env);
 }
 
 type ReviewFallbackRow = {
@@ -236,14 +249,14 @@ function searchApiParams(request: Request, includeLimit = false) {
   return params;
 }
 
-async function readReviewSearchFallback(request: Request, env: WorkerEnv): Promise<ReviewFallbackPayload | null> {
+async function readReviewSearchFallback(request: Request, env: WorkerEnv, ctx: CacheContext): Promise<ReviewFallbackPayload | null> {
   try {
     const pageUrl = new URL(request.url);
     const params = searchApiParams(request, true);
     const apiRequest = new Request(new URL(`/api/reviews?${params.toString()}`, pageUrl.origin), {
       headers: { accept: "application/json" },
     });
-    const apiResponse = await worker.fetch(apiRequest, env);
+    const apiResponse = await apiFetch(ctx, apiRequest, env);
     if (!apiResponse.ok) return null;
     const payload = await apiResponse.json() as ReviewFallbackPayload;
     if (!Number.isFinite(payload.count) || !Array.isArray(payload.reviews)) return null;
@@ -275,11 +288,11 @@ ${renderReviewSource(row)}
 </article>`;
 }
 
-async function integrateReviewSearchFallback(request: Request, html: string, env: WorkerEnv) {
+async function integrateReviewSearchFallback(request: Request, html: string, env: WorkerEnv, ctx: CacheContext) {
   const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
   if (pathname !== "/review-search") return html;
 
-  const payload = await readReviewSearchFallback(request, env);
+  const payload = await readReviewSearchFallback(request, env, ctx);
   if (!payload) return html;
 
   const count = Number(payload.count) || 0;
@@ -297,7 +310,7 @@ async function integrateReviewSearchFallback(request: Request, html: string, env
   return html;
 }
 
-async function readReviewStatsFallback(request: Request, env: WorkerEnv): Promise<ReviewStatsFallbackPayload | null> {
+async function readReviewStatsFallback(request: Request, env: WorkerEnv, ctx: CacheContext): Promise<ReviewStatsFallbackPayload | null> {
   try {
     const pageUrl = new URL(request.url);
     const params = new URLSearchParams();
@@ -308,7 +321,7 @@ async function readReviewStatsFallback(request: Request, env: WorkerEnv): Promis
     const apiRequest = new Request(new URL(`/api/reviews/stats?${params.toString()}`, pageUrl.origin), {
       headers: { accept: "application/json" },
     });
-    const apiResponse = await worker.fetch(apiRequest, env);
+    const apiResponse = await apiFetch(ctx, apiRequest, env);
     if (!apiResponse.ok) return null;
     const payload = await apiResponse.json() as ReviewStatsFallbackPayload;
     if (!Number.isFinite(payload.count) || !Number.isFinite(payload.product_count)) return null;
@@ -318,11 +331,11 @@ async function readReviewStatsFallback(request: Request, env: WorkerEnv): Promis
   }
 }
 
-async function integrateReviewInsightsFallback(request: Request, html: string, env: WorkerEnv) {
+async function integrateReviewInsightsFallback(request: Request, html: string, env: WorkerEnv, ctx: CacheContext) {
   const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
   if (pathname !== "/review-insights") return html;
 
-  const payload = await readReviewStatsFallback(request, env);
+  const payload = await readReviewStatsFallback(request, env, ctx);
   if (!payload) return html;
 
   const count = Number(payload.count) || 0;
@@ -380,11 +393,11 @@ const CATEGORY_LABELS: Record<string,string> = {
   "dog-harness":"犬用ハーネス",
 };
 
-async function readReviewGroupsFallback(request: Request, env: WorkerEnv, params: URLSearchParams): Promise<ReviewGroupsFallbackPayload | null> {
+async function readReviewGroupsFallback(request: Request, env: WorkerEnv, ctx: CacheContext, params: URLSearchParams): Promise<ReviewGroupsFallbackPayload | null> {
   try {
     const pageUrl = new URL(request.url);
     const apiUrl = new URL("/api/reviews/groups?" + params.toString(), pageUrl.origin);
-    const apiResponse = await worker.fetch(new Request(apiUrl, { headers: { accept: "application/json" } }), env);
+    const apiResponse = await apiFetch(ctx, new Request(apiUrl, { headers: { accept: "application/json" } }), env);
     if (!apiResponse.ok) return null;
     const payload = await apiResponse.json() as ReviewGroupsFallbackPayload;
     if (!Number.isFinite(payload.count) || !Array.isArray(payload.groups)) return null;
@@ -398,13 +411,13 @@ function renderGroupReviewSamples(group: ReviewGroupFallback) {
   ).join("");
 }
 
-async function integrateDogSizeFallback(request: Request, html: string, env: WorkerEnv) {
+async function integrateDogSizeFallback(request: Request, html: string, env: WorkerEnv, ctx: CacheContext) {
   const url = new URL(request.url);
   if (url.pathname.replace(/\.html$/, "") !== "/dog-size") return html;
   const requested = url.searchParams.get("size") || "small";
   const size = ["small","medium","large"].includes(requested) ? requested : "small";
   const params = new URLSearchParams({size,limit:"4",offset:"0"});
-  const payload = await readReviewGroupsFallback(request, env, params);
+  const payload = await readReviewGroupsFallback(request, env, ctx, params);
   if (!payload) return html;
   const sizeLabels: Record<string,string> = {small:"小型犬",medium:"中型犬",large:"大型犬"};
   const sizeImages: Record<string,string> = {small:"/small-dogw.PNG",medium:"/medium-dogw.PNG",large:"/large-dog.PNG"};
@@ -421,9 +434,9 @@ async function integrateDogSizeFallback(request: Request, html: string, env: Wor
   return html;
 }
 
-async function integrateBreedFallback(request: Request, html: string, env: WorkerEnv) {
+async function integrateBreedFallback(request: Request, html: string, env: WorkerEnv, ctx: CacheContext) {
   if (new URL(request.url).pathname.replace(/\.html$/, "") !== "/breed-toy-poodle") return html;
-  const payload = await readReviewGroupsFallback(request, env, new URLSearchParams({breed:"トイプードル",limit:"6",offset:"0"}));
+  const payload = await readReviewGroupsFallback(request, env, ctx, new URLSearchParams({breed:"トイプードル",limit:"6",offset:"0"}));
   if (!payload) return html;
   const cards = (payload.groups || []).slice(0,6).map((group) => {
     const category = group.category || "";
@@ -560,23 +573,8 @@ function htmlResponse(response: Response, html: string) {
 
 // Product-by-product overview rendered into the HTML, so crawlers (and visitors without JavaScript) see
 // the same substance that the interactive "商品別" list loads later. Computed from existing rows only.
-const PROFILE_CACHE_SECONDS = 600;
-
-async function cachedFragment(request: Request, key: string, build: () => Promise<string>): Promise<string> {
-  const cache = (globalThis as { caches?: { default?: Cache } }).caches?.default;
-  const cacheRequest = new Request(`${new URL(request.url).origin}/__fragment/v1/${key}`);
-  try {
-    const hit = await cache?.match(cacheRequest);
-    if (hit) return await hit.text();
-  } catch { /* cache is optional */ }
-  const fragment = await build();
-  try {
-    await cache?.put(cacheRequest, new Response(fragment, { headers: { "cache-control": `public, max-age=${PROFILE_CACHE_SECONDS}`, "content-type": "text/html; charset=utf-8" } }));
-  } catch { /* cache is optional */ }
-  return fragment;
-}
-
-async function integrateProductProfiles(request: Request, html: string, env: WorkerEnv) {
+// Cached against the data version and the deployed Worker version (d1-cache.ts), so neither new rows nor new wording wait for a manual cache bump.
+async function integrateProductProfiles(request: Request, html: string, ctx: CacheContext) {
   if (html.includes("data-inu-profiles")) return html;
   // The page itself says which category its product list belongs to (page paths such as /dog-nail-grinder differ from category ids).
   // /pet-dryer has its own product picker (#db-review-browser); the other categories use the shared data-db-review-browser block.
@@ -588,8 +586,8 @@ async function integrateProductProfiles(request: Request, html: string, env: Wor
   const end = html.indexOf("</section>", start);
   if (start === -1 || end === -1) return html;
   try {
-    const fragment = await cachedFragment(request, `profiles-${category}`, async () =>
-      renderProfilesHtml(CATEGORY_LABELS[category] || category, await loadCategoryProfiles(env.DB, category), category));
+    const fragment = await versioned(ctx, `profiles:${category}`, async () =>
+      renderProfilesHtml(CATEGORY_LABELS[category] || category, await loadCategoryProfiles(ctx.db, category), category));
     if (!fragment) return html;
     const insertAt = end + "</section>".length;
     return html.slice(0, insertAt) + "\n" + fragment + html.slice(insertAt);
@@ -600,14 +598,12 @@ async function integrateProductProfiles(request: Request, html: string, env: Wor
 
 const SOURCE_BREAKDOWN_PAGES = new Set(["/about", "/editorial-policy", "/review-search"]);
 
-async function integrateSourceBreakdown(request: Request, html: string, env: WorkerEnv) {
+async function integrateSourceBreakdown(request: Request, html: string, ctx: CacheContext) {
   const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
   if (!SOURCE_BREAKDOWN_PAGES.has(pathname) || html.includes("data-inu-source-breakdown") || !html.includes("</main>")) return html;
   try {
-    const fragment = await cachedFragment(request, "source-breakdown", async () => {
-      const data = await loadSourceBreakdown(env.DB);
-      return data ? renderSourceBreakdownHtml(data) : "";
-    });
+    const data = (await readSiteSummary(ctx))?.breakdown;
+    const fragment = data ? renderSourceBreakdownHtml(data) : "";
     return fragment ? html.replace("</main>", `${fragment}\n</main>`) : html;
   } catch {
     return html;
@@ -618,15 +614,15 @@ async function integrateSourceBreakdown(request: Request, html: string, env: Wor
 // Headline totals (e.g. 1595件) include rows that re-organise this site's own articles. Say so right under the headline.
 const COUNT_NOTE_PAGES = new Set(["/", "/index", "/review-search", "/dog-size", "/review-insights"]);
 
-async function integrateCountNote(request: Request, html: string, env: WorkerEnv) {
+async function integrateCountNote(request: Request, html: string, ctx: CacheContext) {
   const pathname = new URL(request.url).pathname.replace(/\.html$/, "");
   if (!COUNT_NOTE_PAGES.has(pathname) || html.includes("data-inu-count-note") || !html.includes("</h1>")) return html;
   try {
-    const fragment = await cachedFragment(request, "count-note", async () => {
-      const data = await loadSourceBreakdown(env.DB);
+    const fragment = await (async () => {
+      const data = (await readSiteSummary(ctx))?.breakdown;
       if (!data || !data.article) return "";
       return `<p data-inu-count-note style="font-size:13px;line-height:1.7;margin:10px 0 0;opacity:.9">件数の内訳：他サイトに公開されたレビュー等の要約が${data.external}件、サイト内の記事を再整理したものが${data.article}件（合計${data.total}件）です。サイト内記事の再整理は他サイトの体験ではないため、体験の横に印を付けています。<a href="/editorial-policy" style="color:inherit;text-decoration:underline">くわしく</a></p>`;
-    });
+    })();
     return fragment ? html.replace("</h1>", `</h1>\n${fragment}`) : html;
   } catch {
     return html;
@@ -643,7 +639,8 @@ function markApiNoindex(request: Request, response: Response) {
 
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
-    const response = markApiNoindex(request, await worker.fetch(request, env));
+    const ctx = createCacheContext(request, env);
+    const response = markApiNoindex(request, await apiFetch(ctx, request, env));
     if (request.method !== "GET" || !response.ok) return response;
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.includes("text/html")) return response;
@@ -654,16 +651,16 @@ export default {
     html = integrateSeoTitle(request, html);
     html = integrateSeoDescription(request, html);
     if (needsLiveCounts(html)) {
-      const liveCounts = await readLiveCounts(env);
+      const liveCounts = await readLiveCounts(ctx);
       html = liveCounts ? applyLiveCounts(html, liveCounts) : neutralizeStaleCounts(html);
     }
-    html = await integrateReviewSearchFallback(request, html, env);
-    html = await integrateReviewInsightsFallback(request, html, env);
-    html = await integrateDogSizeFallback(request, html, env);
-    html = await integrateBreedFallback(request, html, env);
-    html = await integrateProductProfiles(request, html, env);
-    html = await integrateSourceBreakdown(request, html, env);
-    html = await integrateCountNote(request, html, env);
+    html = await integrateReviewSearchFallback(request, html, env, ctx);
+    html = await integrateReviewInsightsFallback(request, html, env, ctx);
+    html = await integrateDogSizeFallback(request, html, env, ctx);
+    html = await integrateBreedFallback(request, html, env, ctx);
+    html = await integrateProductProfiles(request, html, ctx);
+    html = await integrateSourceBreakdown(request, html, ctx);
+    html = await integrateCountNote(request, html, ctx);
     return htmlResponse(response, html);
   },
 };
