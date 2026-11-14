@@ -99,7 +99,7 @@
 
     const allSearchLink = document.createElement('a');
     allSearchLink.className = 'db-all-search-link';
-    allSearchLink.href = '/review-search.html?category=' + encodeURIComponent(category);
+    allSearchLink.href = '/review-search?category=' + encodeURIComponent(category);
     allSearchLink.textContent = 'このカテゴリの体験をまとめて検索 →';
     totalBadge.after(allSearchLink);
 
@@ -155,7 +155,7 @@
           ? '<div class="db-review-tags">' + tags.map((tag) => '<span>' + esc(tag) + '</span>').join('') + '</div>'
           : '';
         const check = review.source_check || null;
-        const sourceUrl = (check && check.url) || review.source_url || '';
+        const sourceUrl = ((check && check.url) || review.source_url || '').replace(/^(\/[a-z0-9-]+)\.html(?=$|[?#])/i, '$1');
         const sourceOk = /^https?:\/\//i.test(sourceUrl) || sourceUrl.startsWith('/');
         const sourceLabel = kindText(review, 'link_label') ? kindText(review, 'link_label') : (check && check.url ? '確認できた投稿のあるページを見る ↗' : '確認元（レビュー一覧）を見る ↗');
         const checkHtml = check ? '<div class="db-review-check db-review-check-' + esc(check.status) + '">' + esc(check.label) + '</div>' : '';

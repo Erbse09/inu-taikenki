@@ -110,3 +110,18 @@ test('GA4 affiliate click event carries product and article info, and the inject
   new vm.Script(script);
   for(const key of ['affiliate_network','is_affiliate','product_name','article_path'])assert(script.includes(key),key);
 });
+
+test('internal links never point at redirecting .html URLs (server HTML and inline/page scripts)',async()=>{
+  const locs=[...readFileSync('public/sitemap.xml','utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
+  const pattern=/["'`]\/[a-z0-9-]+\.html(?=[?#"'`])/gi;
+  for(const loc of locs){
+    const html=await (await get(loc)).text();
+    assert.deepEqual(html.match(pattern)||[],[],loc);
+  }
+  for(const file of ['public/db-review-browser.js']){
+    assert.deepEqual(readFileSync(file,'utf8').match(pattern)||[],[],file);
+  }
+  // Rows whose source is a site-internal article are stored as "/pet-dryer.html"; the rendered link must be extensionless.
+  const search=await (await get('https://inu-taikenki.com/review-search?category=pet-dryer')).text();
+  assert(!search.includes('href="/pet-dryer.html"'),'review-search SSR must not link to /pet-dryer.html');
+});
