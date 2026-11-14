@@ -328,3 +328,127 @@ test('facet counts keep exactly the former three-table join result for every fil
   for(const [now_,old] of pairs)assert.deepEqual(now_,old);
   assert(pairs[0][0].length>10);
 });
+
+// ---- Finished-page cache (readPage / writePage): CPU on a newly started isolate, never at the cost of correctness ----
+function countedAssets(){
+  const calls=[];
+  return {calls,ASSETS:{async fetch(req){calls.push(new URL(req.url).pathname);return ASSETS.fetch(req);}}};
+}
+const uncached=async(path)=>{delete globalThis.caches;__resetD1CacheForTests(()=>now);return page(path,{DB:counting(shared).DB,ASSETS});};
+
+test('a repeated page view is served from the stored page: no D1 statement and no HTML rewrite pipeline',async()=>{
+  for(const path of ['/','/about','/review-search?category=brush-pin&size=small','/dog-harness','/dog-size?size=large']){
+    const reference=await uncached(path);
+    const {DB,log}=counting(shared);setup();const a=countedAssets();const env={DB,ASSETS:a.ASSETS,...META};
+    const first=await page(path,env);
+    assert.equal(first.text,reference.text,path);assert.equal(a.calls.length,1);
+    log.length=0;
+    const again=await page(path,env);
+    assert.equal(again.text,reference.text,path+' warm');assert.equal(again.status,200);
+    for(const h of ['content-type','cache-control'])assert.equal(again.headers.get(h),reference.headers.get(h),path+' '+h);
+    assert.equal(a.calls.length,1,path+': the pipeline did not run again');assert.deepEqual(log,[],path+': no D1 statement');
+    // a newly started isolate in the same data center: isolate memory empty, the Cache API answers
+    __resetD1CacheForTests(()=>now);
+    const fresh=await page(path,env);
+    assert.equal(fresh.text,reference.text,path+' new isolate');assert.equal(a.calls.length,1);assert.deepEqual(log,[],path+': still no D1 statement');
+  }
+});
+
+test('a page built while D1 cannot be read is never stored: real totals return as soon as D1 recovers',async()=>{
+  const {DB,setDown}=counting(shared);setup();const env={DB,ASSETS,...META};
+  setDown(true);
+  const down=(await page('/about',env)).text;
+  assert(!/合計\d+件/.test(down),'without D1 the page claims no total');
+  setDown(false);
+  const up=(await page('/about',env)).text;
+  assert.match(up,/合計2262件/,'no time passed, yet the real total is shown: the degraded page was not kept');
+});
+
+test('a page built from a stale fragment (a query failed, the data version could still be read) is not stored',async()=>{
+  // The case where writePage could otherwise stamp the new data version on old numbers.
+  const db=fullDatabase();let failBreakdown=false;
+  const base=counting(db).DB;
+  const DB={prepare(sql){if(failBreakdown&&sql.startsWith('SELECT r.source_type, r.source_url FROM reviews'))throw new Error('breakdown down');return base.prepare(sql);}};
+  setup();const env={DB,ASSETS,...META};
+  const total=(html)=>Number(html.match(/合計(\d+)件/)[1]);
+  const before=total((await page('/about',env)).text);
+  db.exec("INSERT INTO reviews(product_id,summary,dog_size,source_type,source_url) VALUES('karikari-machine-v2c-plus','追加された体験の要約（劣化ページのテスト）','small','public_experience_summary','https://example.com/')");
+  failBreakdown=true;now+=VERSION_CHECK_MS+1;
+  assert.equal(total((await page('/about',env)).text),before,'old numbers shown while the query fails (unchanged stale-if-error behaviour)');
+  failBreakdown=false;
+  assert.equal(total((await page('/about',env)).text),before+1,'no time passed: the page with old numbers was not stored under the new data version');
+});
+
+test('a page built from a stale API body (the API query threw, the data version could still be read) is not stored',async()=>{
+  const db=fullDatabase();let failGroups=false;
+  const base=counting(db).DB;
+  const DB={prepare(sql){if(failGroups&&sql.includes('GROUP BY p.id ORDER BY count DESC,p.id LIMIT ? OFFSET ?'))throw new Error('groups down');return base.prepare(sql);}};
+  setup();const env={DB,ASSETS,...META};
+  const smallCount=(html)=>Number(html.match(/該当体験 (\d+)件/)[1]);
+  const before=smallCount((await page('/dog-size',env)).text);
+  db.exec("INSERT INTO reviews(product_id,summary,dog_size,source_type,source_url) VALUES('karikari-machine-v2c-plus','追加された小型犬の体験（劣化ページのテスト）','small','public_experience_summary','https://example.com/')");
+  failGroups=true;now+=VERSION_CHECK_MS+1;
+  assert.equal(smallCount((await page('/dog-size',env)).text),before,'the stored API body from before is shown while the query fails');
+  failGroups=false;
+  assert.equal(smallCount((await page('/dog-size',env)).text),before+1,'no time passed: the page with the stale API body was not stored');
+});
+
+test('a page that reads no data needs no D1 even after the version-check window, and still ends with the hard maximum',async()=>{
+  const reference=await uncached('/privacy');
+  const {DB,log}=counting(shared);setup();const a=countedAssets();const env={DB,ASSETS:a.ASSETS,...META};
+  assert.equal((await page('/privacy',env)).text,reference.text);
+  assert.deepEqual(log,[],'/privacy reads no data');
+  now+=VERSION_CHECK_MS+1;
+  assert.equal((await page('/privacy',env)).text,reference.text);
+  assert.deepEqual(log,[],'no data-version check for a page without data');
+  assert.equal(a.calls.length,1);
+  now+=HARD_MAX_MS;
+  await page('/privacy',env);
+  assert.equal(a.calls.length,2,'rebuilt after the hard maximum');
+  await page('/privacy',{...env,CF_VERSION_METADATA:{id:'test-version-2'}});
+  assert.equal(a.calls.length,3,'a new deploy (new static assets and code) rebuilds it');
+});
+
+test('redirects, 404s and HEAD requests are never stored and cause no D1 read',async()=>{
+  const {DB,log}=counting(shared);const {colo}=setup();const env={DB,ASSETS,...META};
+  for(let i=0;i<2;i++){
+    assert.equal((await page('/brush-pin.html',env)).status,301);
+    assert.equal((await page('/no-such-page',env)).status,404);
+    const head=await worker.fetch(new Request('https://inu-taikenki.com/about',{method:'HEAD'}),env);assert.equal(head.status,200);
+  }
+  assert.deepEqual(log,[]);
+  assert(![...colo.store.keys()].some((k)=>/page%3A%2F(brush-pin\.html|no-such-page)/.test(k)),'no stored page for a redirect or a 404');
+});
+
+test('query strings are separate pages and each matches the uncached output',async()=>{
+  const paths=['/review-search?category=brush-pin','/review-search?category=dog-harness','/review-search','/dog-size?size=medium','/dog-size'];
+  const reference={};for(const p of paths)reference[p]=(await uncached(p)).text;
+  const {DB}=counting(shared);setup();const env={DB,ASSETS,...META};
+  for(let round=0;round<2;round++)for(const p of paths)assert.equal((await page(p,env)).text,reference[p],p+' round '+round);
+  assert.notEqual(reference[paths[0]],reference[paths[1]]);
+});
+
+test('a page whose server-rendered fallback failed is not stored, so the fallback returns when the API recovers',async()=>{
+  let failGroups=true;
+  const base=counting(shared).DB;
+  const DB={prepare(sql){if(failGroups&&sql.includes('COUNT(*) AS count FROM reviews r JOIN products p ON p.id=r.product_id')&&sql.includes('GROUP BY p.id ORDER BY count DESC,p.id LIMIT ? OFFSET ?'))throw new Error('groups down');return base.prepare(sql);}};
+  setup();const env={DB,ASSETS,...META};
+  const broken=(await page('/dog-size',env)).text;
+  // data-static-size-card exists only in the server-rendered fallback (the static HTML has no such element)
+  assert(!readFileSync('public/dog-size.html','utf8').includes('data-static-size-card'));
+  assert(!broken.includes('data-static-size-card'),'fallback missing while the API fails');
+  failGroups=false;
+  const ok=(await page('/dog-size',env)).text;
+  assert(ok.includes('data-static-size-card'),'the page without its fallback was not stored');
+  assert.equal(ok,(await uncached('/dog-size')).text);
+});
+
+test('a new review reaches stored pages within the version-check window',async()=>{
+  const db=fullDatabase();const {DB}=counting(db);setup();const env={DB,ASSETS,...META};
+  const total=(html)=>Number(html.match(/合計(\d+)件/)[1]);
+  const before=total((await page('/about',env)).text);
+  db.exec("INSERT INTO reviews(product_id,summary,dog_size,source_type,source_url) VALUES('karikari-machine-v2c-plus','追加された体験の要約（ページ保存のテスト）','small','public_experience_summary','https://example.com/')");
+  assert.equal(total((await page('/about',env)).text),before);
+  now+=VERSION_CHECK_MS+1;
+  assert.equal(total((await page('/about',env)).text),before+1);
+});

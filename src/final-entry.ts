@@ -8,7 +8,7 @@ import {
   renderSourceBreakdownHtml,
   type SiteSummary,
 } from "./product-profiles";
-import { createCacheContext, versioned, type CacheContext } from "./d1-cache";
+import { createCacheContext, readPage, versioned, writePage, type CacheContext } from "./d1-cache";
 
 // CF_VERSION_METADATA (wrangler.jsonc "version_metadata") names the deployed Worker version; cache keys use it.
 type WorkerEnv = Parameters<typeof worker.fetch>[1] & { CF_VERSION_METADATA?: { id?: string } };
@@ -168,7 +168,7 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
 // Before, readLiveCounts re-counted every review on every page view (4,954 rows each time).
 function readSiteSummary(ctx: CacheContext): Promise<SiteSummary | null> {
   return versioned(ctx, "site-summary", () => loadSiteSummary(ctx.db), { cacheable: (summary) => !summary.partial, preferStale: (summary) => summary.partial })
-    .catch(() => null);
+    .catch(() => { ctx.degraded = true; return null; });
 }
 
 async function readLiveCounts(ctx: CacheContext): Promise<LiveCounts | null> {
@@ -257,11 +257,12 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv, ctx: C
       headers: { accept: "application/json" },
     });
     const apiResponse = await apiFetch(ctx, apiRequest, env);
-    if (!apiResponse.ok) return null;
+    if (!apiResponse.ok) { ctx.degraded = true; return null; }
     const payload = await apiResponse.json() as ReviewFallbackPayload;
-    if (!Number.isFinite(payload.count) || !Array.isArray(payload.reviews)) return null;
+    if (!Number.isFinite(payload.count) || !Array.isArray(payload.reviews)) { ctx.degraded = true; return null; }
     return payload;
   } catch {
+    ctx.degraded = true;
     return null;
   }
 }
@@ -322,11 +323,12 @@ async function readReviewStatsFallback(request: Request, env: WorkerEnv, ctx: Ca
       headers: { accept: "application/json" },
     });
     const apiResponse = await apiFetch(ctx, apiRequest, env);
-    if (!apiResponse.ok) return null;
+    if (!apiResponse.ok) { ctx.degraded = true; return null; }
     const payload = await apiResponse.json() as ReviewStatsFallbackPayload;
-    if (!Number.isFinite(payload.count) || !Number.isFinite(payload.product_count)) return null;
+    if (!Number.isFinite(payload.count) || !Number.isFinite(payload.product_count)) { ctx.degraded = true; return null; }
     return payload;
   } catch {
+    ctx.degraded = true;
     return null;
   }
 }
@@ -398,11 +400,11 @@ async function readReviewGroupsFallback(request: Request, env: WorkerEnv, ctx: C
     const pageUrl = new URL(request.url);
     const apiUrl = new URL("/api/reviews/groups?" + params.toString(), pageUrl.origin);
     const apiResponse = await apiFetch(ctx, new Request(apiUrl, { headers: { accept: "application/json" } }), env);
-    if (!apiResponse.ok) return null;
+    if (!apiResponse.ok) { ctx.degraded = true; return null; }
     const payload = await apiResponse.json() as ReviewGroupsFallbackPayload;
-    if (!Number.isFinite(payload.count) || !Array.isArray(payload.groups)) return null;
+    if (!Number.isFinite(payload.count) || !Array.isArray(payload.groups)) { ctx.degraded = true; return null; }
     return payload;
-  } catch { return null; }
+  } catch { ctx.degraded = true; return null; }
 }
 
 function renderGroupReviewSamples(group: ReviewGroupFallback) {
@@ -592,6 +594,7 @@ async function integrateProductProfiles(request: Request, html: string, ctx: Cac
     const insertAt = end + "</section>".length;
     return html.slice(0, insertAt) + "\n" + fragment + html.slice(insertAt);
   } catch {
+    ctx.degraded = true;
     return html;
   }
 }
@@ -606,6 +609,7 @@ async function integrateSourceBreakdown(request: Request, html: string, ctx: Cac
     const fragment = data ? renderSourceBreakdownHtml(data) : "";
     return fragment ? html.replace("</main>", `${fragment}\n</main>`) : html;
   } catch {
+    ctx.degraded = true;
     return html;
   }
 }
@@ -625,6 +629,7 @@ async function integrateCountNote(request: Request, html: string, ctx: CacheCont
     })();
     return fragment ? html.replace("</h1>", `</h1>\n${fragment}`) : html;
   } catch {
+    ctx.degraded = true;
     return html;
   }
 }
@@ -640,6 +645,14 @@ function markApiNoindex(request: Request, response: Response) {
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     const ctx = createCacheContext(request, env);
+    // Finished pages are stored per exact path + query (see d1-cache.ts readPage / writePage).
+    const url = new URL(request.url);
+    // "*.html" URLs are always redirected to the extensionless page (index.ts), so they never need a lookup.
+    const pageKey = request.method === "GET" && !url.pathname.startsWith("/api/") && !url.pathname.endsWith(".html") ? `page:${url.pathname}${url.search}` : "";
+    if (pageKey) {
+      const stored = await readPage(ctx, pageKey);
+      if (stored) return new Response(stored.body, { status: stored.status, statusText: stored.statusText, headers: stored.headers });
+    }
     const response = markApiNoindex(request, await apiFetch(ctx, request, env));
     if (request.method !== "GET" || !response.ok) return response;
     const contentType = response.headers.get("content-type") ?? "";
@@ -661,6 +674,12 @@ export default {
     html = await integrateProductProfiles(request, html, ctx);
     html = await integrateSourceBreakdown(request, html, ctx);
     html = await integrateCountNote(request, html, ctx);
-    return htmlResponse(response, html);
+    const page = htmlResponse(response, html);
+    if (pageKey && page.status === 200) {
+      const headers: Array<[string, string]> = [];
+      page.headers.forEach((value, name) => headers.push([name, value]));
+      await writePage(ctx, pageKey, { status: page.status, statusText: page.statusText, headers, body: html });
+    }
+    return page;
   },
 };
