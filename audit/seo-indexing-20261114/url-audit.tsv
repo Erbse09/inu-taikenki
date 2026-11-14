@@ -1,0 +1,31 @@
+URL	HTTP	canonical	noindex	被内部リンク(サイトマップ内ページ数)	種類	本文文字数(概算)	Search Console状態	問題点	修正の必要性
+https://inu-taikenki.com/	200	自己参照	なし	29	トップ（ハブ）	2577	未確認	旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作
+https://inu-taikenki.com/dog-size	200	自己参照	なし	4	検索ツール（JS依存大）	1318	未確認	固有本文が少なくJS描画中心；JS内リンクが.html（PRで修正）	技術（低）：Draft PRで修正済み；内容（中）：固有の説明文をHTMLに
+https://inu-taikenki.com/breed-toy-poodle	200	自己参照	なし	3	犬種ハブ	1855	未確認	被内部リンクが少ない（3ページ）	低：関連記事からのリンク追加
+https://inu-taikenki.com/review-search	200	自己参照	なし	25	検索ツール（JS依存大）	2568	未確認	固有本文が少なくJS描画中心；確認元リンクが/pet-dryer.html（PRで修正）	技術（低）：Draft PRで修正済み；内容（中）：固有の説明文をHTMLに
+https://inu-taikenki.com/review-insights	200	自己参照	なし	3	データ集計ページ（JS依存大）	1161	未確認	固有本文が少なくJS描画中心；被内部リンクが少ない（3ページ）	内容（中）：固有の説明文をHTMLに
+https://inu-taikenki.com/pet-dryer	200	自己参照	なし	6	商品比較記事（公開レビュー要約）	9677	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作；内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/auto-feeder	200	自己参照	なし	3	商品比較記事（公開レビュー要約）	10509	未登録（11/11画面の例）	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；被内部リンクが少ない（3ページ）；旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作；内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-clipper	200	自己参照	なし	6	商品比較記事（公開レビュー要約）	7681	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作；内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/brush-guide	200	自己参照	なし	13	選び方ガイド	3625	未確認	旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作
+https://inu-taikenki.com/dog-brushing-dislike	200	自己参照	なし	8	困りごとガイド	2717	未確認	技術的問題なし	不要
+https://inu-taikenki.com/dog-nail-care-dislike	200	自己参照	なし	4	困りごとガイド	2378	未確認	技術的問題なし	不要
+https://inu-taikenki.com/dog-toothbrushing-dislike	200	自己参照	なし	5	困りごとガイド	2367	未確認	技術的問題なし	不要
+https://inu-taikenki.com/dog-home-shampoo-guide	200	自己参照	なし	6	困りごとガイド	1851	未確認	技術的問題なし	不要
+https://inu-taikenki.com/brush-slicker	200	自己参照	なし	6	商品比較記事（公開レビュー要約）	6924	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作；内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/brush-pin	200	自己参照	なし	6	商品比較記事（公開レビュー要約）	17793	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作；内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/brush-undercoat	200	自己参照	なし	7	商品比較記事（公開レビュー要約）	5767	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作；内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/brush-comb	200	自己参照	なし	6	商品比較記事（公開レビュー要約）	6007	未登録（11/11画面の例）	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作；内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/about	200	自己参照	なし	29	運営情報	2137	未登録（11/11画面の例。理由区分は未確認）	旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作
+https://inu-taikenki.com/editorial-policy	200	自己参照	なし	29	運営情報	2261	未確認	旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作
+https://inu-taikenki.com/privacy	200	自己参照	なし	29	運営情報	1126	未確認	旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作
+https://inu-taikenki.com/affiliate	200	自己参照	なし	29	運営情報	468	未確認	本文が短い（468字）；旧版がGitHub Pagesに重複公開（canonicalは.html）	技術（中）：GitHub Pages停止＝運営者操作；低：現状で可（運営情報）
+https://inu-taikenki.com/dog-nail-grinder	200	自己参照	なし	5	商品比較記事（公開レビュー要約）	7680	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート	内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-nail-clipper	200	自己参照	なし	4	商品比較記事（公開レビュー要約）	7698	未登録（11/11画面の例）	第三者レビューのAI要約が中心・実体験なし・共通テンプレート	内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-shampoo	200	自己参照	なし	6	商品比較記事（公開レビュー要約）	7576	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート	内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-conditioner	200	自己参照	なし	4	商品比較記事（公開レビュー要約）	8653	未登録（11/11画面の例）	第三者レビューのAI要約が中心・実体験なし・共通テンプレート	内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-toothbrush	200	自己参照	なし	6	商品比較記事（公開レビュー要約）	7338	未登録（11/11画面の例）	第三者レビューのAI要約が中心・実体験なし・共通テンプレート	内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-toothpaste	200	自己参照	なし	4	商品比較記事（公開レビュー要約）	7011	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート	内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-dental-chew	200	自己参照	なし	3	商品比較記事（公開レビュー要約）	7102	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；被内部リンクが少ない（3ページ）	内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-ear-cleaner	200	自己参照	なし	2	商品比較記事（公開レビュー要約）	7017	未確認	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；被内部リンクが少ない（2ページ）	内容（高）：独自の判断材料・一次情報の追加を検討
+https://inu-taikenki.com/dog-harness	200	自己参照	なし	2	商品比較記事（公開レビュー要約）	27112	クロール済み・インデックス未登録（URL検査、最終クロール10/23）	第三者レビューのAI要約が中心・実体験なし・共通テンプレート；被内部リンクが少ない（2ページ）	内容（高）：独自の判断材料・一次情報の追加を検討
