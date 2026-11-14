@@ -94,6 +94,12 @@ export type CacheContext = {
   hardMaxMs: number;
   version?: Promise<string | null>;
   local: Map<string, Promise<unknown>>;
+  /**
+   * Set when anything served in this request is not a fresh, complete result for the current data version
+   * (D1 or the fingerprint unreadable, a stale entry shown after an error, a partial or uncacheable result).
+   * A page built in such a request is never stored by writePage.
+   */
+  degraded: boolean;
 };
 
 export function createCacheContext(request: Request, env: { DB: CacheDB; CF_VERSION_METADATA?: { id?: string } }): CacheContext {
@@ -105,6 +111,7 @@ export function createCacheContext(request: Request, env: { DB: CacheDB; CF_VERS
     namespace: safeVersion ? `w-${safeVersion}` : "w-unversioned",
     hardMaxMs: safeVersion ? HARD_MAX_MS : VERSION_CHECK_MS,
     local: new Map(),
+    degraded: false,
   };
 }
 
@@ -154,7 +161,7 @@ function memoryGet(store: Store, fullKey: string): Entry | null {
 
 function memorySet(store: Store, fullKey: string, entry: Entry) {
   let size = 64;
-  try { size += JSON.stringify(entry.d)?.length ?? 0; } catch { return; }
+  try { size += typeof entry.d === "string" ? entry.d.length : JSON.stringify(entry.d)?.length ?? 0; } catch { return; }
   if (size > MEMORY_MAX_CHARS / 4) return;
   const old = store.entries.get(fullKey);
   if (old) { store.chars -= old.size; store.entries.delete(fullKey); }
@@ -224,20 +231,23 @@ async function resolveVersioned<T>(ctx: CacheContext, key: string, compute: () =
   const usable = (entry: Entry | null, maxAge: number) => !!entry && typeof entry.v === "string" && now - entry.t >= 0 && now - entry.t < maxAge;
   const store = storeOf(ctx);
   let entry = memoryGet(store, fullKey);
+  let fromMemory = !!entry;
   if (!(version !== null && entry?.v === version && usable(entry, ctx.hardMaxMs))) {
     const shared = await cacheRead<Entry>(ctx, key);
-    if (shared && (!entry || shared.t > entry.t)) entry = shared;
+    if (shared && (!entry || shared.t > entry.t)) { entry = shared; fromMemory = false; }
   }
   if (version !== null && entry && entry.v === version && usable(entry, ctx.hardMaxMs)) {
-    memorySet(store, fullKey, entry);
+    // memoryGet already moved a memory hit to the newest LRU position; only a Cache API hit needs storing.
+    if (!fromMemory) memorySet(store, fullKey, entry);
     return entry.d as T;
   }
   // D1 could not even return the fingerprint: prefer a recent entry over an error.
-  if (version === null && usable(entry, STALE_IF_ERROR_MS)) return entry!.d as T;
+  if (version === null && usable(entry, STALE_IF_ERROR_MS)) { ctx.degraded = true; return entry!.d as T; }
   let value: T;
   try {
     value = await compute();
   } catch (error) {
+    ctx.degraded = true;
     if (usable(entry, STALE_IF_ERROR_MS)) return entry!.d as T;
     throw error;
   }
@@ -245,9 +255,57 @@ async function resolveVersioned<T>(ctx: CacheContext, key: string, compute: () =
     const fresh: Entry = { v: version, t: now, d: value };
     memorySet(store, fullKey, fresh);
     await cacheWrite(ctx, key, fresh);
-  } else if (options.preferStale?.(value) && usable(entry, STALE_IF_ERROR_MS)) {
+  } else {
+    ctx.degraded = true;
     // The fresh computation failed part-way; a recent complete entry is better than a partial one.
-    return entry!.d as T;
+    if (options.preferStale?.(value) && usable(entry, STALE_IF_ERROR_MS)) return entry!.d as T;
   }
   return value;
+}
+
+// ---- Finished HTML pages ----
+// A page is fully determined by its path + query, the deployed Worker version (code and static assets are uploaded
+// together, and the version id is part of every key) and the data it read. Storing the finished page lets a newly
+// started isolate skip the whole HTML rewrite pipeline, which is most of its CPU time on a first request.
+// Rules are the same as for every other entry: the data version is checked at most every VERSION_CHECK_MS,
+// no entry lives longer than ctx.hardMaxMs, and nothing built in a degraded request is ever stored.
+
+export type StoredPage = { status: number; statusText?: string; headers: Array<[string, string]>; body: string };
+/** Version stamp for a page that read no data at all: it depends only on the deployed version and the URL. */
+const NO_DATA = "no-data";
+
+/**
+ * A stored page for `key`, or null. A page that read no data is served without touching D1; a data page is served
+ * only while its data version is current. Never returns a stale page: on any doubt the caller builds the page again,
+ * with the same fallbacks (and stale-if-error per fragment) as without this cache.
+ */
+export async function readPage(ctx: CacheContext, key: string): Promise<StoredPage | null> {
+  const fullKey = `${ctx.origin}|${ctx.namespace}|${key}`;
+  const store = storeOf(ctx);
+  const now = clock();
+  const fresh = (entry: Entry | null) => !!entry && typeof entry.v === "string" && now - entry.t >= 0 && now - entry.t < ctx.hardMaxMs;
+  let entry = memoryGet(store, fullKey);
+  const fromMemory = fresh(entry);
+  if (!fromMemory) entry = await cacheRead<Entry>(ctx, key);
+  if (!fresh(entry)) return null;
+  if (entry!.v !== NO_DATA) {
+    const version = await dataVersion(ctx);
+    if (version === null || entry!.v !== version) return null;
+  }
+  if (!fromMemory) memorySet(store, fullKey, entry!);
+  return entry!.d as StoredPage;
+}
+
+/** Stores a page built in this request, unless anything in the request was degraded. */
+export async function writePage(ctx: CacheContext, key: string, page: StoredPage): Promise<void> {
+  if (ctx.degraded) return;
+  let stamp = NO_DATA;
+  if (ctx.version) {
+    const version = await ctx.version;
+    if (version === null || ctx.degraded) return;
+    stamp = version;
+  }
+  const entry: Entry = { v: stamp, t: clock(), d: page };
+  memorySet(storeOf(ctx), `${ctx.origin}|${ctx.namespace}|${key}`, entry);
+  await cacheWrite(ctx, key, entry);
 }

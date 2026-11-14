@@ -32,6 +32,8 @@ D1無料枠（1日500万行の読み取り）を守るため、件数・出典�
 - **10分以内に反映されるもの**：レビュー・出典記録の追加、商品のどの値の変更（名前・カテゴリ・ASIN・アフィリエイトURL・active。文字数が同じ変更や、複数商品のactiveの入れ替えも含む）、商品の追加・削除。
 - **データ版で検知を保証しないもの（最大24時間）**：既存レビュー・出典記録の、最新IDを変えないUPDATE/DELETE（summary・dog_breed・dog_size・coat_type・needs・source_type・source_url・product_id など。運用上は行わない）。dog_size・coat_type・needs の変更は0018のトリガーが属性を入れ直すため多くの場合10分以内に反映されるが、属性の最新rowidが変わらない場合があるため保証しない。これらは24時間以内、またはデプロイ直後に反映される（キーにWorkerのバージョンIDを含むため。`wrangler.jsonc` の `version_metadata`）。急いで反映したい場合は再デプロイする。
 - D1が読めないときは24時間以内のエントリーを表示し、それより古い場合は従来どおり件数を中立表現にする。Cache APIが使えないときはD1を直接読む。
+- **完成したHTMLページ**も同じ規則で保存する（`readPage` / `writePage`、キーはパス＋クエリ）。新しく起動したisolateがHTMLの書き換え処理を丸ごと省けるため、初回のCPU時間が下がる。データを読まないページ（/privacy など）はデータ版を確認せず、デプロイと24時間の上限だけで作り直す。D1の失敗・古いエントリーの表示・部分的な結果・SSR用APIの失敗が1つでもあった要求のページは保存しない（その場合は従来どおりの代替表示を毎回作り直す）。GET の 200 `text/html` だけが対象で、リダイレクト・404・HEAD・`/api/` は対象外。
+- CPU時間はローカルで測る：`node --import ./tests/ts-loader.mjs scripts/cpu-bench.mjs [比較するfinal-entry.ts]`（isolateの状態ごとの中央値・p95・最大値。Node上の値でありCloudflareの実測ではない）。
 - 読み取り行数はローカルの複製D1で測る：`node --import ./tests/ts-loader.mjs scripts/d1-read-bench.mjs pages`（`day` で1日分の模擬アクセス）。本番D1には接続しない。
 
 ## Preview運用（設定済み）
