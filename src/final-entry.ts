@@ -304,7 +304,8 @@ async function readReviewSearchFallback(request: Request, env: WorkerEnv, ctx: C
 }
 
 function renderReviewSource(row: ReviewFallbackRow) {
-  const url = row.source_check?.url || row.source_url || "";
+  // Site-internal sources were stored as "/pet-dryer.html"; link to the canonical extensionless URL, not a 301.
+  const url = (row.source_check?.url || row.source_url || "").replace(/^(\/[a-z0-9-]+)\.html(?=$|[?#])/i, "$1");
   if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return "";
   const articleInfo = sourceKindOf(row);
   const label = isArticleKind(articleInfo.kind) ? articleInfo.linkLabel : row.source_check?.url ? "確認できた投稿のあるページを見る ↗" : "確認元（レビュー一覧）を見る ↗";

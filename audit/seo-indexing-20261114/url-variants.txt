@@ -1,0 +1,84 @@
+# 2026-11-14 取得。curl -sS -o /dev/null -w '%{http_code} -> %{redirect_url}'（リダイレクトは追わない）
+https://inu-taikenki.com/	200 -> 
+https://www.inu-taikenki.com/	301 -> https://inu-taikenki.com/
+http://inu-taikenki.com/	301 -> https://inu-taikenki.com/
+http://www.inu-taikenki.com/	301 -> https://www.inu-taikenki.com/
+https://inu-taikenki.com/index	307 -> https://inu-taikenki.com/
+https://www.inu-taikenki.com/index	301 -> https://inu-taikenki.com/index
+http://inu-taikenki.com/index	301 -> https://inu-taikenki.com/index
+http://www.inu-taikenki.com/index	301 -> https://www.inu-taikenki.com/index
+https://inu-taikenki.com/index.html	301 -> https://inu-taikenki.com/
+https://www.inu-taikenki.com/index.html	301 -> https://inu-taikenki.com/index.html
+http://inu-taikenki.com/index.html	301 -> https://inu-taikenki.com/index.html
+http://www.inu-taikenki.com/index.html	301 -> https://www.inu-taikenki.com/index.html
+https://inu-taikenki.com/about	200 -> 
+https://www.inu-taikenki.com/about	301 -> https://inu-taikenki.com/about
+http://inu-taikenki.com/about	301 -> https://inu-taikenki.com/about
+http://www.inu-taikenki.com/about	301 -> https://www.inu-taikenki.com/about
+https://inu-taikenki.com/about.html	301 -> https://inu-taikenki.com/about
+https://www.inu-taikenki.com/about.html	301 -> https://inu-taikenki.com/about.html
+http://inu-taikenki.com/about.html	301 -> https://inu-taikenki.com/about.html
+http://www.inu-taikenki.com/about.html	301 -> https://www.inu-taikenki.com/about.html
+https://inu-taikenki.com/about/	307 -> https://inu-taikenki.com/about
+https://www.inu-taikenki.com/about/	307 -> https://www.inu-taikenki.com/about
+http://inu-taikenki.com/about/	301 -> https://inu-taikenki.com/about/
+http://www.inu-taikenki.com/about/	301 -> https://www.inu-taikenki.com/about/
+https://inu-taikenki.com/dog-harness	200 -> 
+https://www.inu-taikenki.com/dog-harness	301 -> https://inu-taikenki.com/dog-harness
+http://inu-taikenki.com/dog-harness	301 -> https://inu-taikenki.com/dog-harness
+http://www.inu-taikenki.com/dog-harness	301 -> https://www.inu-taikenki.com/dog-harness
+https://inu-taikenki.com/dog-harness.html	301 -> https://inu-taikenki.com/dog-harness
+https://www.inu-taikenki.com/dog-harness.html	301 -> https://inu-taikenki.com/dog-harness.html
+http://inu-taikenki.com/dog-harness.html	301 -> https://inu-taikenki.com/dog-harness.html
+http://www.inu-taikenki.com/dog-harness.html	301 -> https://www.inu-taikenki.com/dog-harness.html
+https://inu-taikenki.com/dog-harness/	307 -> https://inu-taikenki.com/dog-harness
+https://www.inu-taikenki.com/dog-harness/	307 -> https://www.inu-taikenki.com/dog-harness
+http://inu-taikenki.com/dog-harness/	301 -> https://inu-taikenki.com/dog-harness/
+http://www.inu-taikenki.com/dog-harness/	301 -> https://www.inu-taikenki.com/dog-harness/
+https://inu-taikenki.com/pet-dryer/	307 -> https://inu-taikenki.com/pet-dryer
+https://www.inu-taikenki.com/pet-dryer/	301 -> https://inu-taikenki.com/pet-dryer/
+http://inu-taikenki.com/pet-dryer/	301 -> https://inu-taikenki.com/pet-dryer/
+http://www.inu-taikenki.com/pet-dryer/	301 -> https://www.inu-taikenki.com/pet-dryer/
+https://inu-taikenki.com/nonexistent-page	404 -> 
+https://www.inu-taikenki.com/nonexistent-page	301 -> https://inu-taikenki.com/nonexistent-page
+http://inu-taikenki.com/nonexistent-page	301 -> https://inu-taikenki.com/nonexistent-page
+http://www.inu-taikenki.com/nonexistent-page	301 -> https://www.inu-taikenki.com/nonexistent-page
+https://inu-taikenki.com/review-search?category=dog-harness	200 -> 
+https://www.inu-taikenki.com/review-search?category=dog-harness	301 -> https://inu-taikenki.com/review-search?category=dog-harness
+http://inu-taikenki.com/review-search?category=dog-harness	301 -> https://inu-taikenki.com/review-search?category=dog-harness
+http://www.inu-taikenki.com/review-search?category=dog-harness	301 -> https://www.inu-taikenki.com/review-search?category=dog-harness
+https://inu-taikenki.com/dog-size?size=small	200 -> 
+https://www.inu-taikenki.com/dog-size?size=small	301 -> https://inu-taikenki.com/dog-size?size=small
+http://inu-taikenki.com/dog-size?size=small	301 -> https://inu-taikenki.com/dog-size?size=small
+http://www.inu-taikenki.com/dog-size?size=small	301 -> https://www.inu-taikenki.com/dog-size?size=small
+
+# 旧GitHub Pages（mainのルート直下のファイルを配信）
+https://erbse09.github.io/inu-taikenki/index.html	200	<link rel="canonical" href="https://inu-taikenki.com/">
+
+https://erbse09.github.io/inu-taikenki/about.html	200	<link rel="canonical" href="https://inu-taikenki.com/about.html">
+
+https://erbse09.github.io/inu-taikenki/affiliate.html	200	<link rel="canonical" href="https://inu-taikenki.com/affiliate.html">
+
+https://erbse09.github.io/inu-taikenki/auto-feeder.html	200	<link rel="canonical" href="https://inu-taikenki.com/auto-feeder.html">
+
+https://erbse09.github.io/inu-taikenki/brush-comb.html	200	<link rel="canonical" href="https://inu-taikenki.com/brush-comb.html">
+
+https://erbse09.github.io/inu-taikenki/brush-guide.html	200	<link rel="canonical" href="https://inu-taikenki.com/brush-guide.html">
+
+https://erbse09.github.io/inu-taikenki/brush-pin.html	200	<link rel="canonical" href="https://inu-taikenki.com/brush-pin.html">
+
+https://erbse09.github.io/inu-taikenki/brush-slicker.html	200	<link rel="canonical" href="https://inu-taikenki.com/brush-slicker.html">
+
+https://erbse09.github.io/inu-taikenki/brush-undercoat.html	200	<link rel="canonical" href="https://inu-taikenki.com/brush-undercoat.html">
+
+https://erbse09.github.io/inu-taikenki/dog-clipper.html	200	<link rel="canonical" href="https://inu-taikenki.com/dog-clipper.html">
+
+https://erbse09.github.io/inu-taikenki/editorial-policy.html	200	<link rel="canonical" href="https://inu-taikenki.com/editorial-policy.html">
+
+https://erbse09.github.io/inu-taikenki/pet-dryer.html	200	<link rel="canonical" href="https://inu-taikenki.com/pet-dryer.html">
+
+https://erbse09.github.io/inu-taikenki/privacy.html	200	<link rel="canonical" href="https://inu-taikenki.com/privacy.html">
+
+https://erbse09.github.io/inu-taikenki/sitemap.xml	200	
+https://erbse09.github.io/inu-taikenki/robots.txt	200	
+https://erbse09.github.io/inu-taikenki/dog-harness.html	404	
