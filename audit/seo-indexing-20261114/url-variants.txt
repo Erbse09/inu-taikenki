@@ -82,3 +82,14 @@ https://erbse09.github.io/inu-taikenki/privacy.html	200	<link rel="canonical" hr
 https://erbse09.github.io/inu-taikenki/sitemap.xml	200	
 https://erbse09.github.io/inu-taikenki/robots.txt	200	
 https://erbse09.github.io/inu-taikenki/dog-harness.html	404	
+
+# 2026-11-16 15:46 UTC 再確認（運営者が GitHub Settings → Pages の公開元を None に変更した後）
+https://erbse09.github.io/inu-taikenki/	404
+https://erbse09.github.io/inu-taikenki/about.html	404
+https://erbse09.github.io/inu-taikenki/pet-dryer.html	404
+https://erbse09.github.io/inu-taikenki/sitemap.xml	404
+https://erbse09.github.io/inu-taikenki/robots.txt	404
+https://inu-taikenki.com/	200
+https://inu-taikenki.com/about	200
+https://inu-taikenki.com/about.html	301 -> https://inu-taikenki.com/about
+# 本番サイトマップ30URL：すべて200・自己参照canonical・noindexなし・X-Robots-Tagなし（main b68ae25 公開後）

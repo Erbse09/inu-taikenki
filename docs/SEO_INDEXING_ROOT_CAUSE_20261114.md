@@ -6,6 +6,9 @@
 - 証拠ファイル：`audit/seo-indexing-20261114/url-audit.tsv`（URL別監査表）、`audit/seo-indexing-20261114/url-variants.txt`（転送・重複ホストの実測）
 - 表記：**事実**＝この調査で実測・確認したこと。**仮説**＝証拠はあるが実証していないこと。**未確認**＝データが取れず判断していないこと。
 
+
+> **2026-11-16 追記**：Search Consoleの「登録済み」6件（`/`・`/dog-shampoo`・`/dog-clipper`・`/brush-slicker`・`/about.html`・`/brush-undercoat`）が判明したため、追加の比較監査を `docs/SEO_INDEXING_COMPARISON_20261116.md` に記録した。主な変更：仮説B1の信頼度を「中〜高」から「中」へ下げ、B2を「高」へ上げ、B3に `/about.html` の具体例を追加、B4（10/23以降の改稿が未評価）を新設。旧GitHub Pagesは11/16に404を確認（停止済み）。第5章（登録済みと未登録の比較）と第9章（未確認事項）は、新しいレポートの第2章・第8章が最新。
+
 ---
 
 ## 0. 結論（先に要点）
