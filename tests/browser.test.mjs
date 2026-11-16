@@ -6,6 +6,7 @@ import {readFileSync,existsSync,mkdirSync} from 'node:fs';
 import {resolve} from 'node:path';
 const {default:worker}=await import('../src/final-entry.ts');
 import {legacyDatabase,migrate,binding} from './database.mjs';
+const {notExcludedSql}=await import('../src/excluded-reviews.ts');
 const require=createRequire(import.meta.url);
 const {chromium}=process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright') : require('playwright');
 const db=legacyDatabase();migrate(db);
@@ -32,7 +33,14 @@ await test('crawler-facing discovery routes contain useful data before client Ja
   const guideHtml=await guide.text();
   assert.equal(guide.status,200);
   assert(!guideHtml.includes('750件'));
-  assert(guideHtml.includes('880件'));
+  // The headline follows the public total: active products, minus the audit rows excluded as cat-owner posts
+  // (src/excluded-reviews.ts). The fixture holds 880 rows (750 legacy + 130 above); legacy row 524 is excluded.
+  const rows=db.prepare('SELECT COUNT(*) n FROM reviews').get().n;
+  const shown=db.prepare(`SELECT COUNT(*) n FROM reviews r JOIN products p ON p.id=r.product_id WHERE p.active=1 AND ${notExcludedSql('r')}`).get().n;
+  assert.equal(rows,880);
+  assert.equal(shown,879,'fixture: exactly one excluded audit row (id 524) is in the legacy data');
+  assert(guideHtml.includes(`${shown}件`),'live public total is shown');
+  assert(!guideHtml.includes(`${rows}件`),'rows excluded by the audit are not counted');
 });
 
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
