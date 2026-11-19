@@ -125,3 +125,27 @@ test('internal links never point at redirecting .html URLs (server HTML and inli
   const search=await (await get('https://inu-taikenki.com/review-search?category=pet-dryer')).text();
   assert(!search.includes('href="/pet-dryer.html"'),'review-search SSR must not link to /pet-dryer.html');
 });
+
+test('nail-clipper E1 experiment: four source-backed specifications and truthful rendered description',async()=>{
+  const res=await get('https://inu-taikenki.com/dog-nail-clipper');
+  assert.equal(res.status,200);
+  const html=await res.text();
+  assert.match(html, /id="verified-product-specs"/);
+  assert.equal((html.match(/<tr data-e1-spec-row>/g)||[]).length,4);
+  for(const marker of [
+    'Z02 / JAN 4562144610027',
+    'Z06 / JAN 4562144610065',
+    'Z01 / JAN 4562144610010',
+    'JAN 4903588274138',
+    'https://www.higashiosakabrand.jp/products/627/',
+    'https://www.higashiosakabrand.jp/products/633/',
+    'https://www.petio.com/item/4903588274138/',
+    '未確認',
+  ])assert(html.includes(marker),'missing E1 product/source label: '+marker);
+  const meta=html.match(/<meta name="description" content="([^"]+)">/i);
+  assert(meta,'rendered meta description missing');
+  assert.match(meta[1], /メーカー・販売元の公表仕様/);
+  assert.doesNotMatch(meta[1], /Amazon/,'SEO description must not imply Amazon customer reviews are a source');
+  const control=await (await get('https://inu-taikenki.com/dog-nail-grinder')).text();
+  assert.doesNotMatch(control, /id="verified-product-specs"/, 'E1 changes must not leak into control article');
+});
