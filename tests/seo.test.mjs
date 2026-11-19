@@ -125,3 +125,23 @@ test('internal links never point at redirecting .html URLs (server HTML and inli
   const search=await (await get('https://inu-taikenki.com/review-search?category=pet-dryer')).text();
   assert(!search.includes('href="/pet-dryer.html"'),'review-search SSR must not link to /pet-dryer.html');
 });
+
+test('shampoo E3 experiment: four source-check rows and unchanged dog-clipper control',async()=>{
+  const res=await get('https://inu-taikenki.com/dog-shampoo');
+  assert.equal(res.status,200);
+  const html=await res.text();
+  assert.match(html, /id="shampoo-source-matrix"/);
+  assert.equal((html.match(/<tr data-e3-shampoo-row>/g)||[]).length,4);
+  for(const token of [
+    'A.P.D.C. ティーツリーシャンプー',
+    'ZOIC N ショート シャンプー',
+    'ZOIC N ロング シャンプー',
+    '自然流 全犬種用トリートメントシャンプー',
+    'https://www.zoic.jp/ec/products/detail/464',
+    'https://www.zoic.jp/ec/products/detail/466',
+    'https://redheart.co.jp/products/shizenryu/',
+    '未確認の値を推測で掲載していません',
+  ])assert(html.includes(token),'missing E3 comparison: '+token);
+  const control=await (await get('https://inu-taikenki.com/dog-clipper')).text();
+  assert.doesNotMatch(control,/id="shampoo-source-matrix"/,'E3 section must not leak into dog-clipper control');
+});
