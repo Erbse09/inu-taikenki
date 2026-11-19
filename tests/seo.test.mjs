@@ -125,3 +125,20 @@ test('internal links never point at redirecting .html URLs (server HTML and inli
   const search=await (await get('https://inu-taikenki.com/review-search?category=pet-dryer')).text();
   assert(!search.includes('href="/pet-dryer.html"'),'review-search SSR must not link to /pet-dryer.html');
 });
+
+test('comb E2 experiment: three purchase-check rows and unchanged brush-pin control',async()=>{
+  const res=await get('https://inu-taikenki.com/brush-comb');
+  assert.equal(res.status,200);
+  const html=await res.text();
+  assert.match(html, /id="comb-choosing-matrix"/);
+  assert.equal((html.match(/<tr data-e2-comb-row>/g)||[]).length,3);
+  for(const label of [
+    '岡野製作所 高級両目金櫛',
+    'SHOWTECH グレイハウンド ASコーム',
+    'SHOWTECH NEW GREYHOUND 19cm',
+    '購入前に確認したい仕様',
+    '未確認の数値を推測で掲載していません',
+  ])assert(html.includes(label),'missing E2 comparison: '+label);
+  const control=await (await get('https://inu-taikenki.com/brush-pin')).text();
+  assert.doesNotMatch(control, /id="comb-choosing-matrix"/, 'E2 section must not leak into brush-pin control');
+});
