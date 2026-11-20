@@ -125,3 +125,45 @@ test('internal links never point at redirecting .html URLs (server HTML and inli
   const search=await (await get('https://inu-taikenki.com/review-search?category=pet-dryer')).text();
   assert(!search.includes('href="/pet-dryer.html"'),'review-search SSR must not link to /pet-dryer.html');
 });
+
+test('comb E2 experiment: each row pairs its own sizes, model numbers, EAN/JAN and sources; cards and finder name the same models',async()=>{
+  const res=await get('https://inu-taikenki.com/brush-comb');
+  assert.equal(res.status,200);
+  const html=await res.text();
+  assert.match(html, /id="comb-choosing-matrix"/);
+  const rows=Object.fromEntries([...html.matchAll(/<tr data-e2-comb-row data-model="([^"]+)">([\s\S]*?)<\/tr>/g)].map(m=>[m[1],m[2]]));
+  assert.deepEqual(Object.keys(rows),['okano-ryome','showtech-2','showtech-1']);
+  const expect={
+    'okano-ryome':{has:['呼番 小・中・大','小 4907733140019','中 4907733140026','大 4907733140033','小29×154、中32×167、大35×194','カーボンスチール','クロームメッキ','29／32／35mmを歯の長さとは扱わない','「大」の体験は調べていない','https://www.petokano.com/life/comb_01.html','https://universcorporation.com/product.php?id=3907'],
+                   not:['5420031924','26STE','TR26SE']},
+    'showtech-2':{has:['#2（帯電防止モデル','品番 26STE007','TR26SE007','EAN 5420031924666','全長190mm','コーム面183×32mm','静電気防止コーティング','海外販売店の表示','https://freebird-wholesale.com/view/item/000000000213','https://item.rakuten.co.jp/petsdms/10010159/','https://groomershop.pl/'],
+                  not:['26STE006','TR26SE006','5420031924659','tr26se006','4907733']},
+    'showtech-1':{has:['#1（標準モデル','品番 26STE006','TR26SE006','EAN 5420031924659','全長190mm','コーム面183×32mm','材質は資料で異なる','「真鍮」','「ステンレス」','#1の帯電性能は未確認','https://item.rakuten.co.jp/freebird/tr26se006/','https://cart.pljapan.com/products/detail.php?product_id=112223250','https://www.petsdms.com/view/item/000000002172','https://groomershop.eu/'],
+                  not:['26STE007','TR26SE007','5420031924666','000000000213','4907733']},
+  };
+  for(const [model,{has,not}] of Object.entries(expect)){
+    for(const v of has)assert(rows[model].includes(v),`${model} row is missing: ${v}`);
+    for(const v of not)assert(!rows[model].includes(v),`${model} row must not contain another product's value: ${v}`);
+  }
+  // Disputed or unverified values are not stated as fact.
+  assert.doesNotMatch(rows['showtech-1'], /<td><strong>販売店表示<\/strong>[^<]*(真鍮|ステンレス)/, '#1 material must not be asserted in the confirmed column');
+  assert.match(html, /どちらも「19cm」＝<strong>全長190mm<\/strong>/);
+  // Product cards show the same two models; the Amazon search keys used for click analytics stay as before.
+  assert.match(html, /<h3>SHOW TECH グレイハウンド ブラックコーム 19cm #2（帯電防止・ASコーム）<\/h3>/);
+  assert.match(html, /<h3>SHOW TECH グレイハウンド コーム 19cm #1（標準）<\/h3>/);
+  assert(html.includes('data-amazon-search="SHOWTECH グレイハウンド ASコーム"')&&html.includes('data-amazon-search="SHOWTECH NEW GREYHOUND 19cm"'),'existing search keys kept');
+  // The JavaScript finder names the same models, and #1 is recommended only from its own reviews and length.
+  const products=JSON.parse(html.match(/const itemProducts=(\[[\s\S]*?\]);/)[1]);
+  const names=products.map(p=>p.name);
+  assert.deepEqual(names,['岡野製作所 高級両目金櫛','SHOW TECH グレイハウンド ブラックコーム 19cm #2（帯電防止）','SHOW TECH グレイハウンド コーム 19cm #1（標準）']);
+  const one=products[2];
+  assert.doesNotMatch(one.reason, /19cmの長さを活かして/);
+  assert.match(one.reason, /#1の商品ページの体験/);
+  assert.match(one.evidence, /#1の商品ページのレビュー/);
+  assert(!one.tags.includes('大型犬')&&!one.tags.includes('中型犬'),'#1 tags must follow its own reviews (toy poodle, Yorkie)');
+  const experiences=JSON.parse(html.match(/const itemExperiences=(\[[\s\S]*?\]);/)[1]);
+  assert(experiences.every(e=>!/#1/.test(e.product)),'#2 experiences must not be moved to #1');
+  assert(!html.includes('SHOWTECH AS<'),'old ambiguous case label is gone');
+  const control=await (await get('https://inu-taikenki.com/brush-pin')).text();
+  assert.doesNotMatch(control, /id="comb-choosing-matrix"/, 'E2 section must not leak into brush-pin control');
+});
