@@ -125,3 +125,45 @@ test('internal links never point at redirecting .html URLs (server HTML and inli
   const search=await (await get('https://inu-taikenki.com/review-search?category=pet-dryer')).text();
   assert(!search.includes('href="/pet-dryer.html"'),'review-search SSR must not link to /pet-dryer.html');
 });
+
+test('shampoo E3 experiment: each row pairs its own volumes, codes, JAN, usage and sources; rinse and medicine wording follow the sources',async()=>{
+  const res=await get('https://inu-taikenki.com/dog-shampoo');
+  assert.equal(res.status,200);
+  const html=await res.text();
+  assert.match(html, /id="shampoo-source-matrix"/);
+  const rows=Object.fromEntries([...html.matchAll(/<tr data-e3-shampoo-row data-product="([^"]+)">([\s\S]*?)<\/tr>/g)].map(m=>[m[1],m[2]]));
+  assert.deepEqual(Object.keys(rows),['apdc-teatree','zoic-n-short','zoic-n-long','shizenryu-all']);
+  const ZPDF='https://www.zoic.jp/cms/wp-content/uploads/2024/05/';
+  const expect={
+    'apdc-teatree':{has:['250mL：13A2024SP／JAN 4528636808020','500mL：13A2024SPL／JAN 4528636808037','業務用5L：13A2024SPXL／JAN 4528636808044','原液または2〜5倍に薄めて','https://www.apdc.jp/product/dog.html','https://takakura.co.jp/products/1448/','https://takakura.co.jp/products/1449/','https://takakura.co.jp/products/1470/'],
+                    not:['49897933','4963974','4562233','3〜15倍','30277','30282']},
+    'zoic-n-short':{has:['300mL：商品コード30277','JAN 4989793350799','4L：JAN 4989793350805','中・短毛','ダックスフンド、プードル、ポメラニアン','軽くさらっとした仕上がり','希釈の要否・倍率は未確認',ZPDF,'https://www.zoic.jp/ec/products/detail/464','https://shopping.yahoo.co.jp/products/2f01e5177c'],
+                    not:['30282','4989793350843','4989793350850','detail/466','ヨークシャテリア','2〜5倍','3〜15倍']},
+    'zoic-n-long':{has:['300mL：商品コード30282','JAN 4989793350843','4L：JAN 4989793350850','長毛','ヨークシャテリア、マルチーズ、シーズー、ロングコートチワワ','しっとりまとまる仕上がり','希釈の要否・倍率は未確認','<strong>4Lの購入者</strong>',ZPDF,'https://www.zoic.jp/ec/products/detail/466','https://item.rakuten.co.jp/nishimura-ejoy/p000029560/'],
+                   not:['30277','4989793350799','4989793350805','detail/464','ダックスフンド','2〜5倍','3〜15倍']},
+    'shizenryu-all':{has:['自然流トリートメントシャンプー 全犬種用','60mL：JAN 4963974005227','300mL：JAN 4963974005326','2L：JAN 4562233455126','通常3〜15倍','約5倍','「泡が切れて、少しぬめりが残る程度」','他の3商品には当てはめない','（5〜20倍）とは希釈倍率が違う','300mLの購入者1人の感想','https://redheart.co.jp/products/shizenryu/','https://redheart.co.jp/customer/faq/faq-shizenryu/','https://kishipet-online.com/product.php?id=1317'],
+                     not:['4989793','4528636','2〜5倍に薄めて']},
+  };
+  for(const [product,{has,not}] of Object.entries(expect)){
+    for(const v of has)assert(rows[product].includes(v),`${product} row is missing: ${v}`);
+    for(const v of not)assert(!rows[product].includes(v),`${product} row must not contain another product's value: ${v}`);
+  }
+  // No blanket claim that shampoo is not a medicine; product-level labels decide.
+  assert(!html.includes('シャンプーは医薬品ではなく'),'blanket "shampoo is not a medicine" wording must be gone');
+  assert.match(html, /この記事では、4商品の洗い方・被毛の仕上がりと購入者の体験を比較します。赤みや強いかゆみが続く場合は獣医師に相談してください。/);
+  assert.match(html, /「薬用」などの表示や効能<\/strong>は、それぞれの製品の容器・メーカーの表示で確認してください/);
+  // The rinse FAQ names 自然流 and no longer tells every product to rinse until no slipperiness remains.
+  const rinse=html.match(/<summary>すすぎはどのくらい必要？<\/summary><div class="faq-answer">([\s\S]*?)<\/div>/)[1];
+  assert.match(rinse, /使う製品の表示を確認してください/);
+  assert.match(rinse, /例えば自然流は、公式FAQで「泡が切れて、少しぬめりが残る程度」を目安/);
+  assert.match(rinse, /ほかの製品には当てはめず/);
+  assert.doesNotMatch(html, /泡やぬめりが残らないよう/);
+  // Volume-specific cards and cases: 4L experience stays 4L, 300 mL codes stay with 300 mL.
+  assert.match(html, /300mLは商品コード30282／JAN 4989793350843、4LはJAN 4989793350850（卸の表示）。掲載したゴールデン2頭の体験は4Lの購入者です。/);
+  assert.match(html, /300mLは商品コード30277／JAN 4989793350799、4LはJAN 4989793350805（卸の表示）/);
+  assert.match(html, /<div class="meta">ZOIC N ロング 4L<\/div><b>ゴールデンレトリバー2頭/);
+  assert.match(html, /<div class="meta">自然流 全犬種用 300mL<\/div><b>約30kgの犬[\s\S]*?300mLを購入した1人の感想で、製品の効果を示すものではありません。/);
+  assert.match(html, />Yahoo!：ZOIC N ロング 4L レビュー</);
+  const control=await (await get('https://inu-taikenki.com/dog-clipper')).text();
+  assert.doesNotMatch(control,/id="shampoo-source-matrix"/,'E3 section must not leak into dog-clipper control');
+});
