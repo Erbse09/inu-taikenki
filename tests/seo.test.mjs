@@ -126,22 +126,37 @@ test('internal links never point at redirecting .html URLs (server HTML and inli
   assert(!search.includes('href="/pet-dryer.html"'),'review-search SSR must not link to /pet-dryer.html');
 });
 
-test('nail-clipper E1 experiment: four source-backed specifications and truthful rendered description',async()=>{
+test('nail-clipper E1 experiment: each spec row pairs its own model, JAN, dimensions and sources; Z01 source conflict is stated',async()=>{
   const res=await get('https://inu-taikenki.com/dog-nail-clipper');
   assert.equal(res.status,200);
   const html=await res.text();
   assert.match(html, /id="verified-product-specs"/);
-  assert.equal((html.match(/<tr data-e1-spec-row>/g)||[]).length,4);
-  for(const marker of [
-    'Z02 / JAN 4562144610027',
-    'Z06 / JAN 4562144610065',
-    'Z01 / JAN 4562144610010',
-    'JAN 4903588274138',
-    'https://www.higashiosakabrand.jp/products/627/',
-    'https://www.higashiosakabrand.jp/products/633/',
-    'https://www.petio.com/item/4903588274138/',
-    '未確認',
-  ])assert(html.includes(marker),'missing E1 product/source label: '+marker);
+  assert.match(html, /メーカー資料・販売店表示で比べた犬用爪切り4商品/);
+  const rows=Object.fromEntries([...html.matchAll(/<tr data-e1-spec-row data-model="([^"]+)">([\s\S]*?)<\/tr>/g)].map(m=>[m[1],m[2]]));
+  assert.deepEqual(Object.keys(rows),['Z02','Z06','Z01','W27413'],'four spec rows in the expected order');
+  const N1='https://www.techplaza.city.higashiosaka.osaka.jp/storage/832/20170404_164940_240.pdf';
+  const expect={
+    Z02:{has:['Z02 / JAN 4562144610027','ギロチン式','小型〜中型犬用','全長125mm、刃部全幅6.8mm',N1,'https://www.higashiosakabrand.jp/products/627/','https://axel.as-1.co.jp/asone/d/63-1233-04/'],
+         not:['4562144610065','4562144610010','63-1233-05','63-1233-07','10.75mm']},
+    Z06:{has:['Z06 / JAN 4562144610065','ギロチン式','大型犬用','全長125mm、刃部全幅10.75mm',N1,'https://www.higashiosakabrand.jp/products/627/','https://axel.as-1.co.jp/asone/d/63-1233-05/'],
+         not:['4562144610027','4562144610010','63-1233-04','63-1233-07','6.8mm']},
+    Z01:{has:['Z01 / JAN 4562144610010','ニッパー式','全長120mm、刃部全幅11.5mm','対象犬の範囲とバネの交換可否は資料により異なります','「小型犬〜大型犬」「バネ交換可能」','「小型犬〜中型犬」「バネ交換不可」','購入する製品の表示を確認してください',N1,'https://www.higashiosakabrand.jp/products/633/','https://axel.as-1.co.jp/asone/d/63-1233-07/','https://item.rakuten.co.jp/petech/001142/'],
+         not:['4562144610027','4562144610065','63-1233-04','63-1233-05']},
+    W27413:{has:['W27413 / JAN 4903588274138','ハサミ式','全犬種用（メーカー表示）','幅5.9×奥行1×高さ12cm','約21g','https://www.petio.com/item/4903588274138/','https://www.petio.com/c/dog/dog-care/dog-nail/4903588274138'],
+         not:['4562144610','axel.as-1.co.jp','未確認']},
+  };
+  for(const [model,{has,not}] of Object.entries(expect)){
+    for(const v of has)assert(rows[model].includes(v),`${model} row is missing: ${v}`);
+    for(const v of not)assert(!rows[model].includes(v),`${model} row must not contain another product's value: ${v}`);
+  }
+  // Z01 must not present only one side of the conflicting sources as the fact.
+  assert.doesNotMatch(rows.Z01.replace(/「[^」]*」/g,''), /<td>小型〜中型犬用/);
+  // The weight of the package listed by AS ONE is not the product weight.
+  assert.match(html, /「荷姿」の重量は梱包を含む値のため、本体重量として載せていません/);
+  assert.match(html, /仕様確認日：2026年11月21日/);
+  // The Petio card states that the published experiences are mostly small dogs, not that the tool is unsuitable for large dogs.
+  assert.match(html, /メーカーの表示は全犬種用。ただし、ここに掲載した体験は小型犬が中心/);
+  assert(!html.includes('本体が小さめなので'),'old Petio wording that implied a size limit must be gone');
   const meta=html.match(/<meta name="description" content="([^"]+)">/i);
   assert(meta,'rendered meta description missing');
   assert.match(meta[1], /メーカー・販売元の公表仕様/);
