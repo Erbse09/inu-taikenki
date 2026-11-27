@@ -192,10 +192,11 @@ test('site description of how summaries were made is truthful: AI-assisted, not 
 });
 
 const {PROFILE_CATEGORIES,loadSourceBreakdown,renderSourceBreakdownHtml}=await import('../src/product-profiles.ts');
-test('dog-harness is a profile category; the 15 existing categories are unchanged',()=>{
+test('dog-harness and dog-step are profile categories; the 15 existing categories are unchanged',()=>{
   const existing=['pet-dryer','auto-feeder','dog-clipper','brush-slicker','brush-pin','brush-undercoat','brush-comb','nail-grinder','nail-clipper','dog-shampoo','dog-conditioner','dog-toothbrush','dog-toothpaste','dog-dental-chew','dog-ear-cleaner'];
-  assert.deepEqual([...PROFILE_CATEGORIES].filter(c=>c!=='dog-harness').sort(),[...existing].sort());
+  assert.deepEqual([...PROFILE_CATEGORIES].filter(c=>c!=='dog-harness'&&c!=='dog-step').sort(),[...existing].sort());
   assert(PROFILE_CATEGORIES.has('dog-harness'));
+  assert(PROFILE_CATEGORIES.has('dog-step'));
 });
 
 function harnessDb(){
