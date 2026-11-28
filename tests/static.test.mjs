@@ -248,3 +248,22 @@ test('dog-step: canonical, one h1, PR line, every product has a tagged sponsored
   assert(readFileSync('public/index.html','utf8').includes(`href="${slug}"`),'homepage link');
   for(const f of ['public/review-search.html','public/review-insights.html'])assert(readFileSync(f,'utf8').includes('<option value="dog-step">'),f);
 });
+
+test('dog-winter-wear-guide: canonical, one h1, PR line, every Amazon link tagged and sponsored, wired into sitemap/routing/home',()=>{
+  const slug='dog-winter-wear-guide';
+  const html=readFileSync(`public/${slug}.html`,'utf8');
+  assert.equal((html.match(/<h1[\s>]/g)||[]).length,1,'h1');
+  assert(html.includes(`<link rel="canonical" href="https://inu-taikenki.com/${slug}">`),'canonical');
+  assert(html.includes(`<meta property="og:url" content="https://inu-taikenki.com/${slug}">`),'og:url');
+  assert(html.includes('data-pr-disclosure')&&html.includes('プロモーション'),'PR line');
+  const amazon=[...html.matchAll(/<a [^>]*href="(https:\/\/www\.amazon\.co\.jp\/[^"]+)"[^>]*>/g)];
+  assert.equal(amazon.length,3,'one Amazon link per product');
+  for(const m of amazon){assert(m[1].includes('tag=100things-22'),'affiliate tag');assert(/rel="sponsored noopener"/.test(m[0]),'rel sponsored');}
+  assert(!/data-db-review-browser|AggregateRating|ratingValue|おすすめ1位/.test(html),'no review browser / rating schema / ranking claims');
+  assert(!/amazon\.co\.jp\/product-reviews/.test(html),'no Amazon review source');
+  assert.equal((html.match(/class="rv"/g)||[]).length,16,'16 review summaries');
+  assert(readFileSync('public/sitemap.xml','utf8').includes(`<loc>https://inu-taikenki.com/${slug}</loc>`),'sitemap');
+  const wrangler=readFileSync('wrangler.jsonc','utf8');
+  assert(wrangler.includes(`"/${slug}"`)&&wrangler.includes(`"/${slug}.html"`),'worker routing');
+  assert(readFileSync('public/index.html','utf8').includes(`href="${slug}"`),'homepage link');
+});
