@@ -31,7 +31,7 @@ const checkOf = (row: Pick<ReviewRow, "id" | "registered_source_url">) => source
 export const PROFILE_CATEGORIES = new Set([
   "pet-dryer", "auto-feeder", "dog-clipper", "brush-slicker", "brush-pin", "brush-undercoat", "brush-comb",
   "nail-grinder", "nail-clipper", "dog-shampoo", "dog-conditioner", "dog-toothbrush", "dog-toothpaste",
-  "dog-dental-chew", "dog-ear-cleaner", "dog-harness",
+  "dog-dental-chew", "dog-ear-cleaner", "dog-harness", "dog-step",
 ]);
 
 const SIZE_LABELS: Record<string, string> = { small: "小型", medium: "中型", large: "大型" };
