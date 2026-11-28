@@ -121,6 +121,7 @@ const CRATE_GUIDE: RelatedGuideLink = { href: "/dog-crate-size-guide", label: "�
 const GATE_GUIDE: RelatedGuideLink = { href: "/dog-indoor-gate-fit-guide", label: "犬用室内ゲートの選び方", note: "設置幅・足元・すき間を公式仕様で比較" };
 const PET_SHEET_GUIDE: RelatedGuideLink = { href: "/dog-pet-sheet-cost-guide", label: "犬用ペットシーツの選び方", note: "交換枚数と送料込み単価から30日費用を計算" };
 const LEAD_GUIDE: RelatedGuideLink = { href: "/dog-lead-guide", label: "犬のリードの選び方", note: "伸縮・ショルダーを公開レビューから比較" };
+const TOY_GUIDE: RelatedGuideLink = { href: "/dog-toy-guide", label: "犬のおもちゃの選び方", note: "知育・ロープ・ボールを公開レビューから比較" };
 const STEP_GUIDE: RelatedGuideLink = { href: "/dog-step", label: "犬用ステップ・スロープの比較", note: "段差の高さ・滑り・ずれを公開レビューから比較" };
 const BUYING_GUIDES_TITLE = "あわせて読みたい購入ガイド";
 
@@ -133,7 +134,7 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   "/dog-crate-size-guide": { title: BUYING_GUIDES_TITLE, links: [GATE_GUIDE, PET_SHEET_GUIDE] },
   "/dog-indoor-gate-fit-guide": { title: BUYING_GUIDES_TITLE, links: [CRATE_GUIDE, PET_SHEET_GUIDE] },
   "/dog-pet-sheet-cost-guide": { title: BUYING_GUIDES_TITLE, links: [CRATE_GUIDE, GATE_GUIDE] },
-  "/dog-harness": { title: "犬用品の選び方（購入ガイド）", links: [GATE_GUIDE, LEAD_GUIDE] },
+  "/dog-harness": { title: "犬用品の選び方（購入ガイド）", links: [GATE_GUIDE, LEAD_GUIDE, TOY_GUIDE] },
   "/dog-step": { title: "犬用品の選び方（購入ガイド）", links: [GATE_GUIDE, CRATE_GUIDE] },
   "/auto-feeder": { title: "犬用品の選び方（購入ガイド）", links: [PET_SHEET_GUIDE] },
   "/dog-brushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-brushing-dislike") },
@@ -433,7 +434,7 @@ const CATEGORY_LABELS: Record<string,string> = {
   "brush-slicker":"スリッカーブラシ","brush-pin":"ピンブラシ","brush-undercoat":"アンダーコート用ブラシ","brush-comb":"犬用コーム",
   "nail-grinder":"電動爪やすり","nail-clipper":"犬用爪切り","dog-shampoo":"犬用シャンプー","dog-conditioner":"犬用コンディショナー",
   "dog-toothbrush":"犬用歯ブラシ","dog-toothpaste":"歯磨きジェル・歯磨き粉","dog-dental-chew":"犬用デンタルガム","dog-ear-cleaner":"犬用イヤークリーナー",
-  "dog-harness":"犬用ハーネス","dog-lead":"犬用リード","dog-step":"犬用ステップ・スロープ",
+  "dog-harness":"犬用ハーネス","dog-lead":"犬用リード","dog-toy":"犬用おもちゃ","dog-step":"犬用ステップ・スロープ",
 };
 
 async function readReviewGroupsFallback(request: Request, env: WorkerEnv, ctx: CacheContext, params: URLSearchParams): Promise<ReviewGroupsFallbackPayload | null> {
