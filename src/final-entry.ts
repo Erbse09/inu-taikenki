@@ -55,6 +55,7 @@ const SEO_TITLES: Record<string, string> = {
   "/dog-dental-chew": "噛む時間・サイズ・カロリーから選ぶ犬用デンタルガム｜公開レビューを横断比較",
   "/dog-ear-cleaner": "垂れ耳・低刺激・耳掃除嫌いから選ぶ犬用イヤークリーナー｜公開レビューを横断比較",
   "/dog-harness": "引っ張り・すっぽ抜け・気管への負担から選ぶ犬用ハーネス｜公開レビューを横断比較",
+  "/dog-step": "段差の高さ・滑り・ずれから選ぶ犬用ステップ・スロープ｜公開レビューを横断比較",
 };
 
 const SEO_DESCRIPTIONS: Record<string, string> = {
@@ -74,6 +75,7 @@ const SEO_DESCRIPTIONS: Record<string, string> = {
   "/dog-dental-chew": "楽天市場の公開購入者レビューとメーカー公式情報をもとに、犬用デンタルガム6商品の体験を整理。噛む時間、サイズ、子犬・シニア、口臭ケア、カロリー、丸飲みしやすさなどを比較し、うちの子に近い実体験から選べます。",
   "/dog-ear-cleaner": "楽天市場の公開購入者レビューとメーカー・販売元情報をもとに、犬用イヤークリーナー6商品の体験を整理。垂れ耳、刺激の少なさ、香り、におい・汚れ、耳掃除嫌い、容量などを比較し、うちの子に近い実体験から選べます。",
   "/dog-harness": "楽天市場・Yahoo!ショッピングの公開購入者レビューを生成AIで要約し、犬用ハーネス32商品を整理。運営者が使った体験ではありません。引っ張り癖、後ずさりでのすっぽ抜け、気管・咳への配慮、脇の擦れ、装着のしやすさ、サイズの合わせ方を、犬種や体重が分かる公開レビューから比較できます。",
+  "/dog-step": "楽天市場の公開購入者レビュー118件を生成AIで要約し、ソファやベッド用の犬用ステップ・スロープ12商品を整理。運営者が使った体験ではありません。段差の高さと段数、踏み面の奥行き・幅、表面の滑りやすさ、本体のずれ、クッションの硬さ、カバーの洗いやすさを、犬種や年齢が分かる公開レビューから比較できます。",
 };
 
 type RelatedGuideLink = {
@@ -120,6 +122,7 @@ const GATE_GUIDE: RelatedGuideLink = { href: "/dog-indoor-gate-fit-guide", label
 const PET_SHEET_GUIDE: RelatedGuideLink = { href: "/dog-pet-sheet-cost-guide", label: "犬用ペットシーツの選び方", note: "交換枚数と送料込み単価から30日費用を計算" };
 const LEAD_GUIDE: RelatedGuideLink = { href: "/dog-lead-guide", label: "犬のリードの選び方", note: "伸縮・ショルダーを公開レビューから比較" };
 const TOY_GUIDE: RelatedGuideLink = { href: "/dog-toy-guide", label: "犬のおもちゃの選び方", note: "知育・ロープ・ボールを公開レビューから比較" };
+const STEP_GUIDE: RelatedGuideLink = { href: "/dog-step", label: "犬用ステップ・スロープの比較", note: "段差の高さ・滑り・ずれを公開レビューから比較" };
 const BUYING_GUIDES_TITLE = "あわせて読みたい購入ガイド";
 
 const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
@@ -132,6 +135,7 @@ const RELATED_GUIDES: Record<string, RelatedGuideConfig> = {
   "/dog-indoor-gate-fit-guide": { title: BUYING_GUIDES_TITLE, links: [CRATE_GUIDE, PET_SHEET_GUIDE] },
   "/dog-pet-sheet-cost-guide": { title: BUYING_GUIDES_TITLE, links: [CRATE_GUIDE, GATE_GUIDE] },
   "/dog-harness": { title: "犬用品の選び方（購入ガイド）", links: [GATE_GUIDE, LEAD_GUIDE, TOY_GUIDE] },
+  "/dog-step": { title: "犬用品の選び方（購入ガイド）", links: [GATE_GUIDE, CRATE_GUIDE] },
   "/auto-feeder": { title: "犬用品の選び方（購入ガイド）", links: [PET_SHEET_GUIDE] },
   "/dog-brushing-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-brushing-dislike") },
   "/dog-nail-care-dislike": { title: OTHER_GUIDES_TITLE, links: discoveryGuidesExcept("/dog-nail-care-dislike") },
@@ -430,7 +434,7 @@ const CATEGORY_LABELS: Record<string,string> = {
   "brush-slicker":"スリッカーブラシ","brush-pin":"ピンブラシ","brush-undercoat":"アンダーコート用ブラシ","brush-comb":"犬用コーム",
   "nail-grinder":"電動爪やすり","nail-clipper":"犬用爪切り","dog-shampoo":"犬用シャンプー","dog-conditioner":"犬用コンディショナー",
   "dog-toothbrush":"犬用歯ブラシ","dog-toothpaste":"歯磨きジェル・歯磨き粉","dog-dental-chew":"犬用デンタルガム","dog-ear-cleaner":"犬用イヤークリーナー",
-  "dog-harness":"犬用ハーネス","dog-lead":"犬用リード","dog-toy":"犬用おもちゃ",
+  "dog-harness":"犬用ハーネス","dog-lead":"犬用リード","dog-toy":"犬用おもちゃ","dog-step":"犬用ステップ・スロープ",
 };
 
 async function readReviewGroupsFallback(request: Request, env: WorkerEnv, ctx: CacheContext, params: URLSearchParams): Promise<ReviewGroupsFallbackPayload | null> {

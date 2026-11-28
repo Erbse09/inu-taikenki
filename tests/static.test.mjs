@@ -221,6 +221,34 @@ test('dog-lead-guide: canonical, one h1, PR line, every Amazon link tagged and s
   assert(readFileSync('public/index.html','utf8').includes(`href="${slug}"`),'homepage link');
 });
 
+test('dog-step: canonical, one h1, PR line, every product has a tagged sponsored Amazon link, honest description, wired into sitemap/routing/home/finders',()=>{
+  const slug='dog-step';
+  const html=readFileSync(`public/${slug}.html`,'utf8');
+  assert.equal((html.match(/<h1[\s>]/g)||[]).length,1,'h1');
+  assert(html.includes(`<link rel="canonical" href="https://inu-taikenki.com/${slug}">`),'canonical');
+  assert(html.includes(`<meta property="og:url" content="https://inu-taikenki.com/${slug}">`),'og:url');
+  assert(html.includes('data-pr-disclosure')&&html.includes('プロモーション'),'PR line');
+  assert(html.includes('data-db-review-browser data-category="dog-step"'),'shared product browser');
+  const amazon=[...html.matchAll(/<a [^>]*href="(https:\/\/www\.amazon\.co\.jp\/[^"]+)"[^>]*>/g)];
+  assert.equal(amazon.length,12,'one Amazon link per product');
+  for(const m of amazon){assert(m[1].includes('tag=100things-22'),'affiliate tag');assert(/rel="sponsored noopener"/.test(m[0]),'rel sponsored');}
+  assert(!/AggregateRating|ratingValue|おすすめ1位/.test(html),'no rating schema / ranking claims');
+  assert(!/amazon\.co\.jp\/product-reviews/.test(html),'no Amazon review source');
+  assert(!/実体験/.test(html),'review summaries are not first-hand experience');
+  const cases=[...html.matchAll(/<div class="case">.*?<\/div>/g)];
+  assert(cases.length>=10,'cases');
+  for(const c of html.match(/<div class="case">[\s\S]*?<\/p><\/div>/g))assert(/<p class="src">出典：<a href="https:\/\/review\.rakuten\.co\.jp\//.test(c),'each case needs its source link');
+  const entry=readFileSync('src/final-entry.ts','utf8');
+  const desc=entry.match(/"\/dog-step": "(楽天市場[^"]+)"/)?.[1]||'';
+  assert(desc.includes('生成AI')&&desc.includes('運営者が使った体験ではありません'),'meta description is honest');
+  assert(entry.includes('"dog-step":"犬用ステップ・スロープ"'),'category label');
+  assert(readFileSync('public/sitemap.xml','utf8').includes(`<loc>https://inu-taikenki.com/${slug}</loc>`),'sitemap');
+  const wrangler=readFileSync('wrangler.jsonc','utf8');
+  assert(wrangler.includes(`"/${slug}"`)&&wrangler.includes(`"/${slug}.html"`),'worker routing');
+  assert(readFileSync('public/index.html','utf8').includes(`href="${slug}"`),'homepage link');
+  for(const f of ['public/review-search.html','public/review-insights.html'])assert(readFileSync(f,'utf8').includes('<option value="dog-step">'),f);
+});
+
 test('dog-toy-guide: canonical, one h1, PR line, every Amazon link tagged and sponsored, wired into sitemap/routing/home',()=>{
   const slug='dog-toy-guide';
   const html=readFileSync(`public/${slug}.html`,'utf8');
